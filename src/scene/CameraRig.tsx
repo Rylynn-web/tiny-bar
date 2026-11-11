@@ -1,69 +1,122 @@
-import { useLayoutEffect, useRef, type ComponentRef } from 'react'
-import { useThree } from '@react-three/fiber'
-import { OrbitControls, OrthographicCamera } from '@react-three/drei'
-import { TOUCH } from 'three'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
+import { CameraControls, CameraControlsImpl, OrthographicCamera } from '@react-three/drei'
+import { Box3, MathUtils, Vector3, type OrthographicCamera as OrthoCam } from 'three'
 import { sceneConfig } from '../config/sceneConfig'
 import { useSceneParams } from '../state/sceneParams'
+import { onResetView } from '../state/cameraActions'
 
+const { ACTION } = CameraControlsImpl
 const cam = sceneConfig.camera
-const ctl = sceneConfig.controls
+const deg = MathUtils.degToRad
 
-// 由极角/方位角/距离算出相机位置
-const initialPosition: [number, number, number] = [
-  cam.target[0] + cam.distance * Math.sin(cam.polarAngle) * Math.sin(cam.azimuthAngle),
-  cam.target[1] + cam.distance * Math.cos(cam.polarAngle),
-  cam.target[2] + cam.distance * Math.sin(cam.polarAngle) * Math.cos(cam.azimuthAngle),
-]
+/** 俯角（与地面夹角）→ 极角（与竖直向上夹角） */
+const polarFromDepression = (d: number) => deg(90 - d)
+
+const defaultAzimuth = deg(cam.defaultAzimuthDeg)
+const defaultPolar = polarFromDepression(cam.defaultDepressionDeg)
+const [tx, ty, tz] = cam.target
+
+// 默认相机位置：焦点 + 球坐标偏移
+const defaultPosition = new Vector3().setFromSphericalCoords(cam.distance, defaultPolar, defaultAzimuth).add(new Vector3(tx, ty, tz))
+
+const roomHalf = sceneConfig.room.size / 2
 
 export function CameraRig() {
-  const cameraRef = useRef<ComponentRef<typeof OrthographicCamera>>(null)
-  const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
-  const baseZoomRef = useRef<number | null>(null)
+  // 显式把正交相机交给 CameraControls；控制器实例在相机就绪后才创建，所以用 state 跟踪
+  const [ortho, setOrtho] = useState<OrthoCam | null>(null)
+  const [controls, setControls] = useState<CameraControlsImpl | null>(null)
+  const controlsRef = useRef<CameraControlsImpl | null>(null)
+  controlsRef.current = controls
   const { width, height } = useThree((s) => s.size)
-  const { viewSize } = useSceneParams()
+  const { camera: p } = useSceneParams()
 
-  // 正交相机的 zoom = 每个世界单位占多少像素。
-  // 按屏幕短边算出"刚好装下 viewSize"的基准 zoom，窗口变化时保留用户缩放的比例。
+  // 正交相机 zoom = 每米多少像素。按屏幕短边把"视野尺寸"换算成 zoom
+  const minSide = Math.min(width, height)
+  const fullZoom = minSide / p.fullViewSize
+  const closeZoom = minSide / p.closeViewSize
+  const fullZoomRef = useRef(fullZoom)
+
+  // 操作映射与固定开关（每个控制器实例设置一次）
   useLayoutEffect(() => {
-    const camera = cameraRef.current
-    const controls = controlsRef.current
-    if (!camera || !controls) return
+    const c = controls
+    if (!c) return
+    c.mouseButtons.left = ACTION.ROTATE
+    c.mouseButtons.right = ACTION.TRUCK
+    c.mouseButtons.middle = ACTION.NONE
+    c.mouseButtons.wheel = ACTION.ZOOM
+    c.touches.one = ACTION.TOUCH_ROTATE
+    c.touches.two = ACTION.TOUCH_ZOOM_TRUCK
+    c.touches.three = ACTION.NONE
+    // 缩放以指针为中心；上下拖动平移时沿地面前后移动，焦点高度和俯角不变
+    c.dollyToCursor = true
+    c.verticalDragToForward = true
+    c.setLookAt(defaultPosition.x, defaultPosition.y, defaultPosition.z, tx, ty, tz, false)
+    fullZoomRef.current = 0
+  }, [controls])
 
-    const base = Math.min(width, height) / viewSize
-    const prevBase = baseZoomRef.current
-    const ratio = prevBase ? camera.zoom / prevBase : 1
-    baseZoomRef.current = base
+  // 可调参数：角度范围、阻尼、速度、缩放上下限
+  useLayoutEffect(() => {
+    const c = controls
+    if (!c) return
+    c.minAzimuthAngle = defaultAzimuth - deg(p.azimuthRangeDeg)
+    c.maxAzimuthAngle = defaultAzimuth + deg(p.azimuthRangeDeg)
+    c.minPolarAngle = polarFromDepression(p.maxDepressionDeg)
+    c.maxPolarAngle = polarFromDepression(p.minDepressionDeg)
+    c.smoothTime = p.smoothTime
+    c.draggingSmoothTime = p.draggingSmoothTime
+    c.azimuthRotateSpeed = p.rotateSpeed
+    c.polarRotateSpeed = p.rotateSpeed
+    c.truckSpeed = p.truckSpeed
+    c.dollySpeed = p.dollySpeed
+    c.minZoom = fullZoom
+    c.maxZoom = closeZoom
 
-    controls.minZoom = base * ctl.minZoomFactor
-    controls.maxZoom = base * ctl.maxZoomFactor
-    camera.zoom = Math.min(controls.maxZoom, Math.max(controls.minZoom, base * ratio))
-    camera.updateProjectionMatrix()
-  }, [width, height, viewSize])
+    // 屏幕尺寸或全景视野变了：按比例保持用户当前的缩放程度（首次直接用全景）
+    const prevFull = fullZoomRef.current
+    const zoom = prevFull > 0 ? c.camera.zoom * (fullZoom / prevFull) : fullZoom
+    fullZoomRef.current = fullZoom
+    c.zoomTo(MathUtils.clamp(zoom, fullZoom, closeZoom), false)
+  }, [controls, p, fullZoom, closeZoom])
+
+  // 平移边界：焦点限制在地板内，并随缩放收放——全景时为 0，房间不会被拖出屏幕
+  const boundary = useMemo(() => new Box3(), [])
+  const lastZoom = useRef(0)
+  useFrame(() => {
+    const c = controlsRef.current
+    if (!c) return
+    const zoom = c.camera.zoom
+    if (Math.abs(zoom - lastZoom.current) < 1e-4) return
+    lastZoom.current = zoom
+    const k = Math.max(0, 1 - fullZoomRef.current / zoom)
+    const half = roomHalf * sceneConfig.controls.boundaryScale * k
+    boundary.min.set(tx - half, ty, tz - half)
+    boundary.max.set(tx + half, ty, tz + half)
+    c.setBoundary(boundary)
+  })
+
+  // 回到全景：平滑过渡到默认角度、焦点和缩放
+  useEffect(
+    () =>
+      onResetView(() => {
+        const c = controlsRef.current
+        if (!c) return
+        c.setLookAt(defaultPosition.x, defaultPosition.y, defaultPosition.z, tx, ty, tz, true)
+        c.zoomTo(fullZoomRef.current, true)
+      }),
+    [],
+  )
 
   return (
     <>
       <OrthographicCamera
-        ref={cameraRef}
+        ref={setOrtho}
         makeDefault
-        position={initialPosition}
+        position={defaultPosition.toArray()}
         near={cam.near}
         far={cam.far}
       />
-      <OrbitControls
-        ref={controlsRef}
-        target={cam.target}
-        enablePan={ctl.enablePan}
-        enableDamping={ctl.enableDamping}
-        dampingFactor={ctl.dampingFactor}
-        rotateSpeed={ctl.rotateSpeed}
-        zoomSpeed={ctl.zoomSpeed}
-        minPolarAngle={ctl.minPolarAngle}
-        maxPolarAngle={ctl.maxPolarAngle}
-        minAzimuthAngle={cam.azimuthAngle - ctl.azimuthRange}
-        maxAzimuthAngle={cam.azimuthAngle + ctl.azimuthRange}
-        // 单指旋转，双指捏合缩放（平移已禁用）
-        touches={{ ONE: TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN }}
-      />
+      {ortho && <CameraControls ref={setControls} camera={ortho} makeDefault />}
     </>
   )
 }

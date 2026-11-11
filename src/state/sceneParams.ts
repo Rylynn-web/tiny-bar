@@ -6,13 +6,26 @@ import { sceneConfig, type BuddyPose, type TimeOfDay } from '../config/sceneConf
 type Palette = { -readonly [K in keyof typeof sceneConfig.palette]: string }
 type Lighting = { -readonly [K in keyof typeof sceneConfig.lighting.day]: (typeof sceneConfig.lighting.day)[K] extends string ? string : number }
 
+export type CameraParams = {
+  azimuthRangeDeg: number
+  minDepressionDeg: number
+  maxDepressionDeg: number
+  fullViewSize: number
+  closeViewSize: number
+  smoothTime: number
+  draggingSmoothTime: number
+  rotateSpeed: number
+  truckSpeed: number
+  dollySpeed: number
+}
+
 export type SceneParams = {
   timeOfDay: TimeOfDay
   palette: Palette
   bevel: number
   lighting: { day: Lighting; night: Lighting }
   ao: { intensity: number; radius: number }
-  viewSize: number
+  camera: CameraParams
   buddy: {
     bodyColor: string
     eyeColor: string
@@ -30,7 +43,18 @@ export const defaultSceneParams: SceneParams = {
     night: { ...sceneConfig.lighting.night },
   },
   ao: { intensity: sceneConfig.ao.intensity, radius: sceneConfig.ao.radius },
-  viewSize: sceneConfig.camera.viewSize,
+  camera: {
+    azimuthRangeDeg: sceneConfig.controls.azimuthRangeDeg,
+    minDepressionDeg: sceneConfig.controls.minDepressionDeg,
+    maxDepressionDeg: sceneConfig.controls.maxDepressionDeg,
+    fullViewSize: sceneConfig.camera.fullViewSize,
+    closeViewSize: sceneConfig.camera.closeViewSize,
+    smoothTime: sceneConfig.controls.smoothTime,
+    draggingSmoothTime: sceneConfig.controls.draggingSmoothTime,
+    rotateSpeed: sceneConfig.controls.rotateSpeed,
+    truckSpeed: sceneConfig.controls.truckSpeed,
+    dollySpeed: sceneConfig.controls.dollySpeed,
+  },
   buddy: {
     bodyColor: sceneConfig.buddy.bodyColor,
     eyeColor: sceneConfig.buddy.eyeColor,

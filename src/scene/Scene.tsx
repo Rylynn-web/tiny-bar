@@ -8,6 +8,7 @@ import { Table } from './furniture/Table'
 import { Chair } from './furniture/Chair'
 import { PendantLamp } from './furniture/PendantLamp'
 import { BarBuddy } from './character/BarBuddy'
+import { DoubleTapReset } from './interaction/tap'
 
 export function Scene() {
   const { canvas } = sceneConfig
@@ -21,6 +22,7 @@ export function Scene() {
     >
       <Lighting />
       <CameraRig />
+      <DoubleTapReset />
       <RoomCorner />
       <Table />
       <Chair />

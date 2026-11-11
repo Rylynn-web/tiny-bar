@@ -62,10 +62,10 @@ export const sceneConfig = {
     night: {
       background: '#2E2A2B',
       sunColor: '#8A8496',
-      sunIntensity: 0.12,
+      sunIntensity: 2,
       ambientSky: '#5C5058',
       ambientGround: '#2C2428',
-      ambientIntensity: 0.4,
+      ambientIntensity: 3,
       lampIntensity: 3.5,
       bulbGlow: 4,
     },
@@ -94,29 +94,58 @@ export const sceneConfig = {
   },
 
   // ───────── 相机（正交）─────────
+  // 角度一律用"度"，方便在 leva 里调；组件里再换算成弧度
   camera: {
+    // 默认焦点（全景时看向这里）
     target: [0, 0.7, 0] as Vec3,
+    // 正交相机离焦点的距离，只影响裁剪，不影响画面大小
     distance: 20,
-    // 极角：与竖直向上的夹角。45° 即 45° 俯视
-    polarAngle: deg(45),
-    // 方位角：绕 Y 轴，从 +Z 方向起算。45° 斜看进墙角
-    azimuthAngle: deg(45),
     near: 0.1,
     far: 100,
-    // 画面短边要能看到的世界尺寸（米）。越小越"近"
-    viewSize: 5.8,
+    // 默认视角：方位角从 +Z 起绕 Y 轴；45° 正对墙角
+    defaultAzimuthDeg: 45,
+    // 默认俯角（与地面夹角）
+    defaultDepressionDeg: 45,
+    // 画面短边能看到的世界尺寸（米）：全景 = 最远，近景 = 最近（大约一张桌子）
+    fullViewSize: 5.8,
+    closeViewSize: 1.3,
   },
   controls: {
-    enablePan: false,
-    enableDamping: true,
-    dampingFactor: 0.08,
+    // 水平方向：默认方位角左右各转多少度（墙在 -X/-Z，超过 45° 会看到墙背面）
+    azimuthRangeDeg: 35,
+    // 俯角范围（与地面夹角）：不能平视，也不能正俯视
+    minDepressionDeg: 25,
+    maxDepressionDeg: 60,
+    // 阻尼：松手后缓停的时间 / 拖动中跟随的时间（秒）
+    smoothTime: 0.3,
+    draggingSmoothTime: 0.12,
     rotateSpeed: 0.6,
-    zoomSpeed: 0.8,
-    minPolarAngle: deg(25),
-    maxPolarAngle: deg(65),
-    azimuthRange: deg(45),
-    minZoomFactor: 0.6,
-    maxZoomFactor: 2.5,
+    truckSpeed: 1,
+    dollySpeed: 0.5,
+    // 平移边界：焦点限制在地板范围内，并随缩放收放（全景时为 0，不能平移）
+    // 地板一半尺寸乘这个系数，留一点余量让边缘物件也能拉到画面中间
+    boundaryScale: 1,
+  },
+
+  // ───────── 交互 ─────────
+  interaction: {
+    // 指针移动不超过这个像素数才算"点按"，否则算拖动
+    tapThreshold: 6,
+    // 双击：两次点按的最大间隔（毫秒）与最大距离（像素）
+    doubleTapMs: 300,
+    doubleTapDistance: 30,
+  },
+
+  // ───────── 2D 界面 ─────────
+  ui: {
+    resetButton: {
+      size: 44,
+      iconSize: 20,
+      margin: 16,
+      background: 'rgba(59, 58, 64, 0.72)',
+      color: '#F3E9DC',
+      shadow: '0 4px 14px rgba(0, 0, 0, 0.18)',
+    },
   },
 
   // ───────── 房间：一角 ─────────
