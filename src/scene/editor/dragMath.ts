@@ -3,33 +3,24 @@ import type { LayoutItem, Vec3 } from '../../config/layoutTypes'
 import { sceneConfig } from '../../config/sceneConfig'
 import { editorConfig } from '../../config/editorConfig'
 import { roomBounds } from '../../state/layoutStore'
+import { normalizeDeg, wallOf } from '../room/walls'
 
 /** 当前房间范围（房间尺寸可以在编辑器里改，所以每次现取） */
 export function roomLimits() {
   return { ...roomBounds(), height: sceneConfig.room.wallHeight }
 }
 
-export type Wall = 'back' | 'left'
-
-/** 把角度规整到 (-180, 180] */
-export function normalizeDeg(deg: number) {
-  let d = ((deg % 360) + 360) % 360
-  if (d > 180) d -= 360
-  return d
-}
-
-/** 墙面物件贴在哪面墙：朝向 ≈ 90° 为左墙，否则为后墙 */
-export function wallOf(item: LayoutItem): Wall {
-  return Math.abs(normalizeDeg(item.rotationY) - 90) < 45 ? 'left' : 'back'
-}
+export type { Wall } from '../room/walls'
+export { normalizeDeg, wallOf }
 
 /** 拖动用的平面：地面物件 = 物件所在高度的水平面；墙面物件 = 所在墙面 */
 export function dragPlane(item: LayoutItem, mount: 'floor' | 'wall') {
   const room = roomLimits()
   if (mount === 'floor') return new Plane(new Vector3(0, 1, 0), -item.position[1])
-  return wallOf(item) === 'left'
-    ? new Plane(new Vector3(1, 0, 0), -room.minX)
-    : new Plane(new Vector3(0, 0, 1), -room.minZ)
+  const wall = wallOf(item)
+  if (wall === 'left') return new Plane(new Vector3(1, 0, 0), -room.minX)
+  if (wall === 'right') return new Plane(new Vector3(1, 0, 0), -room.maxX)
+  return new Plane(new Vector3(0, 0, 1), -room.minZ)
 }
 
 export function snap(v: number, grid: number) {
@@ -65,9 +56,10 @@ export function constrain(
     return [x, item.position[1], z]
   }
   const y = lockY ? item.position[1] : clampAxis(s(target.y), offMin.y, offMax.y, 0, room.height)
-  if (wallOf(item) === 'left') {
+  const wall = wallOf(item)
+  if (wall !== 'back') {
     const z = clampAxis(s(target.z), offMin.z, offMax.z, room.minZ, room.maxZ)
-    return [room.minX, y, z]
+    return [wall === 'left' ? room.minX : room.maxX, y, z]
   }
   const x = clampAxis(s(target.x), offMin.x, offMax.x, room.minX, room.maxX)
   return [x, y, room.minZ]

@@ -4,6 +4,8 @@ import { useEditorBridge } from '../state/editorBridge'
 import { useSceneParams } from '../state/sceneParams'
 import { MergeStatic } from './primitives/MergeStatic'
 import { catalog } from './catalog'
+import { SideWallItem } from './room/SideWallItem'
+import { wallOf } from './room/walls'
 
 /** 按 layout.json（或编辑器里的当前布局）渲染每个物件 */
 export function LayoutRenderer() {
@@ -17,7 +19,8 @@ export function LayoutRenderer() {
         const entry = catalog[item.type]
         if (!entry) return null
         const Component = entry.component
-        const node = (
+        const wall = entry.mount === 'wall' ? wallOf(item) : null
+        const inner = (
           <group
             position={item.position}
             rotation={[0, MathUtils.degToRad(item.rotationY), 0]}
@@ -33,6 +36,8 @@ export function LayoutRenderer() {
             </MergeStatic>
           </group>
         )
+        // 左右墙上的物件跟着墙一起隐藏
+        const node = wall === 'left' || wall === 'right' ? <SideWallItem side={wall}>{inner}</SideWallItem> : inner
         return bridge ? (
           <bridge.ItemWrapper key={item.id} item={item}>
             {node}

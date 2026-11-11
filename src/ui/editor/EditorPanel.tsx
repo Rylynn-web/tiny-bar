@@ -1,4 +1,5 @@
 import { editorConfig } from '../../config/editorConfig'
+import { setWallMode, useWallMode } from '../../state/wallVisibility'
 import { useLayoutItems } from '../../state/layoutStore'
 import { catalog } from '../../scene/catalog'
 import {
@@ -180,6 +181,7 @@ export function EditorPanel() {
 function RoomSection() {
   const room = useRoom()
   const R = editorConfig.room
+  const wallMode = useWallMode()
   return (
     <section className="editor-panel__section">
       <h3>房间</h3>
@@ -199,6 +201,14 @@ function RoomSection() {
         step={R.step}
         onChange={(depth) => updateRoom({ ...room, depth })}
       />
+      <div className="editor-panel__row">
+        <button type="button" className={wallMode === 'showAll' ? 'is-on' : ''} onClick={() => setWallMode('showAll')}>
+          显示全部墙
+        </button>
+        <button type="button" className={wallMode === 'follow' ? 'is-on' : ''} onClick={() => setWallMode('follow')}>
+          跟随视角
+        </button>
+      </div>
     </section>
   )
 }

@@ -88,8 +88,9 @@ export function CameraRig() {
   useLayoutEffect(() => {
     const c = controls
     if (!c) return
-    c.minAzimuthAngle = defaultAzimuth - deg(p.azimuthRangeDeg)
-    c.maxAzimuthAngle = defaultAzimuth + deg(p.azimuthRangeDeg)
+    // 方位角范围是绝对值（0° = 正对后墙），默认视角在范围内
+    c.minAzimuthAngle = deg(Math.min(p.azimuthMinDeg, cam.defaultAzimuthDeg))
+    c.maxAzimuthAngle = deg(Math.max(p.azimuthMaxDeg, cam.defaultAzimuthDeg))
     c.minPolarAngle = polarFromDepression(p.maxDepressionDeg)
     c.maxPolarAngle = polarFromDepression(p.minDepressionDeg)
     c.smoothTime = p.smoothTime

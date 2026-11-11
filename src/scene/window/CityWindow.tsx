@@ -48,7 +48,8 @@ export function CityWindow({ props, item }: CatalogProps) {
   const fit = item ? fitWindow(item, bounds) : null
   const width = fit ? fit.width : windowWidth(props)
   // 被挪回墙内时，窗户相对物件原点的偏移（局部 x）
-  const dx = fit ? (fit.left ? -(fit.center - fit.along) : fit.center - fit.along) : 0
+  // 左墙的局部 +x 指向 -Z，后墙和右墙的局部 +x 分别指向 +X、+Z
+  const dx = fit ? (fit.wall === 'left' ? -(fit.center - fit.along) : fit.center - fit.along) : 0
   const height = W.headHeight - W.sillHeight
   const detail = resolveQuality(params.quality) === 'high' ? 1 : 0
 

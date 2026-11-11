@@ -103,7 +103,8 @@ export default function DebugPanel() {
       aoRadius: { value: d.ao.radius, min: 0.05, max: 2, step: 0.01, label: '半径' },
     }),
     相机: folder({
-      azimuthRangeDeg: { value: d.camera.azimuthRangeDeg, min: 0, max: 45, step: 1, label: '水平±°' },
+      azimuthMinDeg: { value: d.camera.azimuthMinDeg, min: -89, max: 0, step: 1, label: '水平最左°' },
+      azimuthMaxDeg: { value: d.camera.azimuthMaxDeg, min: 0, max: 89, step: 1, label: '水平最右°' },
       minDepressionDeg: { value: d.camera.minDepressionDeg, min: 5, max: 85, step: 1, label: '俯角下限°' },
       maxDepressionDeg: { value: d.camera.maxDepressionDeg, min: 5, max: 89, step: 1, label: '俯角上限°' },
       fullViewSize: { value: d.camera.fullViewSize, min: 2, max: 12, step: 0.1, label: '全景视野' },
@@ -151,7 +152,8 @@ export default function DebugPanel() {
         pool: v.emPool as number,
       },
       camera: {
-        azimuthRangeDeg: v.azimuthRangeDeg as number,
+        azimuthMinDeg: v.azimuthMinDeg as number,
+        azimuthMaxDeg: v.azimuthMaxDeg as number,
         minDepressionDeg: v.minDepressionDeg as number,
         maxDepressionDeg: v.maxDepressionDeg as number,
         fullViewSize: v.fullViewSize as number,

@@ -150,8 +150,8 @@ export const sceneConfig = {
       glow: 1,
     },
     // 主光方向（相对房间中心）
-    // 从相机一侧偏左上打过来，两面墙都能受光，影子落向墙角
-    sunPosition: [3.5, 5, 6] as Vec3,
+    // 从房间正面偏左上打过来：右墙的影子落在房间外，左墙的影子只贴着墙根，三面墙都能受一点光
+    sunPosition: [-1.2, 6, 6] as Vec3,
   },
   // ───────── 环境光遮蔽（N8AO）─────────
   ao: {
@@ -181,8 +181,10 @@ export const sceneConfig = {
     closeViewSize: 1.5,
   },
   controls: {
-    // 水平方向：默认方位角左右各转多少度（墙在 -X/-Z，超过 45° 会看到墙背面）
-    azimuthRangeDeg: 35,
+    // 水平方向的允许范围（方位角，0° = 正对后墙，正值 = 摄像机在右前方）。
+    // 左右墙会按视角自动降低，所以能从左前方一直转到右前方；超过 ±90° 会跑到后墙背后
+    azimuthMinDeg: -80,
+    azimuthMaxDeg: 80,
     // 俯角范围（与地面夹角）：不能平视，也不能正俯视
     minDepressionDeg: 25,
     maxDepressionDeg: 60,
@@ -219,7 +221,7 @@ export const sceneConfig = {
   },
 
   // ───────── 房间 ─────────
-  // 地面顶面在 y=0，中心在原点。后墙在 -Z，左墙在 -X
+  // 地面顶面在 y=0，中心在原点。后墙在 -Z，左墙在 -X，右墙在 +X，前面（+Z）敞开
   room: {
     width: 8,
     depth: 6.4,
@@ -232,6 +234,16 @@ export const sceneConfig = {
     // 踢脚线
     baseboardHeight: 0.08,
     baseboardThickness: 0.02,
+  },
+  // 左右墙随视角自动降低：摄像机偏右（方位角 > +buffer）降右墙，偏左（< -buffer）降左墙，中间保持上一次的状态
+  walls: {
+    hideBufferDeg: 5,
+    // 降下后剩下的墙基高度（占墙高的比例）
+    loweredRatio: 0.15,
+    // 升降过渡时间（秒）
+    transitionSeconds: 0.3,
+    // 墙高降到这个比例以下时，挂在这面墙上的物件（画、置物架、壁灯、窗）一起隐藏
+    itemHideRatio: 0.9,
   },
   door: {
     width: 0.92,
@@ -672,6 +684,22 @@ export const sceneConfig = {
     neighborDistance: 1.3,
     // 镜头飞向座位时的默认取景（之后用）
     focus: { lift: 0.45, azimuthDeg: 45, depressionDeg: 38, viewSize: 2.4 },
+  },
+
+  // ───────── 脸部可见性检查（只在 ?debug 下）─────────
+  // 每个座位：在允许的相机角度范围内，是否存在一个角度能看到小人的正脸
+  faceCheck: {
+    // 相机方向与小人朝向的最大夹角
+    maxAngleDeg: 60,
+    // 角度取样步长
+    sampleStepDeg: 1,
+    // 不算座位的家具类型（吧台只是摆设）
+    excludeTypes: ['barStool'],
+    // 调试标记：看得到 / 看不到正脸
+    okColor: '#3FBF5F',
+    failColor: '#E0453A',
+    markerRadius: 0.07,
+    markerLift: 0.05,
   },
 
   // ───────── 小人 Bar Buddy ─────────

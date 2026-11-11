@@ -8,7 +8,8 @@ type Palette = { -readonly [K in keyof typeof sceneConfig.palette]: string }
 type Lighting = { -readonly [K in keyof typeof sceneConfig.lighting.day]: (typeof sceneConfig.lighting.day)[K] extends string ? string : number }
 
 export type CameraParams = {
-  azimuthRangeDeg: number
+  azimuthMinDeg: number
+  azimuthMaxDeg: number
   minDepressionDeg: number
   maxDepressionDeg: number
   fullViewSize: number
@@ -80,7 +81,8 @@ export const defaultSceneParams: SceneParams = {
   },
   emissive: { ...sceneConfig.emissive },
   camera: {
-    azimuthRangeDeg: sceneConfig.controls.azimuthRangeDeg,
+    azimuthMinDeg: sceneConfig.controls.azimuthMinDeg,
+    azimuthMaxDeg: sceneConfig.controls.azimuthMaxDeg,
     minDepressionDeg: sceneConfig.controls.minDepressionDeg,
     maxDepressionDeg: sceneConfig.controls.maxDepressionDeg,
     fullViewSize: sceneConfig.camera.fullViewSize,

@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, lazy, Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { sceneConfig } from '../config/sceneConfig'
 import { useEditorBridge } from '../state/editorBridge'
@@ -10,8 +10,13 @@ import { Effects } from './Effects'
 import { Lighting } from './Lighting'
 import { LayoutRenderer } from './LayoutRenderer'
 import { Room } from './room/Room'
+import { WallVisibilityDriver } from './room/WallVisibilityDriver'
 import { BarBuddy } from './character/BarBuddy'
 import { DoubleTapReset } from './interaction/tap'
+
+// 脸部可见性检查：只在 ?debug 时加载
+const isDebug = new URLSearchParams(window.location.search).has('debug')
+const FaceCheck = isDebug ? lazy(() => import('./debug/FaceCheck')) : null
 
 export function Scene() {
   const { canvas } = sceneConfig
@@ -37,6 +42,7 @@ export function Scene() {
       <Root>
         <Lighting />
         <CameraRig />
+        <WallVisibilityDriver />
         <DoubleTapReset />
         <MergeStatic enabled={params.mergeStatic} version={params} extra={roomKey}>
           <Room />
@@ -44,6 +50,11 @@ export function Scene() {
         <LayoutRenderer />
         <BarBuddy />
         {Extras && <Extras />}
+        {FaceCheck && (
+          <Suspense fallback={null}>
+            <FaceCheck />
+          </Suspense>
+        )}
         <Effects />
       </Root>
     </Canvas>
