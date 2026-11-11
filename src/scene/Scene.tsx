@@ -1,24 +1,32 @@
 import { Canvas } from '@react-three/fiber'
 import { sceneConfig } from '../config/sceneConfig'
 import { CameraRig } from './CameraRig'
-import { TestBox } from './TestBox'
+import { Effects } from './Effects'
+import { Lighting } from './Lighting'
+import { RoomCorner } from './room/RoomCorner'
+import { Table } from './furniture/Table'
+import { Chair } from './furniture/Chair'
+import { PendantLamp } from './furniture/PendantLamp'
+import { BarBuddy } from './character/BarBuddy'
 
 export function Scene() {
-  const { canvas, lights } = sceneConfig
+  const { canvas } = sceneConfig
   return (
     <Canvas
       dpr={[canvas.dprMin, canvas.dprMax]}
-      gl={{ antialias: canvas.antialias }}
+      // 色调映射交给后处理，渲染器本身不做
+      flat
+      shadows="percentage"
+      gl={{ antialias: false }}
     >
-      <color attach="background" args={[canvas.background]} />
-      <ambientLight color={lights.ambient.color} intensity={lights.ambient.intensity} />
-      <directionalLight
-        color={lights.directional.color}
-        intensity={lights.directional.intensity}
-        position={lights.directional.position}
-      />
+      <Lighting />
       <CameraRig />
-      <TestBox />
+      <RoomCorner />
+      <Table />
+      <Chair />
+      <PendantLamp />
+      <BarBuddy />
+      <Effects />
     </Canvas>
   )
 }

@@ -3,6 +3,7 @@ import { useThree } from '@react-three/fiber'
 import { OrbitControls, OrthographicCamera } from '@react-three/drei'
 import { TOUCH } from 'three'
 import { sceneConfig } from '../config/sceneConfig'
+import { useSceneParams } from '../state/sceneParams'
 
 const cam = sceneConfig.camera
 const ctl = sceneConfig.controls
@@ -19,6 +20,7 @@ export function CameraRig() {
   const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null)
   const baseZoomRef = useRef<number | null>(null)
   const { width, height } = useThree((s) => s.size)
+  const { viewSize } = useSceneParams()
 
   // 正交相机的 zoom = 每个世界单位占多少像素。
   // 按屏幕短边算出"刚好装下 viewSize"的基准 zoom，窗口变化时保留用户缩放的比例。
@@ -27,7 +29,7 @@ export function CameraRig() {
     const controls = controlsRef.current
     if (!camera || !controls) return
 
-    const base = Math.min(width, height) / cam.viewSize
+    const base = Math.min(width, height) / viewSize
     const prevBase = baseZoomRef.current
     const ratio = prevBase ? camera.zoom / prevBase : 1
     baseZoomRef.current = base
@@ -36,7 +38,7 @@ export function CameraRig() {
     controls.maxZoom = base * ctl.maxZoomFactor
     camera.zoom = Math.min(controls.maxZoom, Math.max(controls.minZoom, base * ratio))
     camera.updateProjectionMatrix()
-  }, [width, height])
+  }, [width, height, viewSize])
 
   return (
     <>
