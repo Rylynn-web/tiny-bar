@@ -5,6 +5,8 @@ import { sceneConfig } from '../../config/sceneConfig'
 export type InstanceItem = {
   position: [number, number, number]
   rotationY?: number
+  /** 非等比缩放（如用单位方块做书本） */
+  scale?: [number, number, number]
   color: string
 }
 
@@ -25,7 +27,13 @@ export function InstancedMatte({ geometry, items }: Props) {
         envMapIntensity={m.envMapIntensity}
       />
       {items.map((it, i) => (
-        <Instance key={i} position={it.position} rotation={[0, it.rotationY ?? 0, 0]} color={it.color} />
+        <Instance
+          key={i}
+          position={it.position}
+          rotation={[0, it.rotationY ?? 0, 0]}
+          scale={it.scale ?? 1}
+          color={it.color}
+        />
       ))}
     </Instances>
   )

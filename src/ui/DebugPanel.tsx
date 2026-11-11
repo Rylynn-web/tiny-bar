@@ -56,6 +56,7 @@ export default function DebugPanel() {
       pendantGreen: { value: d.palette.pendantGreen, label: '吊灯绿' },
       steel: { value: d.palette.steel, label: '不锈钢' },
       brass: { value: d.palette.brass, label: '黄铜' },
+      orange: { value: d.palette.orange, label: '橙' },
     }),
     造型: folder({
       bevel: { value: d.bevel, min: 0, max: 0.08, step: 0.002, label: '倒角半径' },
@@ -64,6 +65,7 @@ export default function DebugPanel() {
       emBulb: { value: d.emissive.bulb, min: 0, max: 20, step: 0.5, label: '灯泡' },
       emLed: { value: d.emissive.ledStrip, min: 0, max: 20, step: 0.5, label: '灯带' },
       emScreen: { value: d.emissive.screen, min: 0, max: 10, step: 0.1, label: '屏幕' },
+      emLamp: { value: d.emissive.lamp, min: 0, max: 20, step: 0.5, label: '台灯' },
       emPool: { value: d.emissive.pool, min: 0, max: 1, step: 0.05, label: '光斑' },
     }),
     Bloom: folder({
@@ -104,6 +106,7 @@ export default function DebugPanel() {
         bulb: v.emBulb as number,
         ledStrip: v.emLed as number,
         screen: v.emScreen as number,
+        lamp: v.emLamp as number,
         pool: v.emPool as number,
       },
       camera: {

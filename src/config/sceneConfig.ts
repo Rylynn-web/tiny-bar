@@ -67,6 +67,7 @@ export const sceneConfig = {
     pendantGreen: '#2F5E3E',
     steel: '#C8CCD0',
     brass: '#C9A15A',
+    orange: '#E07B39',
   },
   // 统一倒角半径（世界单位），分三档：大件家具 / 小件 / 细杆（乘以 bevel）
   bevel: 0.03,
@@ -94,6 +95,8 @@ export const sceneConfig = {
     bulb: 8,
     ledStrip: 6,
     screen: 2,
+    // 台灯类：叠环台灯、蘑菇台灯、落地灯
+    lamp: 7,
     // 灯具下方的假光斑（叠加混合的径向渐变），不是真实光源
     pool: 0.55,
   },
@@ -275,6 +278,123 @@ export const sceneConfig = {
     thickness: 0.012,
   },
 
+
+  // ───────── 沙发区 ─────────
+  // 都是局部坐标（原点在物件底面中心，+Z 为正面），摆放位置在 layout.json
+  lounge: {
+    sofa: {
+      width: 1.7,
+      depth: 0.85,
+      // 不锈钢管框把沙发托离地面的高度
+      liftHeight: 0.07,
+      baseHeight: 0.2,
+      armWidth: 0.18,
+      armHeight: 0.26,
+      backDepth: 0.2,
+      backHeight: 0.38,
+      cushionThickness: 0.13,
+      cushionGap: 0.02,
+      // 座位锚点在坐垫上往前挪一点（米）
+      seatForward: 0.04,
+      // 管框：侧面圆角矩形的高度、离两端的缩进、管半径、圆角半径
+      frameHeight: 0.32,
+      frameInset: 0.06,
+      frameRadius: 0.014,
+      frameCorner: 0.06,
+      frameOutset: 0.03,
+      pillow: { size: [0.42, 0.38, 0.12] as Vec3, tilt: deg(16), insetSize: [0.2, 0.2, 0.02] as Vec3, side: -1 },
+    },
+    pouf: { size: [0.5, 0.4, 0.5] as Vec3, radius: 0.1 },
+    coffeeTable: {
+      topSize: [1.0, 0.06, 0.55] as Vec3,
+      baseSize: [0.84, 0.3, 0.4] as Vec3,
+    },
+    zebraRug: {
+      size: [2.3, 1.7] as [number, number],
+      thickness: 0.012,
+      // 贴图：边长、条纹数量、波浪振幅与频率、条纹粗细（0–1，占一个周期的比例）
+      textureSize: 512,
+      stripes: 11,
+      waveAmplitude: 0.035,
+      waveFrequency: 2.5,
+      stripeWeight: 0.45,
+      // 贴图面离地毯顶面的距离，防止闪烁
+      surfaceOffset: 0.001,
+    },
+    bookshelf: {
+      width: 1.4,
+      depth: 0.38,
+      height: 1.0,
+      board: 0.03,
+      // 下层（唱片格）顶板高度；下层分成几格
+      midShelfY: 0.5,
+      cubbies: 3,
+      books: {
+        depth: 0.22,
+        thickness: [0.025, 0.045] as [number, number],
+        height: [0.22, 0.32] as [number, number],
+        gap: 0.004,
+        colors: ['navy', 'rust', 'cream', 'sage', 'wood', 'pendantGreen', 'dark', 'orange'] as const,
+        seed: 11,
+      },
+      records: {
+        perCubby: 7,
+        size: [0.012, 0.31, 0.31] as Vec3,
+        colors: ['dark', 'cream', 'navy', 'rust', 'orange', 'sage', 'wood'] as const,
+      },
+    },
+    turntable: {
+      baseSize: [0.42, 0.08, 0.34] as Vec3,
+      platterRadius: 0.13,
+      platterHeight: 0.012,
+      labelRadius: 0.04,
+      armLength: 0.2,
+      armRadius: 0.006,
+      // 唱盘中心、唱臂支点相对底座中心的位置（x, z）
+      platterOffset: [-0.05, 0.01] as [number, number],
+      armPivot: [0.15, -0.1] as [number, number],
+      armYaw: deg(25),
+      lidSize: [0.42, 0.08, 0.34] as Vec3,
+      // 防尘盖打开的角度
+      lidOpen: deg(58),
+    },
+    stackLamp: { rings: 3, ringRadius: 0.085, tube: 0.05, spacing: 0.085, topRadius: 0.07 },
+    // 光斑离所在台面的高度，防止闪烁
+    poolLift: 0.003,
+    mushroomLamp: { stemRadius: 0.028, stemHeight: 0.14, headRadius: 0.1, poolRadius: 0.38 },
+    floorLamp: {
+      baseRadius: 0.17,
+      baseHeight: 0.03,
+      tubeRadius: 0.013,
+      // 弧管经过的点（局部坐标，弧向 +X 伸出）
+      arc: [[0, 0.03, 0], [0, 1.4, 0], [0.12, 1.85, 0], [0.55, 1.98, 0], [0.9, 1.82, 0]] as Vec3[],
+      shade: [[0.16, 0], [0.15, 0.04], [0.1, 0.12], [0.03, 0.15], [0.001, 0.152]] as [number, number][],
+      bulbRadius: 0.045,
+      poolRadius: 0.55,
+      // 光斑默认落在这个高度（局部，大约沙发坐垫面）；layout 里可用 props.poolHeight 覆盖
+      poolHeight: 0.42,
+    },
+    vase: {
+      profile: [[0.001, 0], [0.045, 0], [0.06, 0.05], [0.05, 0.12], [0.025, 0.17], [0.028, 0.2], [0.024, 0.2], [0.02, 0.17], [0.001, 0.17]] as [number, number][],
+      stems: 5,
+      stemLength: [0.22, 0.34] as [number, number],
+      stemRadius: 0.004,
+      stemSpread: deg(28),
+      berriesPerStem: 5,
+      berryRadius: 0.018,
+      // 浆果在枝头附近散开的范围
+      berryScatter: 0.035,
+      colors: ['orange', 'rust'] as const,
+      seed: 7,
+    },
+    bookStack: {
+      books: [
+        { size: [0.26, 0.04, 0.2] as Vec3, color: 'cream', yaw: deg(4) },
+        { size: [0.24, 0.035, 0.18] as Vec3, color: 'navy', yaw: deg(-6) },
+        { size: [0.2, 0.03, 0.16] as Vec3, color: 'rust', yaw: deg(10) },
+      ],
+    },
+  },
 
   // ───────── 吧台区 ─────────
   // 以下坐标都是各物件的局部坐标（原点在物件底面中心，+Z 朝向房间），摆放位置在 layout.json

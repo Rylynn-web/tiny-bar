@@ -14,12 +14,14 @@ type Props = Omit<ThreeElements['mesh'], 'args' | 'children' | 'ref' | 'material
   tier?: BevelTier
   /** 自定义材质（如金属）；不传则用哑光 color */
   surface?: ReactNode
+  /** 指定圆角半径（如方凳这种特别圆的物件）；不传则按档位 */
+  radius?: number
 }
 
 /** 统一倒角的圆角方块。倒角不会超过最短边的一半 */
-export function BevelBox({ size, color, tier = 'large', surface, ...rest }: Props) {
+export function BevelBox({ size, color, tier = 'large', surface, radius: fixedRadius, ...rest }: Props) {
   const { bevel } = useSceneParams()
-  const radius = Math.min(bevel * sceneConfig.bevelTiers[tier], Math.min(...size) / 2 - 1e-4)
+  const radius = Math.min(fixedRadius ?? bevel * sceneConfig.bevelTiers[tier], Math.min(...size) / 2 - 1e-4)
   return (
     <RoundedBox
       args={size}

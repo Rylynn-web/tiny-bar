@@ -35,15 +35,19 @@ export function deriveSeats(items: LayoutItem[]): Seat[] {
   const seats: Seat[] = []
 
   for (const item of items) {
-    const anchors = catalog[item.type]?.component.seats
-    if (!anchors?.length) continue
+    const allAnchors = catalog[item.type]?.component.seats
+    if (!allAnchors?.length) continue
+    // layout 里可以用 props.seats 限制启用前几个座位（0 = 这件家具不提供座位）
+    const limit = typeof item.props?.seats === 'number' ? item.props.seats : allAnchors.length
+    const anchors = allAnchors.slice(0, Math.max(0, limit))
+    if (!anchors.length) continue
     const yaw = MathUtils.degToRad(item.rotationY)
     const scale = item.scale ?? 1
     anchors.forEach((a, i) => {
       const local = new Vector3(...a.position).multiplyScalar(scale).applyAxisAngle(up, yaw)
       const position: Vec3 = [item.position[0] + local.x, item.position[1] + local.y, item.position[2] + local.z]
       seats.push({
-        id: anchors.length === 1 ? item.id : `${item.id}:${i}`,
+        id: allAnchors.length === 1 ? item.id : `${item.id}:${i}`,
         itemId: item.id,
         type: item.type,
         position,
