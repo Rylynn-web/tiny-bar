@@ -22,7 +22,7 @@ export const sceneConfig = {
     bias: -0.0005,
     normalBias: 0.02,
     // 主光阴影相机覆盖范围（世界单位，正交），要盖住整个房间
-    cameraExtent: 4.6,
+    cameraExtent: 5.8,
   },
   postprocessing: {
     // 后处理内的 MSAA 采样数（0 = 关）。手机可降到 0 或 2
@@ -140,7 +140,7 @@ export const sceneConfig = {
     // 默认俯角（与地面夹角）
     defaultDepressionDeg: 45,
     // 画面短边能看到的世界尺寸（米）：全景 = 最远，近景 = 最近（大约一张桌子）
-    fullViewSize: 8.8,
+    fullViewSize: 11,
     closeViewSize: 1.5,
   },
   controls: {
@@ -182,11 +182,10 @@ export const sceneConfig = {
   },
 
   // ───────── 房间 ─────────
-  // 地面顶面在 y=0，中心在原点。后墙在 -Z，左墙在 -X，右前角（+X+Z）切一个斜角
+  // 地面顶面在 y=0，中心在原点。后墙在 -Z，左墙在 -X
   room: {
-    width: 6.4,
-    depth: 5,
-    chamfer: 1.3,
+    width: 8,
+    depth: 6.4,
     floorThickness: 0.16,
     wallHeight: 2.6,
     wallThickness: 0.14,
@@ -199,7 +198,7 @@ export const sceneConfig = {
   },
   door: {
     // 门中心在后墙上的 X 位置
-    x: 2.45,
+    x: 3.2,
     width: 0.92,
     height: 2.06,
     thickness: 0.05,
@@ -220,8 +219,8 @@ export const sceneConfig = {
 
   // ───────── 区域锚点（之后几批的家具按这里摆）─────────
   zones: {
-    bar: { x: 0.6, z: -1.45 },
-    lounge: { x: -2.1, z: 1.4 },
+    bar: { x: 0.8, z: -2.1 },
+    lounge: { x: -2.6, z: 1.8 },
   },
 
   // ───────── 餐桌区 ─────────
@@ -238,8 +237,8 @@ export const sceneConfig = {
     columnOverlap: 0.005,
   },
   tables: {
-    A: { position: [-0.55, 0, -0.1] as Vec3, chairColors: ['navy', 'cream'] as const },
-    B: { position: [1.55, 0, 1.15] as Vec3, chairColors: ['rust', 'cream'] as const, rug: true },
+    A: { position: [-0.7, 0, -0.2] as Vec3, chairColors: ['navy', 'cream'] as const },
+    B: { position: [1.9, 0, 1.5] as Vec3, chairColors: ['rust', 'cream'] as const, rug: true },
   },
   shellChair: {
     seatWidth: 0.44,
