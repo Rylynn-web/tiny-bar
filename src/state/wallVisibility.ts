@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from 'react'
-import { MathUtils, Mesh, type Object3D } from 'three'
+import { Mesh, type Object3D } from 'three'
 import { sceneConfig } from '../config/sceneConfig'
 import type { SideWall } from '../scene/room/walls'
 
-// 左右墙随视角自动降低。每帧由 WallVisibilityDriver 更新；墙和墙面物件在自己的 useFrame 里读。
-// 每帧变化的数值（高度）放在普通对象里，不触发 React 重渲染；只有"模式"是订阅式状态（编辑器开关用）。
+// 左右墙按视角显示 / 不显示（没有过渡）。每帧由 WallVisibilityDriver 更新；墙和墙面物件在自己的 useFrame 里读。
+// 每帧变化的结果放在普通对象里，不触发 React 重渲染；只有"模式"是订阅式状态（编辑器开关用）。
 
 const W = sceneConfig.walls
 
@@ -12,13 +12,8 @@ const W = sceneConfig.walls
 export type WallMode = 'follow' | 'showAll'
 
 export const wallState = {
-  /** 当前被降低的侧墙；null = 两面都在（只在开场正好落在缓冲区间时出现） */
-  hidden: null as SideWall | null,
-  /** 升降进度：1 = 完整的墙，0 = 降到墙基 */
-  progress: { left: 1, right: 1 } as Record<SideWall, number>,
-  /** 当前墙高占完整墙高的比例（loweredRatio … 1，已做缓动） */
-  ratio: { left: 1, right: 1 } as Record<SideWall, number>,
-  initialized: false,
+  /** 每面侧墙当前是否显示 */
+  visible: { left: true, right: true } as Record<SideWall, boolean>,
 }
 
 let mode: WallMode = 'follow'
@@ -43,22 +38,13 @@ export function useWallMode() {
 }
 
 /**
- * 按摄像机方位角（度，0 = 正对后墙，正 = 偏右）推进一帧。
- * 偏右超过缓冲降右墙，偏左超过缓冲降左墙，缓冲区间内保持上一次的结果，避免来回闪。
+ * 按摄像机方位角（度，0 = 正对后墙，正 = 偏右）更新侧墙显示。
+ * 墙背对摄像机时不显示：偏右不显示右墙，偏左不显示左墙；正对时三面都显示。
  */
-export function stepWalls(azimuthDeg: number, delta: number) {
-  if (azimuthDeg > W.hideBufferDeg) wallState.hidden = 'right'
-  else if (azimuthDeg < -W.hideBufferDeg) wallState.hidden = 'left'
-
-  const step = delta / Math.max(W.transitionSeconds, 1e-3)
-  for (const side of ['left', 'right'] as const) {
-    const target = mode === 'showAll' || wallState.hidden !== side ? 1 : 0
-    // 第一帧直接到位，不播放开场动画
-    const p = wallState.initialized ? MathUtils.clamp(wallState.progress[side] + Math.sign(target - wallState.progress[side]) * step, 0, 1) : target
-    wallState.progress[side] = p
-    wallState.ratio[side] = MathUtils.lerp(W.loweredRatio, 1, MathUtils.smoothstep(p, 0, 1))
-  }
-  wallState.initialized = true
+export function updateWalls(azimuthDeg: number) {
+  const all = mode === 'showAll'
+  wallState.visible.right = all || azimuthDeg <= W.frontToleranceDeg
+  wallState.visible.left = all || azimuthDeg >= -W.frontToleranceDeg
 }
 
 // ── 点击检测开关：降下的墙、被隐藏的墙面物件不挡点击 ──

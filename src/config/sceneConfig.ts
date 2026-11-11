@@ -235,15 +235,10 @@ export const sceneConfig = {
     baseboardHeight: 0.08,
     baseboardThickness: 0.02,
   },
-  // 左右墙随视角自动降低：摄像机偏右（方位角 > +buffer）降右墙，偏左（< -buffer）降左墙，中间保持上一次的状态
+  // 左右墙按视角显示：墙背对摄像机（视线与墙面夹角过了 0°）就整面不显示，没有过渡动画。
+  // 方位角 > 容差时不显示右墙，< -容差时不显示左墙；正对（|方位角| ≤ 容差）时三面墙都显示
   walls: {
-    hideBufferDeg: 5,
-    // 降下后剩下的墙基高度（占墙高的比例）
-    loweredRatio: 0.15,
-    // 升降过渡时间（秒）
-    transitionSeconds: 0.3,
-    // 墙高降到这个比例以下时，挂在这面墙上的物件（画、置物架、壁灯、窗）一起隐藏
-    itemHideRatio: 0.9,
+    frontToleranceDeg: 0,
   },
   door: {
     width: 0.92,

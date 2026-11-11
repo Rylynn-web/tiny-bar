@@ -1,18 +1,17 @@
 import { useRef, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
-import { sceneConfig } from '../../config/sceneConfig'
 import { setRaycastable, wallState } from '../../state/wallVisibility'
 import type { SideWall } from './walls'
 
-/** 挂在左墙 / 右墙上的物件：墙降下时一起隐藏，并且不参与点击检测 */
+/** 挂在左墙 / 右墙上的物件：墙不显示时一起隐藏，并且不参与点击检测 */
 export function SideWallItem({ side, children }: { side: SideWall; children: ReactNode }) {
   const ref = useRef<Group>(null)
   const shown = useRef(true)
   useFrame(() => {
     const g = ref.current
     if (!g) return
-    const show = wallState.ratio[side] >= sceneConfig.walls.itemHideRatio
+    const show = wallState.visible[side]
     if (show === shown.current) return
     shown.current = show
     g.visible = show
