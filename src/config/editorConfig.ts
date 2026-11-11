@@ -23,4 +23,6 @@ export const editorConfig = {
   backupKey: 'tavern.layout.backup',
   saveEndpoint: '/__layout/save',
   panelWidth: 260,
+  // 房间尺寸滑杆的范围（米）
+  room: { widthRange: [5, 9] as [number, number], depthRange: [4, 7] as [number, number], step: 0.1 },
   } as const

@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber'
 import { sceneConfig } from '../config/sceneConfig'
 import { useEditorBridge } from '../state/editorBridge'
 import { useSceneParams } from '../state/sceneParams'
-import { useLayoutItems } from '../state/layoutStore'
+import { useLayoutItems, useRoom } from '../state/layoutStore'
 import { MergeStatic } from './primitives/MergeStatic'
 import { CameraRig } from './CameraRig'
 import { Effects } from './Effects'
@@ -19,7 +19,9 @@ export function Scene() {
   const bridge = useEditorBridge()
   const params = useSceneParams()
   const items = useLayoutItems()
-  const windowKey = JSON.stringify(items.filter((i) => i.type === 'cityWindow'))
+  const room = useRoom()
+  // 窗户或房间尺寸变了，墙会重新开洞/变长，要跟着重新合并
+  const roomKey = JSON.stringify([room, items.filter((i) => i.type === 'cityWindow')])
   const Root = bridge?.Root ?? Fragment
   const Extras = bridge?.SceneExtras
 
@@ -36,8 +38,7 @@ export function Scene() {
         <Lighting />
         <CameraRig />
         <DoubleTapReset />
-        {/* 窗户挪动或改宽度时墙会重新开洞，要跟着重新合并 */}
-        <MergeStatic enabled={params.mergeStatic} version={params} extra={windowKey}>
+        <MergeStatic enabled={params.mergeStatic} version={params} extra={roomKey}>
           <Room />
         </MergeStatic>
         <LayoutRenderer />

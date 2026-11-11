@@ -10,6 +10,8 @@ import { createCityMaterial, createGlassMaterial, createSkyMaterial } from './ci
 import { getCityTexture } from './cityTexture'
 import { hitHeight, projectionShift, projectWindow, type WindowRect } from './viewCoverage'
 import { windowWidth } from './windowSize'
+import { fitWindow } from './windowFit'
+import { useRoomBounds } from '../../state/layoutStore'
 
 const W = sceneConfig.cityWindow
 const V = sceneConfig.cityView
@@ -37,11 +39,16 @@ const noRaycast = () => null
  * 原点在墙内表面、窗洞下沿中点所在的地面高度；局部 +Z 朝室内，墙外表面在 z = -墙厚。
  * 墙上的洞由 Room 按 layout 里的窗户开出来。props.width = 窗宽（米）
  */
-export function CityWindow({ props }: CatalogProps) {
+export function CityWindow({ props, item }: CatalogProps) {
   const params = useSceneParams()
   const city = params.cityView
   const { palette } = params
-  const width = windowWidth(props)
+  // 实际宽度：不超过墙长，房间变窄时自动缩窄（和 Room 开洞用同一个计算）
+  const bounds = useRoomBounds()
+  const fit = item ? fitWindow(item, bounds) : null
+  const width = fit ? fit.width : windowWidth(props)
+  // 被挪回墙内时，窗户相对物件原点的偏移（局部 x）
+  const dx = fit ? (fit.left ? -(fit.center - fit.along) : fit.center - fit.along) : 0
   const height = W.headHeight - W.sillHeight
   const detail = resolveQuality(params.quality) === 'high' ? 1 : 0
 
@@ -185,7 +192,7 @@ export function CityWindow({ props }: CatalogProps) {
   const frameColor = palette.slate
 
   return (
-    <group ref={group}>
+    <group ref={group} position={[dx, 0, 0]}>
       {/* 窗外：编辑器里不参与点击和包围盒 */}
       <group userData={{ editorIgnore: true }}>
         <mesh geometry={sky.geometry} material={sky.material} frustumCulled={false} raycast={noRaycast} />

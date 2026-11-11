@@ -36,11 +36,16 @@ function layoutSavePlugin(): Plugin {
                   i.position.length === 3 &&
                   typeof i.rotationY === 'number',
               )
-            if (!valid) throw new Error('数据格式不对：需要 { items: [{ id, type, position: [x,y,z], rotationY }] }')
+            const room = data.room
+            const roomValid =
+              room === undefined || (typeof room?.width === 'number' && typeof room?.depth === 'number')
+            if (!valid || !roomValid)
+              throw new Error('数据格式不对：需要 { room?: { width, depth }, items: [{ id, type, position: [x,y,z], rotationY }] }')
             // 每个物件一行，方便看 diff
             const lines = data.items.map((i: unknown) => `    ${JSON.stringify(i)}`).join(',\n')
+            const roomLine = room ? `  "room": ${JSON.stringify({ width: room.width, depth: room.depth })},\n` : ''
             skipNextReload = true
-            await writeFile(layoutPath, `{\n  "items": [\n${lines}\n  ]\n}\n`)
+            await writeFile(layoutPath, `{\n${roomLine}  "items": [\n${lines}\n  ]\n}\n`)
             res.end('ok')
           } catch (err) {
             res.statusCode = 400

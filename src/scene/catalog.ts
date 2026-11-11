@@ -56,6 +56,8 @@ export const catalog: Record<string, CatalogEntry> = {
     mount: 'wall',
     component: CityWindow,
     lockY: true,
+    // 宽度会随房间和位置自动变化，窗框不做网格合并
+    merge: false,
     defaultProps: { width: sceneConfig.cityWindow.defaultWidth },
     editableProps: [
       {

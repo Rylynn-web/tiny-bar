@@ -5,6 +5,7 @@ import { Box3, MathUtils, Vector3, type OrthographicCamera as OrthoCam } from 't
 import { sceneConfig } from '../config/sceneConfig'
 import { useSceneParams } from '../state/sceneParams'
 import { onControlsEnabled, onResetView } from '../state/cameraActions'
+import { useRoomBounds } from '../state/layoutStore'
 
 const { ACTION } = CameraControlsImpl
 const cam = sceneConfig.camera
@@ -15,13 +16,13 @@ const polarFromDepression = (d: number) => deg(90 - d)
 
 const defaultAzimuth = deg(cam.defaultAzimuthDeg)
 const defaultPolar = polarFromDepression(cam.defaultDepressionDeg)
-const [tx, ty, tz] = cam.target
+const ty = cam.target[1]
+const R = sceneConfig.room
 
-// 默认相机位置：焦点 + 球坐标偏移
-const defaultPosition = new Vector3().setFromSphericalCoords(cam.distance, defaultPolar, defaultAzimuth).add(new Vector3(tx, ty, tz))
-
-const halfW = sceneConfig.room.width / 2
-const halfD = sceneConfig.room.depth / 2
+/** 默认相机位置：焦点 + 球坐标偏移 */
+function defaultPositionFor(tx: number, tz: number) {
+  return new Vector3().setFromSphericalCoords(cam.distance, defaultPolar, defaultAzimuth).add(new Vector3(tx, ty, tz))
+}
 
 export function CameraRig() {
   // 显式把正交相机交给 CameraControls；控制器实例在相机就绪后才创建，所以用 state 跟踪
@@ -34,9 +35,18 @@ export function CameraRig() {
   const { width, height } = useThree((s) => s.size)
   const { camera: p } = useSceneParams()
 
+  // 房间尺寸可在编辑器里改：焦点跟着房间中心走，全景视野按房间大小等比缩放
+  const b = useRoomBounds()
+  const view = useRef({ tx: b.centerX, tz: b.centerZ, halfW: b.width / 2, halfD: b.depth / 2 })
+  const roomScale = (b.width + b.depth) / (R.width + R.depth)
+  const tx = b.centerX
+  const tz = b.centerZ
+  // 相机的初始位置只用一次，之后交给 CameraControls
+  const [initialPosition] = useState(() => defaultPositionFor(b.centerX, b.centerZ).toArray())
+
   // 正交相机 zoom = 每米多少像素。按屏幕短边把"视野尺寸"换算成 zoom
   const minSide = Math.min(width, height)
-  const fullZoom = minSide / p.fullViewSize
+  const fullZoom = minSide / (p.fullViewSize * roomScale)
   const closeZoom = minSide / p.closeViewSize
   const fullZoomRef = useRef(fullZoom)
 
@@ -56,9 +66,23 @@ export function CameraRig() {
     // 缩放以指针为中心；上下拖动平移时沿地面前后移动，焦点高度和俯角不变
     c.dollyToCursor = true
     c.verticalDragToForward = true
-    c.setLookAt(defaultPosition.x, defaultPosition.y, defaultPosition.z, tx, ty, tz, false)
+    const pos = defaultPositionFor(view.current.tx, view.current.tz)
+    c.setLookAt(pos.x, pos.y, pos.z, view.current.tx, ty, view.current.tz, false)
     fullZoomRef.current = 0
   }, [controls])
+
+  // 房间尺寸变了：记下新的中心和半宽，平滑回到新的全景
+  useEffect(() => {
+    const v = view.current
+    const changed = v.tx !== tx || v.tz !== tz || v.halfW !== b.width / 2 || v.halfD !== b.depth / 2
+    view.current = { tx, tz, halfW: b.width / 2, halfD: b.depth / 2 }
+    lastZoom.current = 0
+    const c = controlsRef.current
+    if (!changed || !c) return
+    const pos = defaultPositionFor(tx, tz)
+    c.setLookAt(pos.x, pos.y, pos.z, tx, ty, tz, true)
+    c.zoomTo(fullZoomRef.current, true)
+  }, [tx, tz, b.width, b.depth])
 
   // 可调参数：角度范围、阻尼、速度、缩放上下限
   useLayoutEffect(() => {
@@ -100,10 +124,11 @@ export function CameraRig() {
     if (Math.abs(zoom - lastZoom.current) < 1e-4) return
     lastZoom.current = zoom
     const visibleHalf = (minSideRef.current / zoom / 2) * sceneConfig.controls.boundaryVisibleFactor
-    const ax = Math.max(0, halfW - visibleHalf)
-    const az = Math.max(0, halfD - visibleHalf)
-    boundary.min.set(tx - ax, ty, tz - az)
-    boundary.max.set(tx + ax, ty, tz + az)
+    const v = view.current
+    const ax = Math.max(0, v.halfW - visibleHalf)
+    const az = Math.max(0, v.halfD - visibleHalf)
+    boundary.min.set(v.tx - ax, ty, v.tz - az)
+    boundary.max.set(v.tx + ax, ty, v.tz + az)
     c.setBoundary(boundary)
   })
 
@@ -113,7 +138,9 @@ export function CameraRig() {
       onResetView(() => {
         const c = controlsRef.current
         if (!c) return
-        c.setLookAt(defaultPosition.x, defaultPosition.y, defaultPosition.z, tx, ty, tz, true)
+        const v = view.current
+        const pos = defaultPositionFor(v.tx, v.tz)
+        c.setLookAt(pos.x, pos.y, pos.z, v.tx, ty, v.tz, true)
         c.zoomTo(fullZoomRef.current, true)
       }),
     [],
@@ -133,7 +160,7 @@ export function CameraRig() {
       <OrthographicCamera
         ref={setOrtho}
         makeDefault
-        position={defaultPosition.toArray()}
+        position={initialPosition}
         near={cam.near}
         far={cam.far}
       />

@@ -265,6 +265,8 @@ export const sceneConfig = {
     mullionWidth: 0.035,
     // 窗外每层的投影四边形比窗洞再大出这么多，藏住窗框下的接缝
     layerMargin: 0.04,
+    // 窗洞离墙两端至少留这么多；房间变窄时窗户会自动缩窄
+    wallMargin: 0.15,
     // 玻璃：几乎透明，不做反光
     glassOpacity: 0.04,
   },

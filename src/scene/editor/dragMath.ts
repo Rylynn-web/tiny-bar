@@ -2,14 +2,11 @@ import { MathUtils, Plane, Vector3 } from 'three'
 import type { LayoutItem, Vec3 } from '../../config/layoutTypes'
 import { sceneConfig } from '../../config/sceneConfig'
 import { editorConfig } from '../../config/editorConfig'
+import { roomBounds } from '../../state/layoutStore'
 
-const R = sceneConfig.room
-export const room = {
-  minX: -R.width / 2,
-  maxX: R.width / 2,
-  minZ: -R.depth / 2,
-  maxZ: R.depth / 2,
-  height: R.wallHeight,
+/** 当前房间范围（房间尺寸可以在编辑器里改，所以每次现取） */
+export function roomLimits() {
+  return { ...roomBounds(), height: sceneConfig.room.wallHeight }
 }
 
 export type Wall = 'back' | 'left'
@@ -28,6 +25,7 @@ export function wallOf(item: LayoutItem): Wall {
 
 /** 拖动用的平面：地面物件 = 物件所在高度的水平面；墙面物件 = 所在墙面 */
 export function dragPlane(item: LayoutItem, mount: 'floor' | 'wall') {
+  const room = roomLimits()
   if (mount === 'floor') return new Plane(new Vector3(0, 1, 0), -item.position[1])
   return wallOf(item) === 'left'
     ? new Plane(new Vector3(1, 0, 0), -room.minX)
@@ -59,6 +57,7 @@ export function constrain(
   lockY = false,
 ): Vec3 {
   const g = editorConfig.grid
+  const room = roomLimits()
   const s = (v: number) => (free ? v : snap(v, g))
   if (mount === 'floor') {
     const x = clampAxis(s(target.x), offMin.x, offMax.x, room.minX, room.maxX)

@@ -1,19 +1,12 @@
 import { useMemo, type ReactElement } from 'react'
-import type { LayoutItem } from '../../config/layoutTypes'
 import { sceneConfig } from '../../config/sceneConfig'
-import { useLayoutItems } from '../../state/layoutStore'
+import { useLayoutItems, useRoomBounds } from '../../state/layoutStore'
 import { useSceneParams } from '../../state/sceneParams'
 import { BevelBox } from '../primitives/BevelBox'
-import { windowWidth } from '../window/windowSize'
+import { fitWindow } from '../window/windowFit'
 
 type Opening = { from: number; to: number }
 type Piece = { from: number; to: number; opening: boolean }
-
-/** 窗户贴在哪面墙：朝向 ≈ 90° 为左墙，否则为后墙 */
-function onLeftWall(item: LayoutItem) {
-  const d = ((((item.rotationY % 360) + 360) % 360) + 180) % 360 - 180
-  return Math.abs(d - 90) < 45
-}
 
 /** 把一面墙沿长度方向切成"整段"和"窗洞段" */
 function cutWall(from: number, to: number, openings: Opening[]): Piece[] {
@@ -31,36 +24,44 @@ function cutWall(from: number, to: number, openings: Opening[]): Piece[] {
   return pieces
 }
 
-/** 水泥地面 + 后墙/左墙（按 layout 里的城市窗开洞）+ 墙顶压边 + 踢脚线（门等墙面物件在 layout.json 里） */
+/**
+ * 水泥地面 + 后墙/左墙（按 layout 里的城市窗开洞）+ 墙顶压边 + 踢脚线。
+ * 房间尺寸来自 layout.json 的 room（编辑器里可以用滑杆改），左后角固定。
+ */
 export function Room() {
   const { palette } = useSceneParams()
   const items = useLayoutItems()
+  const b = useRoomBounds()
   const r = sceneConfig.room
-  const hw = r.width / 2
-  const hd = r.depth / 2
-  const trimY = r.wallHeight + r.trimHeight / 2
-  const trimT = r.wallThickness + r.trimOverhang * 2
   const cw = sceneConfig.cityWindow
+  const wt = r.wallThickness
   const wallBottom = -r.floorThickness
+  const trimY = r.wallHeight + r.trimHeight / 2
+  const trimT = wt + r.trimOverhang * 2
+  const backZ = b.minZ - wt / 2
+  const leftX = b.minX - wt / 2
 
   const { back, left } = useMemo(() => {
     const back: Opening[] = []
     const left: Opening[] = []
     for (const it of items) {
       if (it.type !== 'cityWindow') continue
-      const half = windowWidth(it.props) / 2
-      if (onLeftWall(it)) left.push({ from: it.position[2] - half, to: it.position[2] + half })
-      else back.push({ from: it.position[0] - half, to: it.position[0] + half })
+      const f = fitWindow(it, b)
+      ;(f.left ? left : back).push({ from: f.center - f.width / 2, to: f.center + f.width / 2 })
     }
     return {
       // 后墙沿 X，向左多出一个墙厚盖住转角；左墙沿 Z
-      back: cutWall(-hw - r.wallThickness, hw, back),
-      left: cutWall(-hd, hd, left),
+      back: cutWall(b.minX - wt, b.maxX, back),
+      left: cutWall(b.minZ, b.maxZ, left),
     }
-  }, [items, hw, hd, r.wallThickness])
+  }, [items, b, wt])
 
   /** 一段墙：整段是一整块；窗洞段只剩窗台以下和窗顶以上两块 */
-  const wallPiece = (p: Piece, key: string, place: (center: number, length: number, y0: number, y1: number) => ReactElement) => {
+  const wallPiece = (
+    p: Piece,
+    key: string,
+    place: (center: number, length: number, y0: number, y1: number) => ReactElement,
+  ) => {
     const len = p.to - p.from
     const c = (p.from + p.to) / 2
     if (!p.opening) return place(c, len, wallBottom, r.wallHeight)
@@ -75,8 +76,8 @@ export function Room() {
   return (
     <group>
       <BevelBox
-        size={[r.width, r.floorThickness, r.depth]}
-        position={[0, -r.floorThickness / 2, 0]}
+        size={[b.width, r.floorThickness, b.depth]}
+        position={[b.centerX, -r.floorThickness / 2, b.centerZ]}
         color={palette.concrete}
         castShadow={false}
       />
@@ -86,8 +87,8 @@ export function Room() {
         wallPiece(p, `b${i}`, (c, len, y0, y1) => (
           <BevelBox
             key={`b${i}-${y0}`}
-            size={[len, y1 - y0, r.wallThickness]}
-            position={[c, (y0 + y1) / 2, -hd - r.wallThickness / 2]}
+            size={[len, y1 - y0, wt]}
+            position={[c, (y0 + y1) / 2, backZ]}
             color={palette.wall}
           />
         )),
@@ -97,8 +98,8 @@ export function Room() {
         wallPiece(p, `l${i}`, (c, len, y0, y1) => (
           <BevelBox
             key={`l${i}-${y0}`}
-            size={[r.wallThickness, y1 - y0, len]}
-            position={[-hw - r.wallThickness / 2, (y0 + y1) / 2, c]}
+            size={[wt, y1 - y0, len]}
+            position={[leftX, (y0 + y1) / 2, c]}
             color={palette.wall}
           />
         )),
@@ -107,31 +108,30 @@ export function Room() {
       {/* 墙顶压边 */}
       <BevelBox
         tier="small"
-        size={[r.width + r.wallThickness + r.trimOverhang * 2, r.trimHeight, trimT]}
-        position={[-r.wallThickness / 2, trimY, -hd - r.wallThickness / 2]}
+        size={[b.width + wt + r.trimOverhang * 2, r.trimHeight, trimT]}
+        position={[b.centerX - wt / 2, trimY, backZ]}
         color={palette.slate}
       />
       <BevelBox
         tier="small"
-        size={[trimT, r.trimHeight, r.depth + r.trimOverhang]}
-        position={[-hw - r.wallThickness / 2, trimY, r.trimOverhang / 2]}
+        size={[trimT, r.trimHeight, b.depth + r.trimOverhang]}
+        position={[leftX, trimY, b.centerZ + r.trimOverhang / 2]}
         color={palette.slate}
       />
 
       {/* 踢脚线 */}
       <BevelBox
         tier="rod"
-        size={[r.width, r.baseboardHeight, r.baseboardThickness]}
-        position={[0, r.baseboardHeight / 2, -hd + r.baseboardThickness / 2]}
+        size={[b.width, r.baseboardHeight, r.baseboardThickness]}
+        position={[b.centerX, r.baseboardHeight / 2, b.minZ + r.baseboardThickness / 2]}
         color={palette.baseboard}
       />
       <BevelBox
         tier="rod"
-        size={[r.baseboardThickness, r.baseboardHeight, r.depth]}
-        position={[-hw + r.baseboardThickness / 2, r.baseboardHeight / 2, 0]}
+        size={[r.baseboardThickness, r.baseboardHeight, b.depth]}
+        position={[b.minX + r.baseboardThickness / 2, r.baseboardHeight / 2, b.centerZ]}
         color={palette.baseboard}
       />
-
     </group>
   )
 }

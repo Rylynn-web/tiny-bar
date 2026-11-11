@@ -1,9 +1,9 @@
 import type { ComponentType } from 'react'
-import type { LayoutProps, Vec3 } from '../config/layoutTypes'
+import type { LayoutItem, LayoutProps, Vec3 } from '../config/layoutTypes'
 import type { SeatPose } from '../config/seatConfig'
 
-/** 目录里每个组件收到的参数：layout 里的 props（已合并默认值） */
-export type CatalogProps = { props: LayoutProps }
+/** 目录里每个组件收到的参数：layout 里的 props（已合并默认值），以及物件本身（需要知道自己位置的组件用） */
+export type CatalogProps = { props: LayoutProps; item?: LayoutItem }
 
 /**
  * 座位锚点：相对于家具原点的位置（坐垫表面中心）和朝向（弧度，0 = 面朝家具的 +Z）。

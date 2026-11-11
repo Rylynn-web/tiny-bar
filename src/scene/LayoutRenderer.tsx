@@ -29,7 +29,7 @@ export function LayoutRenderer() {
               version={params}
               extra={JSON.stringify(item.props ?? null)}
             >
-              <Component props={{ ...entry.defaultProps, ...item.props }} />
+              <Component props={{ ...entry.defaultProps, ...item.props }} item={item} />
             </MergeStatic>
           </group>
         )

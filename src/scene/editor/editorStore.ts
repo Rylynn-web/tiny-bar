@@ -1,10 +1,10 @@
 import { useSyncExternalStore } from 'react'
 import type { Object3D } from 'three'
-import type { LayoutItem } from '../../config/layoutTypes'
+import type { LayoutItem, RoomSize } from '../../config/layoutTypes'
 import { editorConfig } from '../../config/editorConfig'
-import { fileLayoutItems, getLayoutItems, setLayoutItems } from '../../state/layoutStore'
+import { fileLayoutItems, fileRoom, getLayoutItems, getRoom, setLayoutItems, setRoom } from '../../state/layoutStore'
 import { catalog } from '../catalog'
-import { normalizeDeg, room, wallOf } from './dragMath'
+import { normalizeDeg, roomLimits, wallOf } from './dragMath'
 
 // 编辑器状态：选中、撤销历史、未保存标记、本地备份、保存。只在开发环境 ?edit 下加载。
 
@@ -20,17 +20,27 @@ type EditorState = {
   saveStatus: SaveStatus
   saveMessage: string
   /** 本地备份和文件不一致时，等用户选择恢复或丢弃 */
-  backup: LayoutItem[] | null
+  backup: Snapshot | null
 }
 
-let savedJson = JSON.stringify(fileLayoutItems)
+/** 一份完整布局：物件 + 房间尺寸（撤销、备份、保存都以它为单位） */
+export type Snapshot = { items: LayoutItem[]; room: RoomSize }
 
-function readBackup(): LayoutItem[] | null {
+const snapJson = (s: Snapshot) => JSON.stringify({ room: s.room, items: s.items })
+let savedJson = snapJson({ items: fileLayoutItems, room: fileRoom })
+
+function current(): Snapshot {
+  return { items: getLayoutItems(), room: getRoom() }
+}
+
+function readBackup(): Snapshot | null {
   try {
     const raw = localStorage.getItem(E.backupKey)
     if (!raw) return null
-    const items = JSON.parse(raw) as LayoutItem[]
-    return JSON.stringify(items) === savedJson ? null : items
+    const data = JSON.parse(raw)
+    // 兼容旧格式（只有物件数组）
+    const snap: Snapshot = Array.isArray(data) ? { items: data, room: fileRoom } : { items: data.items, room: data.room ?? fileRoom }
+    return snapJson(snap) === savedJson ? null : snap
   } catch {
     return null
   }
@@ -80,11 +90,11 @@ export function getObjects() {
 
 // ── 本地备份 ──
 let backupTimer: ReturnType<typeof setTimeout> | undefined
-function scheduleBackup(items: LayoutItem[]) {
+function scheduleBackup(snap: Snapshot) {
   clearTimeout(backupTimer)
   backupTimer = setTimeout(() => {
     try {
-      localStorage.setItem(E.backupKey, JSON.stringify(items))
+      localStorage.setItem(E.backupKey, snapJson(snap))
     } catch {
       // 隐私模式等情况下写不进去，忽略
     }
@@ -92,25 +102,39 @@ function scheduleBackup(items: LayoutItem[]) {
 }
 
 // ── 修改布局 ──
-const history: LayoutItem[][] = []
-let transientBase: LayoutItem[] | null = null
+const history: Snapshot[] = []
+let transientBase: Snapshot | null = null
 
-function afterChange(next: LayoutItem[]) {
-  const ids = new Set(next.map((i) => i.id))
+function apply(s: Snapshot) {
+  if (s.items !== getLayoutItems()) setLayoutItems(s.items)
+  if (s.room !== getRoom()) setRoom(s.room)
+}
+
+function afterChange() {
+  const s = current()
+  const ids = new Set(s.items.map((i) => i.id))
   patch({
-    dirty: JSON.stringify(next) !== savedJson,
+    dirty: snapJson(s) !== savedJson,
     canUndo: history.length > 0,
     selectedId: state.selectedId && ids.has(state.selectedId) ? state.selectedId : null,
     saveStatus: 'idle',
   })
-  scheduleBackup(next)
+  scheduleBackup(s)
 }
 
-function commit(next: LayoutItem[]) {
-  history.push(getLayoutItems())
+function pushHistory(s: Snapshot) {
+  history.push(s)
   if (history.length > E.historyLimit) history.shift()
-  setLayoutItems(next)
-  afterChange(next)
+}
+
+function commitSnap(next: Snapshot) {
+  pushHistory(current())
+  apply(next)
+  afterChange()
+}
+
+function commit(nextItems: LayoutItem[]) {
+  commitSnap({ items: nextItems, room: getRoom() })
 }
 
 function mapItem(id: string, fn: (item: LayoutItem) => LayoutItem) {
@@ -121,34 +145,43 @@ export function updateItem(id: string, p: Partial<LayoutItem>) {
   commit(mapItem(id, (i) => ({ ...i, ...p })))
 }
 
-/** 改物件的一个 props 数值（侧边栏里的可编辑属性） */
-export function updateProp(id: string, key: string, value: number) {
-  commit(mapItem(id, (i) => ({ ...i, props: { ...i.props, [key]: value } })))
-}
-
-/** 拖动开始：记下起点，拖动过程中的更新不进历史，松手时整体算一步 */
+/** 拖动 / 拖滑杆开始：记下起点，过程中的更新不进历史，松手时整体算一步 */
 export function beginTransient() {
-  transientBase = getLayoutItems()
+  transientBase = current()
 }
 export function transientUpdate(id: string, p: Partial<LayoutItem>) {
-  const next = mapItem(id, (i) => ({ ...i, ...p }))
-  setLayoutItems(next)
+  setLayoutItems(mapItem(id, (i) => ({ ...i, ...p })))
   patch({ dirty: true })
 }
+/** 改物件的一个 props 数值（侧边栏里的可编辑属性）；不在拖动中时直接算一步 */
+export function updateProp(id: string, key: string, value: number) {
+  const next = mapItem(id, (i) => ({ ...i, props: { ...i.props, [key]: value } }))
+  if (transientBase) {
+    setLayoutItems(next)
+    patch({ dirty: true })
+  } else commit(next)
+}
+/** 改房间尺寸；不在拖动中时直接算一步 */
+export function updateRoom(room: RoomSize) {
+  if (transientBase) {
+    setRoom(room)
+    patch({ dirty: true })
+  } else commitSnap({ items: getLayoutItems(), room })
+}
 export function endTransient() {
-  if (transientBase && transientBase !== getLayoutItems()) {
-    history.push(transientBase)
-    if (history.length > E.historyLimit) history.shift()
-  }
+  const base = transientBase
   transientBase = null
-  afterChange(getLayoutItems())
+  if (!base) return
+  const now = current()
+  if (base.items !== now.items || base.room !== now.room) pushHistory(base)
+  afterChange()
 }
 
 export function undo() {
   const prev = history.pop()
   if (!prev) return
-  setLayoutItems(prev)
-  afterChange(prev)
+  apply(prev)
+  afterChange()
 }
 
 export function select(id: string | null) {
@@ -208,7 +241,10 @@ export function addItem(type: string) {
   const item: LayoutItem = {
     id: newId(type),
     type,
-    position: entry.mount === 'wall' ? [0, E.wallItemY, room.minZ] : [0, 0, 0],
+    position: (() => {
+      const room = roomLimits()
+      return entry.mount === 'wall' ? [room.centerX, E.wallItemY, room.minZ] : [room.centerX, 0, room.centerZ]
+    })() as LayoutItem['position'],
     rotationY: 0,
     ...(entry.defaultProps ? { props: { ...entry.defaultProps } } : {}),
   }
@@ -218,16 +254,16 @@ export function addItem(type: string) {
 
 // ── 保存 / 备份 ──
 export async function save() {
-  const items = getLayoutItems()
+  const snap = current()
   patch({ saveStatus: 'saving', saveMessage: '' })
   try {
     const res = await fetch(E.saveEndpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ room: snap.room, items: snap.items }),
     })
     if (!res.ok) throw new Error(await res.text())
-    savedJson = JSON.stringify(items)
+    savedJson = snapJson(snap)
     try {
       localStorage.removeItem(E.backupKey)
     } catch {
@@ -240,10 +276,10 @@ export async function save() {
 }
 
 export function restoreBackup() {
-  const items = state.backup
-  if (!items) return
+  const snap = state.backup
+  if (!snap) return
   patch({ backup: null })
-  commit(items)
+  commitSnap(snap)
 }
 
 export function discardBackup() {

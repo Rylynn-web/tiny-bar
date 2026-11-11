@@ -17,4 +17,7 @@ export type LayoutItem = {
   props?: LayoutProps
 }
 
-export type LayoutFile = { items: LayoutItem[] }
+/** 房间尺寸（米）。左后角固定在 sceneConfig 默认房间的左后角，宽度向右、进深向前伸缩 */
+export type RoomSize = { width: number; depth: number }
+
+export type LayoutFile = { room?: RoomSize; items: LayoutItem[] }

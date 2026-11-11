@@ -11,10 +11,43 @@ import {
   save,
   select,
   togglePivot,
+  beginTransient,
+  endTransient,
   undo,
   updateProp,
+  updateRoom,
   useEditor,
 } from '../../scene/editor/editorStore'
+import { useRoom } from '../../state/layoutStore'
+
+/** 滑杆：按下时开始一次"拖动"，松手算一步撤销 */
+function Slider(props: {
+  label: string
+  value: number
+  min: number
+  max: number
+  step: number
+  onChange: (v: number) => void
+}) {
+  return (
+    <label className="editor-panel__label">
+      {props.label}：{props.value.toFixed(2)}
+      <input
+        type="range"
+        min={props.min}
+        max={props.max}
+        step={props.step}
+        value={props.value}
+        onPointerDown={beginTransient}
+        onPointerUp={endTransient}
+        onKeyDown={beginTransient}
+        onKeyUp={endTransient}
+        onBlur={endTransient}
+        onChange={(e) => props.onChange(Number(e.target.value))}
+      />
+    </label>
+  )
+}
 
 const fmt = (n: number) => n.toFixed(2)
 
@@ -40,7 +73,7 @@ export function EditorPanel() {
 
       {backup && (
         <div className="editor-panel__banner">
-          发现未保存的本地备份（{backup.length} 个物件）
+          发现未保存的本地备份（{backup.items.length} 个物件）
           <div className="editor-panel__row">
             <button type="button" onClick={restoreBackup}>恢复</button>
             <button type="button" onClick={discardBackup}>丢弃</button>
@@ -75,6 +108,8 @@ export function EditorPanel() {
         </select>
       </label>
 
+      <RoomSection />
+
       <section className="editor-panel__section">
         <h3>选中物件</h3>
         {selected && selectedEntry ? (
@@ -88,17 +123,15 @@ export function EditorPanel() {
               const raw = selected.props?.[ep.key] ?? selectedEntry.defaultProps?.[ep.key]
               const value = typeof raw === 'number' ? raw : ep.min
               return (
-                <label key={ep.key} className="editor-panel__label">
-                  {ep.label}：{value.toFixed(2)}
-                  <input
-                    type="range"
-                    min={ep.min}
-                    max={ep.max}
-                    step={ep.step}
-                    value={value}
-                    onChange={(e) => updateProp(selected.id, ep.key, Number(e.target.value))}
-                  />
-                </label>
+                <Slider
+                  key={ep.key}
+                  label={ep.label}
+                  value={value}
+                  min={ep.min}
+                  max={ep.max}
+                  step={ep.step}
+                  onChange={(v) => updateProp(selected.id, ep.key, v)}
+                />
               )
             })}
             <div className="editor-panel__row">
@@ -140,5 +173,32 @@ export function EditorPanel() {
         拖动吸附 {editorConfig.grid} 米，按住 Shift 自由移动 · R 旋转 · ⌘/Ctrl+D 复制 · Delete 删除 · ⌘/Ctrl+Z 撤销
       </p>
     </aside>
+  )
+}
+
+/** 房间尺寸：左后角固定，宽度向右收放、进深向前收放；落地窗会跟着墙长自动缩窄 */
+function RoomSection() {
+  const room = useRoom()
+  const R = editorConfig.room
+  return (
+    <section className="editor-panel__section">
+      <h3>房间</h3>
+      <Slider
+        label="宽度（米）"
+        value={room.width}
+        min={R.widthRange[0]}
+        max={R.widthRange[1]}
+        step={R.step}
+        onChange={(width) => updateRoom({ ...room, width })}
+      />
+      <Slider
+        label="进深（米）"
+        value={room.depth}
+        min={R.depthRange[0]}
+        max={R.depthRange[1]}
+        step={R.step}
+        onChange={(depth) => updateRoom({ ...room, depth })}
+      />
+    </section>
   )
 }
