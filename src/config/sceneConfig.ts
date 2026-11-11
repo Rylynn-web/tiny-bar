@@ -72,6 +72,8 @@ export const sceneConfig = {
     steel: '#C8CCD0',
     brass: '#C9A15A',
     orange: '#E07B39',
+    leaf: '#6E9461',
+    leafDark: '#4A6E4C',
   },
   // 统一倒角半径（世界单位），分三档：大件家具 / 小件 / 细杆（乘以 bevel）
   bevel: 0.03,
@@ -398,6 +400,29 @@ export const sceneConfig = {
         { size: [0.2, 0.03, 0.16] as Vec3, color: 'rust', yaw: deg(10) },
       ],
     },
+  },
+
+  // ───────── 植物（外部模型，见 public/models/CREDITS.md）─────────
+  plants: {
+    species: {
+      // height：缩放到这个高度（米）；baseAnchor：土面在模型包围盒高度的哪个比例处（0 = 底部；垂吊植物在中间偏上）
+      monstera: { url: '/models/plants/monstera.glb', height: 1.15, baseAnchor: 0, pot: 'steel', label: '龟背竹' },
+      banana: { url: '/models/plants/banana.glb', height: 2.0, baseAnchor: 0, pot: 'steelTall', label: '香蕉树' },
+      pothos: { url: '/models/plants/pothos.glb', height: 0.7, baseAnchor: 0.62, pot: 'ceramic', label: '绿萝' },
+    },
+    pots: {
+      // 盆口半径、盆底半径、高度
+      steel: { radiusTop: 0.21, radiusBottom: 0.18, height: 0.34 },
+      steelTall: { radiusTop: 0.25, radiusBottom: 0.21, height: 0.42 },
+      ceramic: { radiusTop: 0.11, radiusBottom: 0.085, height: 0.12 },
+    },
+    // 盆壁厚度；土面半径占盆口的比例；土面比盆口低多少、植物根部再往土里埋多少
+    rimThickness: 0.012,
+    soilRadiusRatio: 0.94,
+    soilDrop: 0.025,
+    plantSink: 0.02,
+    // 按模型原本的颜色给三角面分类：色相在这个范围、饱和度够高的算叶子，亮度低于 darkLightness 的算深色叶子
+    classify: { hueMin: 55, hueMax: 175, minSaturation: 0.18, darkLightness: 0.42 },
   },
 
   // ───────── 吧台区 ─────────

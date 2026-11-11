@@ -8,6 +8,7 @@ import { DiningTable } from './furniture/DiningTable'
 import { RoundRug } from './furniture/RoundRug'
 import { ShellChair } from './furniture/ShellChair'
 import { Door } from './room/Door'
+import { Plant } from './plants/Plant'
 import { BookStack } from './lounge/BookStack'
 import { Bookshelf } from './lounge/Bookshelf'
 import { CoffeeTable } from './lounge/CoffeeTable'
@@ -48,4 +49,12 @@ export const catalog: Record<string, CatalogEntry> = {
   floorLamp: { label: '落地弧灯', mount: 'floor', component: FloorLamp, collide: false },
   vase: { label: '花瓶', mount: 'floor', component: Vase, defaultProps: { color: 'cream' } },
   bookStack: { label: '书摞', mount: 'floor', component: BookStack },
+  // 植物：叶片会自然地和别的东西交叠，不参与重叠检测
+  plant: {
+    label: '盆栽',
+    mount: 'floor',
+    component: Plant,
+    collide: false,
+    defaultProps: { species: 'monstera' },
+  },
 }

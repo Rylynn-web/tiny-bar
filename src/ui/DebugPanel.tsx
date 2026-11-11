@@ -57,6 +57,8 @@ export default function DebugPanel() {
       steel: { value: d.palette.steel, label: '不锈钢' },
       brass: { value: d.palette.brass, label: '黄铜' },
       orange: { value: d.palette.orange, label: '橙' },
+      leaf: { value: d.palette.leaf, label: '叶子' },
+      leafDark: { value: d.palette.leafDark, label: '深色叶子' },
     }),
     造型: folder({
       bevel: { value: d.bevel, min: 0, max: 0.08, step: 0.002, label: '倒角半径' },
