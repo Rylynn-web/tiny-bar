@@ -25,4 +25,8 @@ export type CatalogEntry = {
   collide?: boolean
   /** 不参与网格合并（以后需要单独动起来的物件设为 false） */
   merge?: boolean
+  /** 墙面物件只能沿墙水平移动、高度固定 */
+  lockY?: boolean
+  /** 编辑器侧边栏里可以直接改的数值属性（写进 layout 的 props） */
+  editableProps?: { key: string; label: string; min: number; max: number; step: number }[]
 }

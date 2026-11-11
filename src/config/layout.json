@@ -1,6 +1,5 @@
 {
   "items": [
-    {"id":"door","type":"door","position":[1.4,0,-3.2],"rotationY":0},
     {"id":"back-counter","type":"backCounter","position":[-2.2,0,-2.9],"rotationY":0},
     {"id":"shelf-mugs","type":"wallShelf","position":[-3.2,2,-3.2],"rotationY":0,"props":{"items":"mug","width":1.1}},
     {"id":"shelf-cups","type":"wallShelf","position":[-3.2,1.7,-3.2],"rotationY":0,"props":{"items":"cup","width":1.1}},
@@ -32,7 +31,8 @@
     {"id":"stack-lamp","type":"stackLamp","position":[-3.8,1,0.3],"rotationY":0},
     {"id":"floor-lamp","type":"floorLamp","position":[-3.62,0,3],"rotationY":90},
     {"id":"plant-monstera","type":"plant","position":[-3.0,0,2.95],"rotationY":20,"props":{"species":"monstera"}},
-    {"id":"plant-banana","type":"plant","position":[2.3,0,-2.85],"rotationY":0,"props":{"species":"banana"}},
-    {"id":"plant-pothos","type":"plant","position":[-3.7,1.0,-0.75],"rotationY":0,"props":{"species":"pothos"}}
+    {"id":"plant-banana","type":"plant","position":[-0.05,0,-2.7],"rotationY":0,"props":{"species":"banana"}},
+    {"id":"plant-pothos","type":"plant","position":[-3.7,1.0,-0.75],"rotationY":0,"props":{"species":"pothos"}},
+    {"id":"city-window","type":"cityWindow","position":[2.1,0,-3.2],"rotationY":0,"props":{"width":3.6}}
   ]
 }

@@ -44,10 +44,12 @@ export function CameraRig() {
   useLayoutEffect(() => {
     const c = controls
     if (!c) return
+    // 电脑：左键旋转；中键按住拖动或右键拖动 = 平移；滚轮缩放
     c.mouseButtons.left = ACTION.ROTATE
     c.mouseButtons.right = ACTION.TRUCK
-    c.mouseButtons.middle = ACTION.NONE
+    c.mouseButtons.middle = ACTION.TRUCK
     c.mouseButtons.wheel = ACTION.ZOOM
+    // 手机：单指旋转；双指捏合缩放的同时拖动 = 平移
     c.touches.one = ACTION.TOUCH_ROTATE
     c.touches.two = ACTION.TOUCH_ZOOM_TRUCK
     c.touches.three = ACTION.NONE

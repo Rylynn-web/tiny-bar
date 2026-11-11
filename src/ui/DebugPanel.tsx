@@ -72,7 +72,29 @@ export default function DebugPanel() {
     }),
     性能: folder({
       mergeStatic: { value: d.mergeStatic, label: '合并网格' },
+      quality: { value: d.quality, options: { 自动: 'auto', 高: 'high', 低: 'low' }, label: '画质' },
     }),
+    窗外: folder(
+      {
+        cvLayers: { value: d.cityView.layerCount, min: 1, max: d.cityView.depths.length, step: 1, label: '城市层数' },
+        ...Object.fromEntries(
+          d.cityView.depths.map((v, i) => [`cvDepth${i}`, { value: v, min: 0.5, max: 30, step: 0.5, label: `第${i + 1}层深度` }]),
+        ),
+        cvLit: { value: d.cityView.litRatio, min: 0, max: 1, step: 0.01, label: '窗灯比例' },
+        cvTwinkle: { value: d.cityView.twinkleRatio, min: 0, max: 0.3, step: 0.01, label: '亮灭比例' },
+        cvSkyDayTop: { value: d.cityView.skyDayTop, label: '白天天顶' },
+        cvSkyDayHorizon: { value: d.cityView.skyDayHorizon, label: '白天地平线' },
+        cvSkyNightTop: { value: d.cityView.skyNightTop, label: '夜晚天顶' },
+        cvSkyNightHorizon: { value: d.cityView.skyNightHorizon, label: '夜晚地平线' },
+        ...Object.fromEntries(
+          d.cityView.layerDay.flatMap((c, i) => [
+            [`cvDay${i}`, { value: c, label: `第${i + 1}层·白天` }],
+            [`cvNight${i}`, { value: d.cityView.layerNight[i], label: `第${i + 1}层·夜晚` }],
+          ]),
+        ),
+      },
+      { collapsed: true },
+    ),
     Bloom: folder({
       bloomIntensity: { value: d.bloom.intensity, min: 0, max: 3, step: 0.05, label: '强度' },
     }),
@@ -108,6 +130,19 @@ export default function DebugPanel() {
       ao: { intensity: v.aoIntensity as number, radius: v.aoRadius as number },
       bloom: { intensity: v.bloomIntensity as number },
       mergeStatic: v.mergeStatic as boolean,
+      quality: v.quality as SceneParams['quality'],
+      cityView: {
+        layerCount: v.cvLayers as number,
+        depths: d.cityView.depths.map((_, i) => v[`cvDepth${i}`] as number),
+        litRatio: v.cvLit as number,
+        twinkleRatio: v.cvTwinkle as number,
+        skyDayTop: v.cvSkyDayTop as string,
+        skyDayHorizon: v.cvSkyDayHorizon as string,
+        skyNightTop: v.cvSkyNightTop as string,
+        skyNightHorizon: v.cvSkyNightHorizon as string,
+        layerDay: d.cityView.layerDay.map((_, i) => v[`cvDay${i}`] as string),
+        layerNight: d.cityView.layerNight.map((_, i) => v[`cvNight${i}`] as string),
+      },
       emissive: {
         bulb: v.emBulb as number,
         ledStrip: v.emLed as number,

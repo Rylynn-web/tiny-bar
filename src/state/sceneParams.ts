@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
 import { sceneConfig, type BuddyPose, type TimeOfDay } from '../config/sceneConfig'
+import type { Quality } from './quality'
 
 // 运行时可调的参数。默认值全部来自 sceneConfig；debug 面板会覆盖它们。
 
@@ -19,6 +20,20 @@ export type CameraParams = {
   dollySpeed: number
 }
 
+export type CityViewParams = {
+  /** 用几层城市（从最近一层往远数） */
+  layerCount: number
+  depths: number[]
+  litRatio: number
+  twinkleRatio: number
+  skyDayTop: string
+  skyDayHorizon: string
+  skyNightTop: string
+  skyNightHorizon: string
+  layerDay: string[]
+  layerNight: string[]
+}
+
 export type SceneParams = {
   timeOfDay: TimeOfDay
   palette: Palette
@@ -27,6 +42,8 @@ export type SceneParams = {
   ao: { intensity: number; radius: number }
   bloom: { intensity: number }
   mergeStatic: boolean
+  quality: Quality
+  cityView: CityViewParams
   emissive: { -readonly [K in keyof typeof sceneConfig.emissive]: number }
   camera: CameraParams
   buddy: {
@@ -48,6 +65,19 @@ export const defaultSceneParams: SceneParams = {
   ao: { intensity: sceneConfig.ao.intensity, radius: sceneConfig.ao.radius },
   bloom: { intensity: sceneConfig.bloom.intensity },
   mergeStatic: sceneConfig.performance.mergeStatic,
+  quality: sceneConfig.performance.quality,
+  cityView: {
+    layerCount: sceneConfig.cityView.layers.length,
+    depths: sceneConfig.cityView.layers.map((l) => l.depth),
+    litRatio: sceneConfig.cityView.litRatio,
+    twinkleRatio: sceneConfig.cityView.twinkleRatio,
+    skyDayTop: sceneConfig.cityView.sky.day.top,
+    skyDayHorizon: sceneConfig.cityView.sky.day.horizon,
+    skyNightTop: sceneConfig.cityView.sky.night.top,
+    skyNightHorizon: sceneConfig.cityView.sky.night.horizon,
+    layerDay: sceneConfig.cityView.layers.map((l) => l.dayColor),
+    layerNight: sceneConfig.cityView.layers.map((l) => l.nightColor),
+  },
   emissive: { ...sceneConfig.emissive },
   camera: {
     azimuthRangeDeg: sceneConfig.controls.azimuthRangeDeg,

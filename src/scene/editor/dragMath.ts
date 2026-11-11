@@ -55,6 +55,8 @@ export function constrain(
   offMin: Vector3,
   offMax: Vector3,
   free: boolean,
+  /** 高度固定（落地窗这种只能左右移动的墙面物件） */
+  lockY = false,
 ): Vec3 {
   const g = editorConfig.grid
   const s = (v: number) => (free ? v : snap(v, g))
@@ -63,7 +65,7 @@ export function constrain(
     const z = clampAxis(s(target.z), offMin.z, offMax.z, room.minZ, room.maxZ)
     return [x, item.position[1], z]
   }
-  const y = clampAxis(s(target.y), offMin.y, offMax.y, 0, room.height)
+  const y = lockY ? item.position[1] : clampAxis(s(target.y), offMin.y, offMax.y, 0, room.height)
   if (wallOf(item) === 'left') {
     const z = clampAxis(s(target.z), offMin.z, offMax.z, room.minZ, room.maxZ)
     return [room.minX, y, z]

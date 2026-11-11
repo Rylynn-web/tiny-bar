@@ -1,13 +1,14 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { ThreeEvent } from '@react-three/fiber'
 import { Select } from '@react-three/postprocessing'
-import { Box3, Vector3, type Group, type Plane } from 'three'
+import { Vector3, type Group, type Plane } from 'three'
 import type { LayoutItem } from '../../config/layoutTypes'
 import { sceneConfig } from '../../config/sceneConfig'
 import { setControlsEnabled } from '../../state/cameraActions'
 import { getLayoutItems } from '../../state/layoutStore'
 import { catalog } from '../catalog'
 import { markInteractiveHit } from '../interaction/tap'
+import { boundsOf } from './bounds'
 import { constrain, dragPlane, round3 } from './dragMath'
 import {
   beginTransient,
@@ -76,7 +77,7 @@ export function EditorItem({ item, children }: { item: LayoutItem; children: Rea
       if (!e.ray.intersectPlane(d.plane, hit)) return
       const pos = new Vector3(...current.position)
       d.grab = pos.clone().sub(hit)
-      const box = new Box3().setFromObject(ref.current)
+      const box = boundsOf(ref.current)
       d.offMin = box.min.sub(pos)
       d.offMax = box.max.sub(pos)
       d.started = true
@@ -86,7 +87,7 @@ export function EditorItem({ item, children }: { item: LayoutItem; children: Rea
 
     if (!e.ray.intersectPlane(d.plane!, hit)) return
     const target = hit.clone().add(d.grab!)
-    const position = constrain(current, mount, target, d.offMin!, d.offMax!, e.shiftKey)
+    const position = constrain(current, mount, target, d.offMin!, d.offMax!, e.shiftKey, catalog[item.type]?.lockY)
     transientUpdate(item.id, { position: round3(position) })
   }
 

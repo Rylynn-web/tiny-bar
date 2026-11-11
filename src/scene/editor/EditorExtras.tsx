@@ -7,6 +7,7 @@ import { editorConfig } from '../../config/editorConfig'
 import { setControlsEnabled } from '../../state/cameraActions'
 import { getLayoutItems, useLayoutItems } from '../../state/layoutStore'
 import { catalog } from '../catalog'
+import { boundsOf } from './bounds'
 import { constrain, normalizeDeg, round3 } from './dragMath'
 import { beginTransient, endTransient, getEditorState, getObjects, transientUpdate, useEditor } from './editorStore'
 
@@ -73,14 +74,14 @@ function OverlapHint() {
     const entry = sel && catalog[sel.type]
     const obj = sel && getObjects().get(sel.id)
     if (!sel || !entry || entry.collide === false || !obj) return
-    box.setFromObject(obj).expandByScalar(-E.overlapTolerance)
+    boundsOf(obj, box).expandByScalar(-E.overlapTolerance)
     for (const it of items) {
       if (it.id === sel.id) continue
       const e = catalog[it.type]
       if (!e || e.collide === false || e.mount !== entry.mount) continue
       const o = getObjects().get(it.id)
       if (!o) continue
-      other.setFromObject(o).expandByScalar(-E.overlapTolerance)
+      boundsOf(o, other).expandByScalar(-E.overlapTolerance)
       if (box.intersectsBox(other)) {
         box.expandByScalar(E.overlapTolerance)
         box.getCenter(m.position)
@@ -135,7 +136,7 @@ function PivotEditor() {
       scale={E.pivotScale}
       onDragStart={() => {
         const obj = getObjects().get(item.id)
-        const box = obj ? new Box3().setFromObject(obj) : null
+        const box = obj ? boundsOf(obj) : null
         const pos = new Vector3(...item.position)
         offsets.current = box ? { min: box.min.sub(pos), max: box.max.sub(pos) } : null
         setControlsEnabled(false)
@@ -149,7 +150,7 @@ function PivotEditor() {
         const q = new Quaternion()
         w.decompose(p, q, new Vector3())
         const yaw = MathUtils.radToDeg(new Euler().setFromQuaternion(q, 'YXZ').y)
-        const position = constrain(current, entry.mount, p, offsets.current.min, offsets.current.max, true)
+        const position = constrain(current, entry.mount, p, offsets.current.min, offsets.current.max, true, entry.lockY)
         transientUpdate(current.id, {
           position: round3(position),
           ...(wall ? {} : { rotationY: Math.round(normalizeDeg(yaw) * 10) / 10 }),

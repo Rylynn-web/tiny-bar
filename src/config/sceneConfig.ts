@@ -27,6 +27,8 @@ export const sceneConfig = {
   performance: {
     // 每个物件内部把同材质零件合并成一个网格（减少绘制调用）；leva 里可开关对比
     mergeStatic: true,
+    // 画质档：auto = 触屏设备用 low，其余 high。low 会关掉窗外窗灯亮灭、信号灯闪烁等细节动画
+    quality: 'auto' as 'auto' | 'high' | 'low',
   },
   postprocessing: {
     // 后处理内的 MSAA 采样数（0 = 关）。手机可降到 0 或 2
@@ -248,6 +250,99 @@ export const sceneConfig = {
     handleBarLength: 0.1,
     // 贴在门面上的零件离门面的距离，防止闪烁
     surfaceOffset: 0.002,
+  },
+
+  // ───────── 城市落地窗（墙面物件，墙上会按窗户位置开洞）─────────
+  cityWindow: {
+    defaultWidth: 3.0,
+    minWidth: 1.0,
+    maxWidth: 4.0,
+    // 窗洞下沿、上沿高度（米）
+    sillHeight: 0.1,
+    headHeight: 2.35,
+    frameWidth: 0.05,
+    frameDepth: 0.06,
+    mullionWidth: 0.035,
+    // 窗外每层的投影四边形比窗洞再大出这么多，藏住窗框下的接缝
+    layerMargin: 0.04,
+    // 玻璃：几乎透明，不做反光
+    glassOpacity: 0.04,
+  },
+  // 窗外城市：天空 + 多层剪影。各层按当前视线把窗洞投影到自己所在的深度，每帧都正好铺满窗口
+  cityView: {
+    seed: 20261111,
+    textureSize: 512,
+    // 从远到近。depth：离墙外表面的距离（米）；tileWidth / height：一张贴图对应的世界宽度、楼群高度（米）；
+    // buildingWidth：楼宽（贴图像素）；buildingHeight：楼高占 height 的比例；skylineAt：默认视角下平均楼顶落在窗高的哪个比例处；
+    // windowCell / windowSize：窗格间距（米）和窗户占格子的比例；
+    // parallax：保留多少真实视差（0 = 跟着窗口不动，1 = 完全按几何投影）。正交相机下真实视差过大，
+    // 俯角稍一变远景就会整片沉到窗下，所以远景只留一点，近景多一点
+    layers: [
+      {
+        depth: 10,
+        tileWidth: 7,
+        height: 3.4,
+        buildingWidth: [10, 30] as [number, number],
+        buildingHeight: [0.3, 0.8] as [number, number],
+        roundChance: 0.55,
+        spireChance: 0.1,
+        skylineAt: 0.62,
+        parallax: 0.05,
+        windowCell: [0.1, 0.12] as [number, number],
+        windowSize: [0.55, 0.45] as [number, number],
+        dayColor: '#C8D1DD',
+        nightColor: '#4A4C7C',
+      },
+      {
+        depth: 5,
+        tileWidth: 7.5,
+        height: 3.7,
+        buildingWidth: [14, 40] as [number, number],
+        buildingHeight: [0.25, 0.8] as [number, number],
+        roundChance: 0.5,
+        spireChance: 0.08,
+        skylineAt: 0.46,
+        parallax: 0.12,
+        windowCell: [0.12, 0.15] as [number, number],
+        windowSize: [0.55, 0.45] as [number, number],
+        dayColor: '#A8B5C6',
+        nightColor: '#30335A',
+      },
+      {
+        depth: 2.5,
+        tileWidth: 8,
+        height: 4,
+        buildingWidth: [22, 60] as [number, number],
+        buildingHeight: [0.22, 0.8] as [number, number],
+        roundChance: 0.45,
+        spireChance: 0.06,
+        skylineAt: 0.3,
+        parallax: 0.25,
+        windowCell: [0.15, 0.18] as [number, number],
+        windowSize: [0.55, 0.45] as [number, number],
+        dayColor: '#8C9AAE',
+        nightColor: '#1D1F37',
+      },
+    ],
+    sky: {
+      day: { top: '#B9D0E8', horizon: '#ECEFF1' },
+      night: { top: '#262B5E', horizon: '#6C66A3' },
+    },
+    // 夜晚亮灯的窗户比例；其中这一部分会缓慢亮灭（周期由 twinkleSpeed 的角速度决定，弧度/秒）
+    litRatio: 0.3,
+    twinkleRatio: 0.03,
+    twinkleSpeed: [0.15, 0.45] as [number, number],
+    litColor: '#FFD27A',
+    // 窗灯亮度：要高于 Bloom 阈值才有光晕
+    litIntensity: 4.5,
+    // 白天窗玻璃比楼体暗一点
+    dayPaneDarken: 0.12,
+    // 楼体明暗的随机起伏
+    bodyVariation: 0.16,
+    // 最近一层最高楼顶的红色信号灯
+    beacon: { color: '#FF3B30', radius: 0.05, intensity: 6, period: 2.6 },
+    // 昼夜切换的过渡时间（秒）
+    transitionSeconds: 1,
   },
 
   // ───────── 餐桌区 ─────────

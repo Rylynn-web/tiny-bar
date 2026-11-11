@@ -1,3 +1,4 @@
+import { sceneConfig } from '../config/sceneConfig'
 import type { CatalogEntry } from './catalogTypes'
 import { BackCounter } from './bar/BackCounter'
 import { BarCounter } from './bar/BarCounter'
@@ -9,6 +10,7 @@ import { RoundRug } from './furniture/RoundRug'
 import { ShellChair } from './furniture/ShellChair'
 import { Door } from './room/Door'
 import { Plant } from './plants/Plant'
+import { CityWindow } from './window/CityWindow'
 import { BookStack } from './lounge/BookStack'
 import { Bookshelf } from './lounge/Bookshelf'
 import { CoffeeTable } from './lounge/CoffeeTable'
@@ -49,6 +51,22 @@ export const catalog: Record<string, CatalogEntry> = {
   floorLamp: { label: '落地弧灯', mount: 'floor', component: FloorLamp, collide: false },
   vase: { label: '花瓶', mount: 'floor', component: Vase, defaultProps: { color: 'cream' } },
   bookStack: { label: '书摞', mount: 'floor', component: BookStack },
+  cityWindow: {
+    label: '城市落地窗',
+    mount: 'wall',
+    component: CityWindow,
+    lockY: true,
+    defaultProps: { width: sceneConfig.cityWindow.defaultWidth },
+    editableProps: [
+      {
+        key: 'width',
+        label: '宽度（米）',
+        min: sceneConfig.cityWindow.minWidth,
+        max: sceneConfig.cityWindow.maxWidth,
+        step: 0.1,
+      },
+    ],
+  },
   // 植物：叶片会自然地和别的东西交叠，不参与重叠检测
   plant: {
     label: '盆栽',

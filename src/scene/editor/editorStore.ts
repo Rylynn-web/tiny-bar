@@ -121,6 +121,11 @@ export function updateItem(id: string, p: Partial<LayoutItem>) {
   commit(mapItem(id, (i) => ({ ...i, ...p })))
 }
 
+/** 改物件的一个 props 数值（侧边栏里的可编辑属性） */
+export function updateProp(id: string, key: string, value: number) {
+  commit(mapItem(id, (i) => ({ ...i, props: { ...i.props, [key]: value } })))
+}
+
 /** 拖动开始：记下起点，拖动过程中的更新不进历史，松手时整体算一步 */
 export function beginTransient() {
   transientBase = getLayoutItems()

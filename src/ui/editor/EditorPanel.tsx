@@ -12,6 +12,7 @@ import {
   select,
   togglePivot,
   undo,
+  updateProp,
   useEditor,
 } from '../../scene/editor/editorStore'
 
@@ -83,6 +84,23 @@ export function EditorPanel() {
               <br />x {fmt(selected.position[0])} y {fmt(selected.position[1])} z {fmt(selected.position[2])}
               <br />朝向 {selected.rotationY}°
             </p>
+            {selectedEntry.editableProps?.map((ep) => {
+              const raw = selected.props?.[ep.key] ?? selectedEntry.defaultProps?.[ep.key]
+              const value = typeof raw === 'number' ? raw : ep.min
+              return (
+                <label key={ep.key} className="editor-panel__label">
+                  {ep.label}：{value.toFixed(2)}
+                  <input
+                    type="range"
+                    min={ep.min}
+                    max={ep.max}
+                    step={ep.step}
+                    value={value}
+                    onChange={(e) => updateProp(selected.id, ep.key, Number(e.target.value))}
+                  />
+                </label>
+              )
+            })}
             <div className="editor-panel__row">
               <button type="button" onClick={() => rotateSelected(1)} disabled={selectedEntry.mount === 'wall'}>
                 旋转 15°
