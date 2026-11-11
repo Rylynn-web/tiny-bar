@@ -27,7 +27,9 @@ export function CameraRig() {
   const [ortho, setOrtho] = useState<OrthoCam | null>(null)
   const [controls, setControls] = useState<CameraControlsImpl | null>(null)
   const controlsRef = useRef<CameraControlsImpl | null>(null)
-  controlsRef.current = controls
+  useLayoutEffect(() => {
+    controlsRef.current = controls
+  }, [controls])
   const { width, height } = useThree((s) => s.size)
   const { camera: p } = useSceneParams()
 
