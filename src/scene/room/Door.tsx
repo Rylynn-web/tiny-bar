@@ -22,7 +22,7 @@ export function Door() {
 
       {/* 舷窗：金属圈 + 半透明玻璃 */}
       <mesh position={[0, d.portholeY, front]} castShadow>
-        <torusGeometry args={[d.portholeRadius, d.portholeRing, 12, 40]} />
+        <torusGeometry args={[d.portholeRadius, d.portholeRing, 8, 32]} />
         <Metal />
       </mesh>
       <mesh position={[0, d.portholeY, front - d.surfaceOffset * 2]}>

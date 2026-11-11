@@ -26,6 +26,7 @@ export type SceneParams = {
   lighting: { day: Lighting; night: Lighting }
   ao: { intensity: number; radius: number }
   bloom: { intensity: number }
+  emissive: { -readonly [K in keyof typeof sceneConfig.emissive]: number }
   camera: CameraParams
   buddy: {
     bodyColor: string
@@ -45,6 +46,7 @@ export const defaultSceneParams: SceneParams = {
   },
   ao: { intensity: sceneConfig.ao.intensity, radius: sceneConfig.ao.radius },
   bloom: { intensity: sceneConfig.bloom.intensity },
+  emissive: { ...sceneConfig.emissive },
   camera: {
     azimuthRangeDeg: sceneConfig.controls.azimuthRangeDeg,
     minDepressionDeg: sceneConfig.controls.minDepressionDeg,

@@ -60,6 +60,12 @@ export default function DebugPanel() {
     造型: folder({
       bevel: { value: d.bevel, min: 0, max: 0.08, step: 0.002, label: '倒角半径' },
     }),
+    自发光: folder({
+      emBulb: { value: d.emissive.bulb, min: 0, max: 20, step: 0.5, label: '灯泡' },
+      emLed: { value: d.emissive.ledStrip, min: 0, max: 20, step: 0.5, label: '灯带' },
+      emScreen: { value: d.emissive.screen, min: 0, max: 10, step: 0.1, label: '屏幕' },
+      emPool: { value: d.emissive.pool, min: 0, max: 1, step: 0.05, label: '光斑' },
+    }),
     Bloom: folder({
       bloomIntensity: { value: d.bloom.intensity, min: 0, max: 3, step: 0.05, label: '强度' },
     }),
@@ -94,6 +100,12 @@ export default function DebugPanel() {
       lighting: { day: pick(v, 'day'), night: pick(v, 'night') },
       ao: { intensity: v.aoIntensity as number, radius: v.aoRadius as number },
       bloom: { intensity: v.bloomIntensity as number },
+      emissive: {
+        bulb: v.emBulb as number,
+        ledStrip: v.emLed as number,
+        screen: v.emScreen as number,
+        pool: v.emPool as number,
+      },
       camera: {
         azimuthRangeDeg: v.azimuthRangeDeg as number,
         minDepressionDeg: v.minDepressionDeg as number,

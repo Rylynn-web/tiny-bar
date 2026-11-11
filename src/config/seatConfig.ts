@@ -58,8 +58,26 @@ function tableSeats(key: 'A' | 'B', zone: SeatZone): Seat[] {
   }))
 }
 
-// ── 占位：吧台区（第二批）、沙发区（第三批）搭好后改成按家具计算 ──
-const bar = sceneConfig.zones.bar
+/** 吧台的两张吧凳：面朝吧台（-Z） */
+function barSeats(): Seat[] {
+  const st = sceneConfig.bar.stools
+  const z = sceneConfig.bar.counter.frontZ + st.fromCounter
+  return st.xs.map((x, i) => {
+    const position: Vec3 = [x, st.seatHeight, z]
+    return {
+      id: `bar-${i + 1}`,
+      zone: 'bar',
+      furniture: 'stool',
+      position,
+      rotationY: Math.PI,
+      pose: 'stool',
+      focus: makeFocus(position),
+      ready: true,
+    }
+  })
+}
+
+// ── 占位：沙发区（第三批）搭好后改成按家具计算 ──
 const lounge = sceneConfig.zones.lounge
 const placeholder = (
   id: string,
@@ -71,8 +89,7 @@ const placeholder = (
 ): Seat => ({ id, zone, furniture, pose, position, rotationY, focus: makeFocus(position), ready: false })
 
 export const seats: Seat[] = [
-  placeholder('bar-1', 'bar', 'stool', 'stool', [bar.x + 0.9, 0.72, bar.z + 0.55], Math.PI),
-  placeholder('bar-2', 'bar', 'stool', 'stool', [bar.x + 1.5, 0.72, bar.z + 0.55], Math.PI),
+  ...barSeats(),
   ...tableSeats('A', 'tableA'),
   ...tableSeats('B', 'tableB'),
   placeholder('lounge-sofa', 'lounge', 'sofa', 'sofa', [lounge.x, 0.42, lounge.z], Math.PI / 4),

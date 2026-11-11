@@ -5,6 +5,7 @@ import { Effects } from './Effects'
 import { Lighting } from './Lighting'
 import { Room } from './room/Room'
 import { DiningArea } from './furniture/DiningArea'
+import { BarArea } from './bar/BarArea'
 import { BarBuddy } from './character/BarBuddy'
 import { DoubleTapReset } from './interaction/tap'
 
@@ -23,6 +24,7 @@ export function Scene() {
       <DoubleTapReset />
       <Room />
       <DiningArea />
+      <BarArea />
       <BarBuddy />
       <Effects />
     </Canvas>

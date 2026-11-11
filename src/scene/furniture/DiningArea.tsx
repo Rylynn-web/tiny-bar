@@ -23,6 +23,7 @@ export function DiningArea() {
                 position={t.position}
                 color={palette.cream}
                 tier="rod"
+                segments={sceneConfig.detail.cylinderSegments.large}
                 castShadow={false}
               />
             )}

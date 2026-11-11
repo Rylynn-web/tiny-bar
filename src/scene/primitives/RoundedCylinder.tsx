@@ -5,20 +5,21 @@ import { sceneConfig } from '../../config/sceneConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { Matte } from './Matte'
 
-type Props = Omit<ThreeElements['mesh'], 'args' | 'children' | 'ref'> & {
+type Props = Omit<ThreeElements['mesh'], 'args' | 'children' | 'ref' | 'material'> & {
   radius: number
   height: number
   color: string
   segments?: number
   tier?: keyof typeof sceneConfig.bevelTiers
   /** 自定义材质（如金属）；不传则用哑光 color */
-  material?: ReactNode
+  surface?: ReactNode
 }
 
-const ARC_STEPS = 6
 
 /** 上下边缘带统一倒角的圆柱（旋转体）。原点在底面中心 */
-export function RoundedCylinder({ radius, height, color, segments = 48, tier = 'large', material, ...rest }: Props) {
+export function RoundedCylinder({ radius, height, color, segments, tier = 'large', surface, ...rest }: Props) {
+  const radial = segments ?? sceneConfig.detail.cylinderSegments[tier]
+  const ARC_STEPS = sceneConfig.detail.cylinderArcSteps[tier]
   const { bevel } = useSceneParams()
   const tierBevel = bevel * sceneConfig.bevelTiers[tier]
   const geometry = useMemo(() => {
@@ -35,12 +36,12 @@ export function RoundedCylinder({ radius, height, color, segments = 48, tier = '
       pts.push(new Vector2(radius - b + b * Math.cos(a), height - b + b * Math.sin(a)))
     }
     pts.push(new Vector2(0, height))
-    return new LatheGeometry(pts, segments)
-  }, [tierBevel, radius, height, segments])
+    return new LatheGeometry(pts, radial)
+  }, [tierBevel, radius, height, radial, ARC_STEPS])
 
   return (
     <mesh geometry={geometry} castShadow receiveShadow {...rest}>
-      {material ?? <Matte color={color} />}
+      {surface ?? <Matte color={color} />}
     </mesh>
   )
 }

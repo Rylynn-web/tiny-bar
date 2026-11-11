@@ -72,11 +72,37 @@ export const sceneConfig = {
   bevel: 0.03,
   bevelTiers: { large: 1, small: 0.5, rod: 0.25 },
   bevelSmoothness: 4,
+  // 几何细分按档位分级：小件和细杆在这个视距下看不出差别，少分段能省很多面（手机）
+  detail: {
+    boxSmoothness: { large: 4, small: 3, rod: 2 },
+    cylinderSegments: { large: 48, small: 32, rod: 16 },
+    cylinderArcSteps: { large: 6, small: 3, rod: 2 },
+    // 旋转体圆周分段：默认 / 瓶子杯子等小物件
+    latheSegments: 32,
+    smallLatheSegments: 16,
+  },
   material: {
     roughness: 0.85,
     metalness: 0,
     // 哑光表面吃一点环境反射，补一层柔光；0 = 完全不受环境影响
     envMapIntensity: 0.25,
+    // 实例化物件的基础色（实例颜色会乘上它，所以必须是白色）
+    instanceBase: '#FFFFFF',
+  },
+  // 自发光分组强度：最终强度 = 分组强度 × 当前时段的 glow 倍率。夜晚要高于 Bloom 阈值才有光晕
+  emissive: {
+    bulb: 8,
+    ledStrip: 6,
+    screen: 2,
+    // 灯具下方的假光斑（叠加混合的径向渐变），不是真实光源
+    pool: 0.55,
+  },
+  // 光斑贴图：径向渐变，启动时生成一次
+  lightPool: {
+    textureSize: 128,
+    // 渐变中间一档的位置和亮度
+    midStop: 0.35,
+    midAlpha: 0.45,
   },
   // 金属白名单（不锈钢 / 镀铬 / 黄铜）
   metal: {
@@ -261,6 +287,150 @@ export const sceneConfig = {
   roundRug: {
     radius: 0.85,
     thickness: 0.012,
+  },
+
+
+  // ───────── 吧台区（后墙 z = -depth/2）─────────
+  bar: {
+    backCounter: {
+      xFrom: -1.4,
+      xTo: 2.2,
+      depth: 0.6,
+      height: 0.9,
+      topThickness: 0.04,
+    },
+    // 水槽：深色薄板嵌在台面上，离台面前沿 frontMargin
+    sink: { x: -1.0, width: 0.42, depth: 0.34, plateThickness: 0.012, frontMargin: 0.05 },
+    // 水龙头：从离墙 backOffset 处立起，弯向前方
+    faucet: { x: -1.0, height: 0.3, reach: 0.17, radius: 0.012, backOffset: 0.1 },
+    // 浮板置物架：x 为中心，y 为板面高度，items 决定上面摆什么
+    shelves: {
+      depth: 0.2,
+      thickness: 0.035,
+      rows: [
+        { x: -0.55, y: 1.85, width: 1.1, items: 'mug' },
+        { x: -0.55, y: 1.5, width: 1.1, items: 'cup' },
+        { x: 1.35, y: 1.9, width: 1.5, items: 'bottle' },
+        { x: 1.35, y: 1.5, width: 1.5, items: 'bottle' },
+      ] as const,
+    },
+    // 杯子轮廓 [半径, 高度]，自下而上，开口朝上（外壁 → 杯口 → 内壁）
+    mug: {
+      count: 7,
+      colors: ['dark'] as const,
+      profile: [[0.001, 0], [0.038, 0], [0.041, 0.006], [0.041, 0.09], [0.036, 0.09], [0.034, 0.012], [0.001, 0.012]] as [number, number][],
+      handleRadius: 0.024,
+      handleTube: 0.007,
+    },
+    cup: {
+      count: 7,
+      colors: ['cream'] as const,
+      profile: [[0.001, 0], [0.028, 0], [0.036, 0.008], [0.04, 0.06], [0.035, 0.06], [0.03, 0.01], [0.001, 0.01]] as [number, number][],
+      handleRadius: 0.018,
+      handleTube: 0.006,
+    },
+    // 酒瓶：3 种瓶型轮廓，每层按顺序轮流使用
+    bottles: {
+      perShelf: 11,
+      colors: ['rust', 'pendantGreen', 'wood', 'navy', 'terracotta', 'brass', 'dark'] as const,
+      profiles: [
+        [[0.001, 0], [0.034, 0], [0.037, 0.01], [0.037, 0.17], [0.03, 0.2], [0.013, 0.23], [0.012, 0.28], [0.001, 0.285]],
+        [[0.001, 0], [0.04, 0], [0.042, 0.012], [0.042, 0.15], [0.035, 0.17], [0.015, 0.19], [0.014, 0.24], [0.001, 0.245]],
+        [[0.001, 0], [0.029, 0], [0.031, 0.01], [0.031, 0.22], [0.021, 0.25], [0.01, 0.27], [0.01, 0.31], [0.001, 0.315]],
+      ] as [number, number][][],
+    },
+    espresso: {
+      x: -0.2,
+      size: [0.56, 0.34, 0.4] as Vec3,
+      panelHeight: 0.12,
+      panelDepth: 0.02,
+      groupHeadRadius: 0.034,
+      groupHeadHeight: 0.05,
+      groupHeadSpacing: 0.2,
+      // 冲煮头离机身底部的高度
+      groupHeadY: 0.14,
+      trayHeight: 0.03,
+      trayDepth: 0.14,
+      // 前面板离顶部、接水盘缩进机身的距离
+      panelInset: 0.02,
+      trayTuck: 0.02,
+      topCupCount: 4,
+      topCupHeight: 0.05,
+    },
+    grinders: {
+      xs: [0.42, 0.68],
+      baseSize: [0.15, 0.22, 0.18] as Vec3,
+      hopper: [[0.001, 0], [0.04, 0], [0.065, 0.1], [0.07, 0.13], [0.001, 0.135]] as [number, number][],
+    },
+    pourOver: {
+      x: 1.05,
+      kettle: [[0.001, 0], [0.065, 0], [0.07, 0.01], [0.068, 0.1], [0.045, 0.13], [0.02, 0.14], [0.001, 0.145]] as [number, number][],
+      spoutRadius: 0.008,
+      spoutLength: 0.13,
+      // 壶嘴从壶身高度的这个比例处伸出，向上倾斜的角度
+      spoutHeightRatio: 0.75,
+      spoutAngle: deg(60),
+      dripperX: 0.18,
+      server: [[0.001, 0], [0.05, 0], [0.055, 0.1], [0.045, 0.12], [0.001, 0.12]] as [number, number][],
+      dripper: [[0.001, 0], [0.025, 0], [0.06, 0.07], [0.055, 0.075], [0.001, 0.02]] as [number, number][],
+    },
+    jars: { xFrom: 1.45, count: 4, spacing: 0.17, radius: 0.045, heights: [0.14, 0.11, 0.16, 0.1] },
+
+    // L 形吧台：长边平行后墙，右端圆角折回后墙方向，左端开口
+    counter: {
+      xFrom: -1.2,
+      xTo: 1.6,
+      frontZ: -1.7,
+      // 折回段一直延伸到这里（z）
+      returnToZ: -2.5,
+      depth: 0.55,
+      cornerRadius: 0.35,
+      height: 1.05,
+      topThickness: 0.05,
+      overhang: 0.04,
+    },
+    // 灯带贴着台面出檐外沿的下方，从斜上方也看得到
+    ledStrip: { radius: 0.011, belowTop: 0.016, outset: 1 },
+    pos: {
+      x: -0.9,
+      baseSize: [0.18, 0.06, 0.16] as Vec3,
+      screenSize: [0.26, 0.18, 0.02] as Vec3,
+      screenTilt: deg(20),
+      readerSize: [0.07, 0.03, 0.12] as Vec3,
+      readerOffset: 0.24,
+      napkinSize: [0.12, 0.08, 0.07] as Vec3,
+      napkinOffset: 0.42,
+    },
+    shakers: {
+      xs: [0.15, 0.27, 0.39],
+      profile: [[0.001, 0], [0.03, 0], [0.034, 0.01], [0.04, 0.12], [0.036, 0.14], [0.026, 0.16], [0.012, 0.18], [0.001, 0.182]] as [number, number][],
+      bottleX: 0.52,
+    },
+    stools: {
+      xs: [0.55, 1.15],
+      // 离吧台正面的距离
+      fromCounter: 0.36,
+      seatHeight: 0.75,
+      cushionRadius: 0.18,
+      cushionThickness: 0.07,
+      columnRadius: 0.028,
+      base: [[0.001, 0], [0.2, 0], [0.2, 0.015], [0.14, 0.04], [0.04, 0.06], [0.001, 0.062]] as [number, number][],
+      footRingRadius: 0.16,
+      footRingTube: 0.011,
+      footRingY: 0.3,
+    },
+    pendants: {
+      xs: [-0.7, 0.2, 1.1],
+      hangFrom: 2.6,
+      shadeBottom: 1.85,
+      cordRadius: 0.006,
+      // 宽扁灯罩轮廓：自下而上（外沿 → 顶），开口朝下
+      shade: [[0.2, 0], [0.2, 0.012], [0.12, 0.05], [0.05, 0.07], [0.001, 0.072]] as [number, number][],
+      capRadius: 0.045,
+      bulbRadius: 0.04,
+      // 灯下吧台台面上的光斑半径
+      poolRadius: 0.5,
+    },
   },
 
   // ───────── 小人 Bar Buddy ─────────
