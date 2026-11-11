@@ -24,6 +24,10 @@ export const sceneConfig = {
     // 主光阴影相机覆盖范围（世界单位，正交），要盖住整个房间
     cameraExtent: 5.8,
   },
+  performance: {
+    // 每个物件内部把同材质零件合并成一个网格（减少绘制调用）；leva 里可开关对比
+    mergeStatic: true,
+  },
   postprocessing: {
     // 后处理内的 MSAA 采样数（0 = 关）。手机可降到 0 或 2
     multisampling: 4,

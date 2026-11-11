@@ -2,6 +2,8 @@ import { Fragment } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { sceneConfig } from '../config/sceneConfig'
 import { useEditorBridge } from '../state/editorBridge'
+import { useSceneParams } from '../state/sceneParams'
+import { MergeStatic } from './primitives/MergeStatic'
 import { CameraRig } from './CameraRig'
 import { Effects } from './Effects'
 import { Lighting } from './Lighting'
@@ -14,6 +16,7 @@ export function Scene() {
   const { canvas } = sceneConfig
   // 只有开发环境 ?edit 时才有编辑器；生产环境为 null
   const bridge = useEditorBridge()
+  const params = useSceneParams()
   const Root = bridge?.Root ?? Fragment
   const Extras = bridge?.SceneExtras
 
@@ -30,7 +33,9 @@ export function Scene() {
         <Lighting />
         <CameraRig />
         <DoubleTapReset />
-        <Room />
+        <MergeStatic enabled={params.mergeStatic} version={params}>
+          <Room />
+        </MergeStatic>
         <LayoutRenderer />
         <BarBuddy />
         {Extras && <Extras />}

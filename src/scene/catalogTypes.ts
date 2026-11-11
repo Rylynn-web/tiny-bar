@@ -23,4 +23,6 @@ export type CatalogEntry = {
   defaultProps?: LayoutProps
   /** 参与重叠检测（地毯、吊灯这类允许和别的东西叠在一起的设为 false） */
   collide?: boolean
+  /** 不参与网格合并（以后需要单独动起来的物件设为 false） */
+  merge?: boolean
 }

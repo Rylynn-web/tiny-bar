@@ -68,6 +68,9 @@ export default function DebugPanel() {
       emLamp: { value: d.emissive.lamp, min: 0, max: 20, step: 0.5, label: '台灯' },
       emPool: { value: d.emissive.pool, min: 0, max: 1, step: 0.05, label: '光斑' },
     }),
+    性能: folder({
+      mergeStatic: { value: d.mergeStatic, label: '合并网格' },
+    }),
     Bloom: folder({
       bloomIntensity: { value: d.bloom.intensity, min: 0, max: 3, step: 0.05, label: '强度' },
     }),
@@ -102,6 +105,7 @@ export default function DebugPanel() {
       lighting: { day: pick(v, 'day'), night: pick(v, 'night') },
       ao: { intensity: v.aoIntensity as number, radius: v.aoRadius as number },
       bloom: { intensity: v.bloomIntensity as number },
+      mergeStatic: v.mergeStatic as boolean,
       emissive: {
         bulb: v.emBulb as number,
         ledStrip: v.emLed as number,
