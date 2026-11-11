@@ -13,6 +13,7 @@ import {
   type Mesh,
 } from 'three'
 import { buddyShape as S, sceneConfig } from '../../config/sceneConfig'
+import { getSeat } from '../../config/seatConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { useBlink } from './useBlink'
 import { useBreath } from './useBreath'
@@ -76,6 +77,7 @@ export function BarBuddy() {
         sheen: B.sheen,
         sheenRoughness: B.sheenRoughness,
         sheenColor: '#ffffff',
+        envMapIntensity: sceneConfig.material.envMapIntensity,
       }),
     [],
   )
@@ -101,21 +103,21 @@ export function BarBuddy() {
 
   // 摆放：坐在椅子上，或站在指定位置
   const scale = B.height / S.designHeight
-  const chair = sceneConfig.chair
+  const seat = getSeat(B.seatId)
   const placement = useMemo(() => {
     if (!sitting) {
       return { position: B.standPosition, rotationY: B.standRotationY }
     }
-    const back = new Vector3(0, 0, -B.sitBack).applyAxisAngle(new Vector3(0, 1, 0), chair.rotationY)
+    const back = new Vector3(0, 0, -B.sitBack).applyAxisAngle(new Vector3(0, 1, 0), seat.rotationY)
     return {
       position: [
-        chair.position[0] + back.x,
-        chair.seatHeight - B.sitSink * scale,
-        chair.position[2] + back.z,
+        seat.position[0] + back.x,
+        seat.position[1] - B.sitSink * scale,
+        seat.position[2] + back.z,
       ] as [number, number, number],
-      rotationY: chair.rotationY,
+      rotationY: seat.rotationY,
     }
-  }, [sitting, chair, scale])
+  }, [sitting, seat, scale])
 
   return (
     <group position={placement.position} rotation={[0, placement.rotationY, 0]} scale={scale}>

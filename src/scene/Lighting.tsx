@@ -1,11 +1,13 @@
+import { Environment, Lightformer } from '@react-three/drei'
 import { sceneConfig } from '../config/sceneConfig'
 import { useLighting } from '../state/sceneParams'
 
-/** 背景 + 环境光（天空/地面两色）+ 投影主光。吊灯的光在 PendantLamp 里 */
+/** 背景 + 环境光（天空/地面两色）+ 唯一一盏投影主光 + 程序化环境反射 */
 export function Lighting() {
   const l = useLighting()
   const s = sceneConfig.shadows
   const e = s.cameraExtent
+  const env = sceneConfig.environment
   return (
     <>
       <color attach="background" args={[l.background]} />
@@ -26,6 +28,21 @@ export function Lighting() {
         shadow-camera-near={0.1}
         shadow-camera-far={20}
       />
+      {/* 只渲染一次的柔光板环境，给金属反射用；不下载 HDR */}
+      <Environment frames={1} resolution={env.resolution}>
+        <color attach="background" args={[env.baseColor]} />
+        {env.lightformers.map((f, i) => (
+          <Lightformer
+            key={i}
+            form="rect"
+            position={f.position}
+            rotation-x={f.rotationX}
+            scale={[f.scale[0], f.scale[1], 1]}
+            intensity={f.intensity}
+            target={[0, 0, 0]}
+          />
+        ))}
+      </Environment>
     </>
   )
 }

@@ -3,10 +3,8 @@ import { sceneConfig } from '../config/sceneConfig'
 import { CameraRig } from './CameraRig'
 import { Effects } from './Effects'
 import { Lighting } from './Lighting'
-import { RoomCorner } from './room/RoomCorner'
-import { Table } from './furniture/Table'
-import { Chair } from './furniture/Chair'
-import { PendantLamp } from './furniture/PendantLamp'
+import { Room } from './room/Room'
+import { DiningArea } from './furniture/DiningArea'
 import { BarBuddy } from './character/BarBuddy'
 import { DoubleTapReset } from './interaction/tap'
 
@@ -23,10 +21,8 @@ export function Scene() {
       <Lighting />
       <CameraRig />
       <DoubleTapReset />
-      <RoomCorner />
-      <Table />
-      <Chair />
-      <PendantLamp />
+      <Room />
+      <DiningArea />
       <BarBuddy />
       <Effects />
     </Canvas>

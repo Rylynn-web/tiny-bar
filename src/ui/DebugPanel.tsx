@@ -15,8 +15,7 @@ function lightingFolder(key: 'day' | 'night') {
     [`${key}.ambientSky`]: { value: l.ambientSky, label: '环境光(天)' },
     [`${key}.ambientGround`]: { value: l.ambientGround, label: '环境光(地)' },
     [`${key}.ambientIntensity`]: { value: l.ambientIntensity, min: 0, max: 6, step: 0.05, label: '环境光强度' },
-    [`${key}.lampIntensity`]: { value: l.lampIntensity, min: 0, max: 40, step: 0.5, label: '吊灯强度' },
-    [`${key}.bulbGlow`]: { value: l.bulbGlow, min: 0, max: 10, step: 0.1, label: '灯泡发光' },
+    [`${key}.glow`]: { value: l.glow, min: 0, max: 3, step: 0.05, label: '自发光倍率' },
   }
 }
 
@@ -47,9 +46,22 @@ export default function DebugPanel() {
       terracotta: { value: d.palette.terracotta, label: '陶土红' },
       dark: { value: d.palette.dark, label: '深色' },
       warmLight: { value: d.palette.warmLight, label: '暖光' },
+      concrete: { value: d.palette.concrete, label: '水泥地' },
+      slate: { value: d.palette.slate, label: '石板灰' },
+      baseboard: { value: d.palette.baseboard, label: '踢脚线' },
+      cream: { value: d.palette.cream, label: '奶白' },
+      navy: { value: d.palette.navy, label: '深蓝' },
+      rust: { value: d.palette.rust, label: '锈红' },
+      blush: { value: d.palette.blush, label: '粉' },
+      pendantGreen: { value: d.palette.pendantGreen, label: '吊灯绿' },
+      steel: { value: d.palette.steel, label: '不锈钢' },
+      brass: { value: d.palette.brass, label: '黄铜' },
     }),
     造型: folder({
       bevel: { value: d.bevel, min: 0, max: 0.08, step: 0.002, label: '倒角半径' },
+    }),
+    Bloom: folder({
+      bloomIntensity: { value: d.bloom.intensity, min: 0, max: 3, step: 0.05, label: '强度' },
     }),
     AO: folder({
       aoIntensity: { value: d.ao.intensity, min: 0, max: 8, step: 0.1, label: '强度' },
@@ -75,17 +87,13 @@ export default function DebugPanel() {
   useEffect(() => {
     setParams({
       timeOfDay: v['时段'] as SceneParams['timeOfDay'],
-      palette: {
-        wall: v.wall as string,
-        wood: v.wood as string,
-        sage: v.sage as string,
-        terracotta: v.terracotta as string,
-        dark: v.dark as string,
-        warmLight: v.warmLight as string,
-      },
+      palette: Object.fromEntries(
+        Object.keys(d.palette).map((k) => [k, v[k] as string]),
+      ) as SceneParams['palette'],
       bevel: v.bevel as number,
       lighting: { day: pick(v, 'day'), night: pick(v, 'night') },
       ao: { intensity: v.aoIntensity as number, radius: v.aoRadius as number },
+      bloom: { intensity: v.bloomIntensity as number },
       camera: {
         azimuthRangeDeg: v.azimuthRangeDeg as number,
         minDepressionDeg: v.minDepressionDeg as number,

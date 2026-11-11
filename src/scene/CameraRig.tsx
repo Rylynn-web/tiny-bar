@@ -20,7 +20,8 @@ const [tx, ty, tz] = cam.target
 // 默认相机位置：焦点 + 球坐标偏移
 const defaultPosition = new Vector3().setFromSphericalCoords(cam.distance, defaultPolar, defaultAzimuth).add(new Vector3(tx, ty, tz))
 
-const roomHalf = sceneConfig.room.size / 2
+const halfW = sceneConfig.room.width / 2
+const halfD = sceneConfig.room.depth / 2
 
 export function CameraRig() {
   // 显式把正交相机交给 CameraControls；控制器实例在相机就绪后才创建，所以用 state 跟踪
@@ -91,9 +92,9 @@ export function CameraRig() {
     if (Math.abs(zoom - lastZoom.current) < 1e-4) return
     lastZoom.current = zoom
     const k = Math.max(0, 1 - fullZoomRef.current / zoom)
-    const half = roomHalf * sceneConfig.controls.boundaryScale * k
-    boundary.min.set(tx - half, ty, tz - half)
-    boundary.max.set(tx + half, ty, tz + half)
+    const s = sceneConfig.controls.boundaryScale * k
+    boundary.min.set(tx - halfW * s, ty, tz - halfD * s)
+    boundary.max.set(tx + halfW * s, ty, tz + halfD * s)
     c.setBoundary(boundary)
   })
 
