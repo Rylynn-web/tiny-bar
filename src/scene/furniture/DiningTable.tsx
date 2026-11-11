@@ -3,16 +3,14 @@ import { useSceneParams } from '../../state/sceneParams'
 import { BevelBox } from '../primitives/BevelBox'
 import { RoundedCylinder } from '../primitives/RoundedCylinder'
 
-type Props = { position: [number, number, number] }
-
-/** 方桌：奶白台面 + 深色立柱 + 圆底盘 */
-export function DiningTable({ position }: Props) {
+/** 方桌：奶白台面 + 深色立柱 + 圆底盘。原点在地面中心 */
+export function DiningTable() {
   const { palette } = useSceneParams()
   const t = sceneConfig.diningTable
   const columnBottom = t.baseThickness
   const columnHeight = t.height - t.topThickness - columnBottom
   return (
-    <group position={position}>
+    <group>
       <RoundedCylinder radius={t.baseRadius} height={t.baseThickness} color={palette.dark} tier="small" />
       <RoundedCylinder
         radius={t.columnRadius}

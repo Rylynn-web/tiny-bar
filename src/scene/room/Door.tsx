@@ -4,15 +4,14 @@ import { BevelBox } from '../primitives/BevelBox'
 import { Glass } from '../primitives/Glass'
 import { Metal } from '../primitives/Metal'
 
-/** 后墙上的门：深色门板 + 圆形舷窗 + 金属门把。局部 +Z 朝向室内 */
+/** 门（墙面物件）：深色门板 + 圆形舷窗 + 金属门把。原点在墙面上、门底边中点，局部 +Z 朝向室内 */
 export function Door() {
   const { palette } = useSceneParams()
   const d = sceneConfig.door
-  const wallZ = -sceneConfig.room.depth / 2
   const front = d.thickness + d.surfaceOffset
 
   return (
-    <group position={[d.x, 0, wallZ]}>
+    <group>
       <BevelBox
         tier="small"
         size={[d.width, d.height, d.thickness]}

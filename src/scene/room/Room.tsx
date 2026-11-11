@@ -1,9 +1,8 @@
 import { sceneConfig } from '../../config/sceneConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { BevelBox } from '../primitives/BevelBox'
-import { Door } from './Door'
 
-/** 水泥地面 + 后墙/左墙 + 墙顶压边 + 踢脚线 + 门 */
+/** 水泥地面 + 后墙/左墙 + 墙顶压边 + 踢脚线（门等墙面物件在 layout.json 里） */
 export function Room() {
   const { palette } = useSceneParams()
   const r = sceneConfig.room
@@ -64,7 +63,6 @@ export function Room() {
         color={palette.baseboard}
       />
 
-      <Door />
     </group>
   )
 }

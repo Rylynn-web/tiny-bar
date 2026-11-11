@@ -15,3 +15,17 @@ export function onResetView(listener: Listener) {
     resetListeners.delete(listener)
   }
 }
+
+const enabledListeners = new Set<(enabled: boolean) => void>()
+
+/** 暂停 / 恢复相机控制（编辑器拖动物件时用） */
+export function setControlsEnabled(enabled: boolean) {
+  enabledListeners.forEach((l) => l(enabled))
+}
+
+export function onControlsEnabled(listener: (enabled: boolean) => void) {
+  enabledListeners.add(listener)
+  return () => {
+    enabledListeners.delete(listener)
+  }
+}

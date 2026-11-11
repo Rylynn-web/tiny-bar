@@ -13,7 +13,7 @@ import {
   type Mesh,
 } from 'three'
 import { buddyShape as S, sceneConfig } from '../../config/sceneConfig'
-import { getSeat } from '../../config/seatConfig'
+import { useSeats } from '../../config/seatConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { useBlink } from './useBlink'
 import { useBreath } from './useBreath'
@@ -103,9 +103,11 @@ export function BarBuddy() {
 
   // 摆放：坐在椅子上，或站在指定位置
   const scale = B.height / S.designHeight
-  const seat = getSeat(B.seatId)
+  // 座位来自 layout 推导：家具挪动时小人跟着走；找不到指定座位就坐第一个，一个座位都没有就站着
+  const seats = useSeats()
+  const seat = seats.find((s) => s.id === B.seatId) ?? seats[0]
   const placement = useMemo(() => {
-    if (!sitting) {
+    if (!sitting || !seat) {
       return { position: B.standPosition, rotationY: B.standRotationY }
     }
     const back = new Vector3(0, 0, -B.sitBack).applyAxisAngle(new Vector3(0, 1, 0), seat.rotationY)

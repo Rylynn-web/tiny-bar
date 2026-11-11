@@ -4,6 +4,8 @@ import { sceneConfig } from '../../config/sceneConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { Matte } from '../primitives/Matte'
 import { Metal } from '../primitives/Metal'
+import type { CatalogProps, SeatAnchor } from '../catalogTypes'
+import { paletteColor } from '../paletteColor'
 
 const C = sceneConfig.shellChair
 
@@ -86,20 +88,15 @@ const legs = [
   return { mid, quaternion, length }
 })
 
-type Props = {
-  color: string
-  position?: [number, number, number]
-  rotationY?: number
-}
-
-/** 壳形椅：一体感的座面 + 弯曲靠背 + 四条不锈钢细腿。局部 +Z 为正面，原点在地面 */
-export function ShellChair({ color, position, rotationY = 0 }: Props) {
-  const { bevel } = useSceneParams()
+/** 壳形椅：一体感的座面 + 弯曲靠背 + 四条不锈钢细腿。局部 +Z 为正面，原点在地面。props.color 为调色板键名 */
+export function ShellChair({ props }: CatalogProps) {
+  const { bevel, palette } = useSceneParams()
   const g = getChairGeometry(bevel * sceneConfig.bevelTiers.small)
+  const color = paletteColor(palette, props.color, 'cream')
   const material = useMemo(() => <Matte color={color} />, [color])
 
   return (
-    <group position={position} rotation={[0, rotationY, 0]}>
+    <group>
       {/* 座面：形状平面转到水平，向上拉伸出厚度 */}
       <mesh geometry={g.seat} rotation={[-Math.PI / 2, 0, 0]} position={[0, legTop, 0]} castShadow receiveShadow>
         {material}
@@ -123,3 +120,6 @@ export function ShellChair({ color, position, rotationY = 0 }: Props) {
     </group>
   )
 }
+
+/** 座位锚点：坐垫表面中心，面朝椅子正面 */
+ShellChair.seats = [{ position: [0, C.seatHeight, 0], rotationY: 0, pose: 'chair' }] satisfies SeatAnchor[]

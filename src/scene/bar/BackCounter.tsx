@@ -4,21 +4,22 @@ import { sceneConfig } from '../../config/sceneConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { BevelBox } from '../primitives/BevelBox'
 import { Metal } from '../primitives/Metal'
+import { CoffeeStation } from './CoffeeStation'
 
 const B = sceneConfig.bar
-const wallZ = -sceneConfig.room.depth / 2
 
-/** 后操作台：柜体 + 木台面 + 水槽 + 水龙头 */
+/** 后操作台（地面物件）：柜体 + 木台面 + 水槽 + 水龙头 + 台面上的咖啡区。原点在底面中心，背面朝 -Z 贴墙 */
 export function BackCounter() {
   const { palette } = useSceneParams()
   const c = B.backCounter
-  const width = c.xTo - c.xFrom
-  const cx = (c.xFrom + c.xTo) / 2
-  const cz = wallZ + c.depth / 2
+  const width = c.width
+  const cx = 0
+  const cz = 0
+  const back = -c.depth / 2
   const bodyHeight = c.height - c.topThickness
 
   const sink = B.sink
-  const sinkZ = wallZ + c.depth - sink.frontMargin - sink.depth / 2
+  const sinkZ = c.depth / 2 - sink.frontMargin - sink.depth / 2
 
   const f = B.faucet
   const faucetGeometry = useMemo(() => {
@@ -48,9 +49,10 @@ export function BackCounter() {
         color={palette.dark}
         castShadow={false}
       />
-      <mesh geometry={faucetGeometry} position={[f.x, c.height, wallZ + f.backOffset]} castShadow>
+      <mesh geometry={faucetGeometry} position={[f.x, c.height, back + f.backOffset]} castShadow>
         <Metal />
       </mesh>
+      <CoffeeStation />
     </group>
   )
 }

@@ -4,7 +4,7 @@ import { CameraControls, CameraControlsImpl, OrthographicCamera } from '@react-t
 import { Box3, MathUtils, Vector3, type OrthographicCamera as OrthoCam } from 'three'
 import { sceneConfig } from '../config/sceneConfig'
 import { useSceneParams } from '../state/sceneParams'
-import { onResetView } from '../state/cameraActions'
+import { onControlsEnabled, onResetView } from '../state/cameraActions'
 
 const { ACTION } = CameraControlsImpl
 const cam = sceneConfig.camera
@@ -106,6 +106,15 @@ export function CameraRig() {
         if (!c) return
         c.setLookAt(defaultPosition.x, defaultPosition.y, defaultPosition.z, tx, ty, tz, true)
         c.zoomTo(fullZoomRef.current, true)
+      }),
+    [],
+  )
+
+  // 编辑器拖动物件时暂停相机
+  useEffect(
+    () =>
+      onControlsEnabled((enabled) => {
+        if (controlsRef.current) controlsRef.current.enabled = enabled
       }),
     [],
   )

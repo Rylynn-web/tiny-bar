@@ -223,8 +223,6 @@ export const sceneConfig = {
     baseboardThickness: 0.02,
   },
   door: {
-    // 门中心在后墙上的 X 位置
-    x: 3.2,
     width: 0.92,
     height: 2.06,
     thickness: 0.05,
@@ -243,12 +241,6 @@ export const sceneConfig = {
     surfaceOffset: 0.002,
   },
 
-  // ───────── 区域锚点（之后几批的家具按这里摆）─────────
-  zones: {
-    bar: { x: 0.8, z: -2.1 },
-    lounge: { x: -2.6, z: 1.8 },
-  },
-
   // ───────── 餐桌区 ─────────
   diningTable: {
     topSize: 0.72,
@@ -257,14 +249,8 @@ export const sceneConfig = {
     columnRadius: 0.035,
     baseRadius: 0.24,
     baseThickness: 0.03,
-    // 两把椅子沿 X 轴面对面，离桌心的距离
-    chairOffset: 0.56,
     // 立柱上下各插进台面/底盘一点，避免接缝
     columnOverlap: 0.005,
-  },
-  tables: {
-    A: { position: [-0.7, 0, -0.2] as Vec3, chairColors: ['navy', 'cream'] as const },
-    B: { position: [1.9, 0, 1.5] as Vec3, chairColors: ['rust', 'cream'] as const, rug: true },
   },
   shellChair: {
     seatWidth: 0.44,
@@ -290,48 +276,44 @@ export const sceneConfig = {
   },
 
 
-  // ───────── 吧台区（后墙 z = -depth/2）─────────
+  // ───────── 吧台区 ─────────
+  // 以下坐标都是各物件的局部坐标（原点在物件底面中心，+Z 朝向房间），摆放位置在 layout.json
   bar: {
+    // 后操作台（连同台面上的咖啡区一起作为一个物件）：背面贴墙
     backCounter: {
-      xFrom: -1.4,
-      xTo: 2.2,
+      width: 3.6,
       depth: 0.6,
       height: 0.9,
       topThickness: 0.04,
     },
     // 水槽：深色薄板嵌在台面上，离台面前沿 frontMargin
-    sink: { x: -1.0, width: 0.42, depth: 0.34, plateThickness: 0.012, frontMargin: 0.05 },
+    sink: { x: -1.4, width: 0.42, depth: 0.34, plateThickness: 0.012, frontMargin: 0.05 },
     // 水龙头：从离墙 backOffset 处立起，弯向前方
-    faucet: { x: -1.0, height: 0.3, reach: 0.17, radius: 0.012, backOffset: 0.1 },
-    // 浮板置物架：x 为中心，y 为板面高度，items 决定上面摆什么
-    shelves: {
+    faucet: { x: -1.4, height: 0.3, reach: 0.17, radius: 0.012, backOffset: 0.1 },
+    // 浮板置物架（墙面物件）：原点在墙面、板面高度处
+    shelf: {
       depth: 0.2,
       thickness: 0.035,
-      rows: [
-        { x: -0.55, y: 1.85, width: 1.1, items: 'mug' },
-        { x: -0.55, y: 1.5, width: 1.1, items: 'cup' },
-        { x: 1.35, y: 1.9, width: 1.5, items: 'bottle' },
-        { x: 1.35, y: 1.5, width: 1.5, items: 'bottle' },
-      ] as const,
+      defaultWidth: 1.2,
     },
-    // 杯子轮廓 [半径, 高度]，自下而上，开口朝上（外壁 → 杯口 → 内壁）
+    // 杯子轮廓 [半径, 高度]，自下而上，开口朝上（外壁 → 杯口 → 内壁）；perMeter = 每米板长放几个
     mug: {
-      count: 7,
+      perMeter: 6.4,
       colors: ['dark'] as const,
       profile: [[0.001, 0], [0.038, 0], [0.041, 0.006], [0.041, 0.09], [0.036, 0.09], [0.034, 0.012], [0.001, 0.012]] as [number, number][],
       handleRadius: 0.024,
       handleTube: 0.007,
     },
     cup: {
-      count: 7,
+      perMeter: 6.4,
       colors: ['cream'] as const,
       profile: [[0.001, 0], [0.028, 0], [0.036, 0.008], [0.04, 0.06], [0.035, 0.06], [0.03, 0.01], [0.001, 0.01]] as [number, number][],
       handleRadius: 0.018,
       handleTube: 0.006,
     },
-    // 酒瓶：3 种瓶型轮廓，每层按顺序轮流使用
+    // 酒瓶：3 种瓶型轮廓轮流使用；颜色从 props.seed 开始轮换，两层不会一模一样
     bottles: {
-      perShelf: 11,
+      perMeter: 7.4,
       colors: ['rust', 'pendantGreen', 'wood', 'navy', 'terracotta', 'brass', 'dark'] as const,
       profiles: [
         [[0.001, 0], [0.034, 0], [0.037, 0.01], [0.037, 0.17], [0.03, 0.2], [0.013, 0.23], [0.012, 0.28], [0.001, 0.285]],
@@ -340,7 +322,7 @@ export const sceneConfig = {
       ] as [number, number][][],
     },
     espresso: {
-      x: -0.2,
+      x: -0.6,
       size: [0.56, 0.34, 0.4] as Vec3,
       panelHeight: 0.12,
       panelDepth: 0.02,
@@ -358,12 +340,12 @@ export const sceneConfig = {
       topCupHeight: 0.05,
     },
     grinders: {
-      xs: [0.42, 0.68],
+      xs: [0.02, 0.28],
       baseSize: [0.15, 0.22, 0.18] as Vec3,
       hopper: [[0.001, 0], [0.04, 0], [0.065, 0.1], [0.07, 0.13], [0.001, 0.135]] as [number, number][],
     },
     pourOver: {
-      x: 1.05,
+      x: 0.65,
       kettle: [[0.001, 0], [0.065, 0], [0.07, 0.01], [0.068, 0.1], [0.045, 0.13], [0.02, 0.14], [0.001, 0.145]] as [number, number][],
       spoutRadius: 0.008,
       spoutLength: 0.13,
@@ -374,16 +356,14 @@ export const sceneConfig = {
       server: [[0.001, 0], [0.05, 0], [0.055, 0.1], [0.045, 0.12], [0.001, 0.12]] as [number, number][],
       dripper: [[0.001, 0], [0.025, 0], [0.06, 0.07], [0.055, 0.075], [0.001, 0.02]] as [number, number][],
     },
-    jars: { xFrom: 1.45, count: 4, spacing: 0.17, radius: 0.045, heights: [0.14, 0.11, 0.16, 0.1] },
+    jars: { xFrom: 1.05, count: 4, spacing: 0.17, radius: 0.045, heights: [0.14, 0.11, 0.16, 0.1] },
 
-    // L 形吧台：长边平行后墙，右端圆角折回后墙方向，左端开口
+    // L 形吧台：原点在长边正面的中点。长边沿 X（-length/2 ~ length/2），
+    // 右端圆角折回 -Z 方向（后墙方向）一直到 -returnDepth，左端开口
     counter: {
-      xFrom: -1.2,
-      xTo: 1.6,
-      frontZ: -1.7,
-      // 折回段一直延伸到这里（z）
-      returnToZ: -2.5,
+      length: 2.8,
       depth: 0.55,
+      returnDepth: 0.8,
       cornerRadius: 0.35,
       height: 1.05,
       topThickness: 0.05,
@@ -392,7 +372,7 @@ export const sceneConfig = {
     // 灯带贴着台面出檐外沿的下方，从斜上方也看得到
     ledStrip: { radius: 0.011, belowTop: 0.016, outset: 1 },
     pos: {
-      x: -0.9,
+      x: -1.1,
       baseSize: [0.18, 0.06, 0.16] as Vec3,
       screenSize: [0.26, 0.18, 0.02] as Vec3,
       screenTilt: deg(20),
@@ -402,14 +382,11 @@ export const sceneConfig = {
       napkinOffset: 0.42,
     },
     shakers: {
-      xs: [0.15, 0.27, 0.39],
+      xs: [-0.05, 0.07, 0.19],
       profile: [[0.001, 0], [0.03, 0], [0.034, 0.01], [0.04, 0.12], [0.036, 0.14], [0.026, 0.16], [0.012, 0.18], [0.001, 0.182]] as [number, number][],
-      bottleX: 0.52,
+      bottleX: 0.32,
     },
     stools: {
-      xs: [0.55, 1.15],
-      // 离吧台正面的距离
-      fromCounter: 0.36,
       seatHeight: 0.75,
       cushionRadius: 0.18,
       cushionThickness: 0.07,
@@ -419,8 +396,8 @@ export const sceneConfig = {
       footRingTube: 0.011,
       footRingY: 0.3,
     },
+    // 吊灯：在水平面上摆放，高度固定
     pendants: {
-      xs: [-0.7, 0.2, 1.1],
       hangFrom: 2.6,
       shadeBottom: 1.85,
       cordRadius: 0.006,
@@ -428,9 +405,18 @@ export const sceneConfig = {
       shade: [[0.2, 0], [0.2, 0.012], [0.12, 0.05], [0.05, 0.07], [0.001, 0.072]] as [number, number][],
       capRadius: 0.045,
       bulbRadius: 0.04,
-      // 灯下吧台台面上的光斑半径
+      // 灯下光斑：半径、落在哪个高度（默认吧台台面）
       poolRadius: 0.5,
+      poolHeight: 1.05,
     },
+  },
+
+  // ───────── 座位 ─────────
+  seating: {
+    // 两个座位水平距离小于这个值就算邻座
+    neighborDistance: 1.3,
+    // 镜头飞向座位时的默认取景（之后用）
+    focus: { lift: 0.45, azimuthDeg: 45, depressionDeg: 38, viewSize: 2.4 },
   },
 
   // ───────── 小人 Bar Buddy ─────────
@@ -453,8 +439,8 @@ export const sceneConfig = {
     sitSink: 0.2,
     // 坐姿时相对座位中心往后挪一点（米），坐得更深
     sitBack: 0.03,
-    // 默认坐在哪个座位（见 seatConfig）
-    seatId: 'tableA-1',
+    // 默认坐在哪个座位（座位 id = 家具在 layout.json 里的 id；多座家具为 id:序号）
+    seatId: 'chair-a1',
     // 站姿时站在这里（用来对照设计稿看比例）
     standPosition: [0.4, 0, 1.6] as Vec3,
     standRotationY: deg(45),

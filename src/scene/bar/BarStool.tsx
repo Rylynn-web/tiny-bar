@@ -3,13 +3,12 @@ import { useSceneParams } from '../../state/sceneParams'
 import { Metal } from '../primitives/Metal'
 import { RoundedCylinder } from '../primitives/RoundedCylinder'
 import { useLathe } from '../primitives/useLathe'
+import type { SeatAnchor } from '../catalogTypes'
 
 const S = sceneConfig.bar.stools
 
-type Props = { position: [number, number, number] }
-
-/** 吧凳：不锈钢底座、立柱、脚踏环 + 黑色坐垫。原点在地面 */
-export function BarStool({ position }: Props) {
+/** 吧凳：不锈钢底座、立柱、脚踏环 + 黑色坐垫。原点在地面，局部 +Z 为坐上去时面朝的方向 */
+export function BarStool() {
   const { palette } = useSceneParams()
   const baseGeo = useLathe(S.base)
   const baseTop = Math.max(...S.base.map((p) => p[1]))
@@ -17,7 +16,7 @@ export function BarStool({ position }: Props) {
   const columnHeight = cushionBottom - baseTop
 
   return (
-    <group position={position}>
+    <group>
       <mesh geometry={baseGeo} castShadow receiveShadow>
         <Metal />
       </mesh>
@@ -39,3 +38,6 @@ export function BarStool({ position }: Props) {
     </group>
   )
 }
+
+/** 座位锚点：坐垫表面中心 */
+BarStool.seats = [{ position: [0, S.seatHeight, 0], rotationY: 0, pose: 'stool' }] satisfies SeatAnchor[]

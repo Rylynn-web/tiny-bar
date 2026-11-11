@@ -1,0 +1,124 @@
+/* ───── 布局编辑器侧边栏（仅开发环境 ?edit）───── */
+.editor-panel {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  bottom: 12px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(30, 29, 34, 0.9);
+  color: #ece6dd;
+  font: 13px/1.45 system-ui, -apple-system, sans-serif;
+  user-select: auto;
+  -webkit-user-select: auto;
+}
+.editor-panel h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #b7afa5;
+}
+.editor-panel p {
+  margin: 0;
+}
+.editor-panel > * {
+  flex-shrink: 0;
+}
+.editor-panel > .editor-panel__list {
+  flex-shrink: 1;
+}
+.editor-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.editor-panel__dirty {
+  color: #ffb347;
+}
+.editor-panel__clean {
+  color: #8fc79a;
+}
+.editor-panel__row {
+  display: flex;
+  gap: 6px;
+}
+.editor-panel button,
+.editor-panel select {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.editor-panel button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.editor-panel button.is-on,
+.editor-panel__primary {
+  background: #ffb347;
+  border-color: #ffb347;
+  color: #2a2420;
+}
+.editor-panel__label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #b7afa5;
+}
+.editor-panel__section {
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.editor-panel__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+}
+.editor-panel__hint {
+  color: #8f877d;
+  font-size: 12px;
+}
+.editor-panel__error {
+  color: #ff8a8a;
+  font-size: 12px;
+}
+.editor-panel__banner {
+  padding: 8px;
+  border-radius: 6px;
+  background: rgba(255, 179, 71, 0.15);
+  color: #ffd59a;
+}
+.editor-panel__banner .editor-panel__row {
+  margin-top: 6px;
+}
+.editor-panel__list {
+  flex: 1 1 auto;
+  min-height: 120px;
+  overflow-y: auto;
+}
+.editor-panel__list ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.editor-panel__list button {
+  width: 100%;
+  text-align: left;
+  border-color: transparent;
+  background: transparent;
+}
+.editor-panel__list button span {
+  color: #8f877d;
+  font-size: 11px;
+}

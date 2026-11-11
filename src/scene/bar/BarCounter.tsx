@@ -16,13 +16,19 @@ const ARC_STEPS = 12
  * L 形吧台的底面轮廓（形状平面的 y = 世界的 -z）。o 为向外扩的距离（台面出檐用）。
  * 长边沿 X，右端圆角折回后墙方向，左端开口。
  */
+// 局部坐标：长边正面在 z=0，x 从 -length/2 到 length/2，折回段到 z=-returnDepth
+const X_FROM = -C.length / 2
+const X_TO = C.length / 2
+const FRONT_Z = 0
+const RETURN_Z = -C.returnDepth
+
 function lShape(o: number) {
-  const xa = C.xFrom - o
-  const xb = C.xTo + o
-  const zf = C.frontZ + o
-  const zr = C.returnToZ - o
-  const xi = C.xTo - C.depth - o
-  const zi = C.frontZ - C.depth - o
+  const xa = X_FROM - o
+  const xb = X_TO + o
+  const zf = FRONT_Z + o
+  const zr = RETURN_Z - o
+  const xi = X_TO - C.depth - o
+  const zi = FRONT_Z - C.depth - o
   const r = C.cornerRadius + o
   const s = new Shape()
   s.moveTo(xa, -zf)
@@ -50,20 +56,20 @@ function extrudeUp(shape: Shape, height: number, bevel: number) {
 /** 灯带路径：沿台面外沿下方，从左端经圆角到折回段末端 */
 function ledPath(y: number, o: number) {
   const r = C.cornerRadius + o
-  const pts: Vector3[] = [new Vector3(C.xFrom, y, C.frontZ + o), new Vector3(C.xTo + o - r, y, C.frontZ + o)]
-  const cx = C.xTo + o - r
-  const cz = C.frontZ + o - r
+  const pts: Vector3[] = [new Vector3(X_FROM, y, FRONT_Z + o), new Vector3(X_TO + o - r, y, FRONT_Z + o)]
+  const cx = X_TO + o - r
+  const cz = FRONT_Z + o - r
   for (let i = 1; i <= ARC_STEPS; i++) {
     const a = (i / ARC_STEPS) * (Math.PI / 2)
     pts.push(new Vector3(cx + r * Math.sin(a), y, cz + r * Math.cos(a)))
   }
-  pts.push(new Vector3(C.xTo + o, y, C.returnToZ))
+  pts.push(new Vector3(X_TO + o, y, RETURN_Z))
   const path = new CurvePath<Vector3>()
   for (let i = 0; i < pts.length - 1; i++) path.add(new LineCurve3(pts[i], pts[i + 1]))
   return path
 }
 
-/** L 形吧台：粉色立面 + 深蓝台面 + 外沿灯带 + 收银机等小物 + 摇酒壶 */
+/** L 形吧台（地面物件）：粉色立面 + 深蓝台面 + 外沿灯带 + 收银机等小物 + 摇酒壶。原点在长边正面中点 */
 export function BarCounter() {
   const { palette, bevel } = useSceneParams()
   const b = bevel * sceneConfig.bevelTiers.small
@@ -83,7 +89,7 @@ export function BarCounter() {
   }, [b, bodyHeight])
 
   const pos = B.pos
-  const midZ = C.frontZ - C.depth / 2
+  const midZ = FRONT_Z - C.depth / 2
   const sh = B.shakers
 
   return (

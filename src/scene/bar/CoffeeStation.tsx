@@ -9,9 +9,9 @@ import { RoundedCylinder } from '../primitives/RoundedCylinder'
 import { useLathe } from '../primitives/useLathe'
 
 const B = sceneConfig.bar
-const wallZ = -sceneConfig.room.depth / 2
+// 后操作台的局部坐标：台面高度、前后居中
 const top = B.backCounter.height
-const midZ = wallZ + B.backCounter.depth / 2
+const midZ = 0
 
 /** 后操作台上的咖啡区：意式咖啡机、两台磨豆机、手冲、小罐 */
 export function CoffeeStation() {
