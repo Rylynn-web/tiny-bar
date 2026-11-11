@@ -34,9 +34,12 @@ C4D 微缩模型质感：圆角、哑光、柔和阴影、低饱和暖色。所�
 - Bloom 阈值设在 3（`sceneConfig.bloom.luminanceThreshold`）：被主光照亮的浅色表面在 HDR 里能到 2.5 左右，阈值低了会被误判成发光。自发光物件的最终亮度要高于阈值才会有光晕。用 `mipmapBlur`。
 - 自发光强度按物件分组放 config，白天几乎关闭，夜晚打开。
 - 需要补光时最多 2 盏不投影的点光源，默认不开。
+- 灯具在桌面/台面上的光感用 `LightPool`（叠加混合的径向渐变假光斑），不用真实光源。
+- 自发光物件要放在从默认俯视角看得见的位置（灯罩下的灯泡、出檐下的灯带会被挡住，看不到光晕）。
 
 ## 实例化与预算
-- 同一几何体出现 ≥ 8 次就用 `InstancedMesh`，颜色用 instanceColor。
+- 同一几何体出现 ≥ 8 次就用 `InstancedMesh`（`InstancedMatte`），颜色用 instanceColor。
+- 几何细分按倒角档位分级（`sceneConfig.detail`）：小件和细杆少分段；瓶子杯子等小旋转体用 `smallLatheSegments`。大面积的圆形（地毯）单独指定高分段，避免露出多边形。
 - 全场景目标：draw calls ≤ 150，三角面 ≤ 15 万。每批搭完测量一次。
 - 外部模型（只限植物，椅子备选）每个 ≤ 300KB，用 drei `useGLTF` 加载；下载前向用户确认文件名、来源、大小。
 
