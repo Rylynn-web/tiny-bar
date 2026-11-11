@@ -19,7 +19,9 @@ type Klass = keyof PlantParts
 const C = sceneConfig.plants.classify
 const hsl = { h: 0, s: 0, l: 0 }
 
-function classify(color: Color): Klass {
+function classify(color: Color, materialName: string): Klass {
+  // 材质名明确是树干/茎的（如香蕉树的 Banana_Trunk），不管颜色都算茎干
+  if (new RegExp(C.stemNamePattern, 'i').test(materialName)) return 'stem'
   color.getHSL(hsl)
   const hue = hsl.h * 360
   const isLeaf = hue >= C.hueMin && hue <= C.hueMax && hsl.s >= C.minSaturation
@@ -79,7 +81,7 @@ export function getPlantParts(key: string, root: Object3D, height: number, baseA
       } else {
         color.copy(mat.color)
       }
-      const b = buckets[classify(color)]
+      const b = buckets[classify(color, mat.name ?? '')]
       for (let k = 0; k < 3; k++) {
         b.pos.push(pos.getX(t + k), pos.getY(t + k), pos.getZ(t + k))
         b.nor.push(nor.getX(t + k), nor.getY(t + k), nor.getZ(t + k))

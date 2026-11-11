@@ -190,9 +190,9 @@ export const sceneConfig = {
     rotateSpeed: 0.6,
     truckSpeed: 1,
     dollySpeed: 0.5,
-    // 平移边界：焦点限制在地板范围内，并随缩放收放（全景时为 0，不能平移）
-    // 地板一半尺寸乘这个系数，留一点余量让边缘物件也能拉到画面中间
-    boundaryScale: 1,
+    // 平移边界：焦点最多走到"房间边缘贴住屏幕边缘"的位置——全景时保持居中，放大后能一路走到角落，
+    // 房间不会被拖出屏幕。画面能看到的地面半径 ≈ 屏幕短边 / zoom / 2 × 这个系数（斜视角下地面会被压缩）
+    boundaryVisibleFactor: 0.7,
   },
 
   // ───────── 交互 ─────────
@@ -422,7 +422,8 @@ export const sceneConfig = {
     soilDrop: 0.025,
     plantSink: 0.02,
     // 按模型原本的颜色给三角面分类：色相在这个范围、饱和度够高的算叶子，亮度低于 darkLightness 的算深色叶子
-    classify: { hueMin: 55, hueMax: 175, minSaturation: 0.18, darkLightness: 0.42 },
+    // 材质名匹配 stemNamePattern 的直接算茎干
+    classify: { hueMin: 55, hueMax: 175, minSaturation: 0.18, darkLightness: 0.42, stemNamePattern: 'trunk|stem|branch' },
   },
 
   // ───────── 吧台区 ─────────

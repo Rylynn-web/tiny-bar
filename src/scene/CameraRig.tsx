@@ -82,19 +82,26 @@ export function CameraRig() {
     c.zoomTo(MathUtils.clamp(zoom, fullZoom, closeZoom), false)
   }, [controls, p, fullZoom, closeZoom])
 
-  // 平移边界：焦点限制在地板内，并随缩放收放——全景时为 0，房间不会被拖出屏幕
+  // 平移边界：按当前画面能看到的范围收放——焦点最多走到房间边缘贴住屏幕边缘的位置。
+  // 全景时几乎为 0（居中），越放大越能走到角落；以指针为中心放大时不会被拉回房间中央
   const boundary = useMemo(() => new Box3(), [])
   const lastZoom = useRef(0)
+  const minSideRef = useRef(minSide)
+  useLayoutEffect(() => {
+    minSideRef.current = minSide
+    lastZoom.current = 0
+  }, [minSide])
   useFrame(() => {
     const c = controlsRef.current
     if (!c) return
     const zoom = c.camera.zoom
     if (Math.abs(zoom - lastZoom.current) < 1e-4) return
     lastZoom.current = zoom
-    const k = Math.max(0, 1 - fullZoomRef.current / zoom)
-    const s = sceneConfig.controls.boundaryScale * k
-    boundary.min.set(tx - halfW * s, ty, tz - halfD * s)
-    boundary.max.set(tx + halfW * s, ty, tz + halfD * s)
+    const visibleHalf = (minSideRef.current / zoom / 2) * sceneConfig.controls.boundaryVisibleFactor
+    const ax = Math.max(0, halfW - visibleHalf)
+    const az = Math.max(0, halfD - visibleHalf)
+    boundary.min.set(tx - ax, ty, tz - az)
+    boundary.max.set(tx + ax, ty, tz + az)
     c.setBoundary(boundary)
   })
 
