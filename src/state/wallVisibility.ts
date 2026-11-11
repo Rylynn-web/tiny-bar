@@ -39,12 +39,13 @@ export function useWallMode() {
 
 /**
  * 按摄像机方位角（度，0 = 正对后墙，正 = 偏右）更新侧墙显示。
- * 墙背对摄像机时不显示：偏右不显示右墙，偏左不显示左墙；正对时三面都显示。
+ * 左右墙同时只显示一面：正对或偏右显示左墙，偏左显示右墙（正对时优先左墙）。
  */
 export function updateWalls(azimuthDeg: number) {
   const all = mode === 'showAll'
-  wallState.visible.right = all || azimuthDeg <= W.frontToleranceDeg
-  wallState.visible.left = all || azimuthDeg >= -W.frontToleranceDeg
+  const left = azimuthDeg >= W.switchDeg
+  wallState.visible.left = all || left
+  wallState.visible.right = all || !left
 }
 
 // ── 点击检测开关：降下的墙、被隐藏的墙面物件不挡点击 ──

@@ -235,10 +235,10 @@ export const sceneConfig = {
     baseboardHeight: 0.08,
     baseboardThickness: 0.02,
   },
-  // 左右墙按视角显示：墙背对摄像机（视线与墙面夹角过了 0°）就整面不显示，没有过渡动画。
-  // 方位角 > 容差时不显示右墙，< -容差时不显示左墙；正对（|方位角| ≤ 容差）时三面墙都显示
+  // 左右墙按视角显示，同一时间只显示一面（加后墙最多两面），没有过渡动画。
+  // 方位角 ≥ switchDeg（正对或偏右）显示左墙、不显示右墙；< switchDeg（偏左）显示右墙、不显示左墙
   walls: {
-    frontToleranceDeg: 0,
+    switchDeg: 0,
   },
   door: {
     width: 0.92,
