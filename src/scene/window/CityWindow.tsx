@@ -105,6 +105,8 @@ export function CityWindow({ props }: CatalogProps) {
       u.uPane.value.set(l.cfg.windowSize[0], l.cfg.windowSize[1])
       u.uDayPaneDarken.value = V.dayPaneDarken
       u.uBodyVariation.value = V.bodyVariation
+      u.uRoofLighten.value = V.roofLighten
+      u.uSideDarken.value = V.sideDarken
       u.uBeaconOn.value = l === nearest ? 1 : 0
       u.uBeaconUV.value.set(l.tex.tallest.u, l.tex.tallest.v)
       ;(u.uBeaconColor.value as Color).set(V.beacon.color)
@@ -165,6 +167,11 @@ export function CityWindow({ props }: CatalogProps) {
       projectionShift(ud.depth, dir0, shift0)
       const keep = 1 - l.cfg.parallax
       u.uShift.value.set((shift.x - shift0.x) * keep, (shift.y - shift0.y) * keep)
+      // 楼往后（离墙更远）挤出 buildingDepth：在这一层平面上的位移 = 视线的横向分量 × 进深 / |视线纵深分量|
+      projectionShift(l.cfg.buildingDepth, dir, shift)
+      const len = Math.hypot(shift.x, shift.y)
+      const k = len > V.extrudeMax ? V.extrudeMax / len : 1
+      u.uExtrude.value.set(-shift.x * k, -shift.y * k)
       u.uNight.value = night.current
       u.uOffset.value = along
       u.uTime.value = clock.elapsedTime

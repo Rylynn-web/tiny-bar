@@ -288,6 +288,8 @@ export const sceneConfig = {
         spireChance: 0.1,
         skylineAt: 0.62,
         parallax: 0.05,
+        // 楼的进深（米）：决定楼顶和侧面在画面上露出多少
+        buildingDepth: 0.12,
         windowCell: [0.1, 0.12] as [number, number],
         windowSize: [0.55, 0.45] as [number, number],
         dayColor: '#C8D1DD',
@@ -303,6 +305,7 @@ export const sceneConfig = {
         spireChance: 0.08,
         skylineAt: 0.46,
         parallax: 0.12,
+        buildingDepth: 0.17,
         windowCell: [0.12, 0.15] as [number, number],
         windowSize: [0.55, 0.45] as [number, number],
         dayColor: '#A8B5C6',
@@ -318,6 +321,7 @@ export const sceneConfig = {
         spireChance: 0.06,
         skylineAt: 0.3,
         parallax: 0.25,
+        buildingDepth: 0.24,
         windowCell: [0.15, 0.18] as [number, number],
         windowSize: [0.55, 0.45] as [number, number],
         dayColor: '#8C9AAE',
@@ -339,6 +343,10 @@ export const sceneConfig = {
     dayPaneDarken: 0.12,
     // 楼体明暗的随机起伏
     bodyVariation: 0.16,
+    // 体积感：楼顶变亮、侧面变暗的比例；挤出在画面上的最大长度（米），防止极端视角下拉得太长
+    roofLighten: 0.14,
+    sideDarken: 0.24,
+    extrudeMax: 0.35,
     // 最近一层最高楼顶的红色信号灯
     beacon: { color: '#FF3B30', radius: 0.05, intensity: 6, period: 2.6 },
     // 昼夜切换的过渡时间（秒）
