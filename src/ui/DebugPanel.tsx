@@ -192,9 +192,6 @@ export default function DebugPanel() {
       buddy: {
         bodyColor: v.bodyColor as string,
         eyeColor: v.eyeColor as string,
-        // 小人现在都坐在座位上、共用实例化零件：没有站姿，也不支持描边
-        outline: false,
-        pose: 'sit',
       },
     })
     // v 每次渲染都是新对象，用序列化后的 key 判断是否真的变了

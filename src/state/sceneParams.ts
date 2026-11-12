@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import { sceneConfig, type BuddyPose, type TimeOfDay } from '../config/sceneConfig'
+import { sceneConfig, type TimeOfDay } from '../config/sceneConfig'
 import type { Quality } from './quality'
 
 // 运行时可调的参数。默认值全部来自 sceneConfig；debug 面板会覆盖它们。
@@ -54,8 +54,6 @@ export type SceneParams = {
   buddy: {
     bodyColor: string
     eyeColor: string
-    outline: boolean
-    pose: BuddyPose
   }
 }
 
@@ -103,8 +101,6 @@ export const defaultSceneParams: SceneParams = {
   buddy: {
     bodyColor: sceneConfig.buddy.bodyColor,
     eyeColor: sceneConfig.buddy.eyeColor,
-    outline: sceneConfig.buddy.outline,
-    pose: sceneConfig.buddy.pose,
   },
 }
 

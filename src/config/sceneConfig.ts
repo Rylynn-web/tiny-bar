@@ -6,7 +6,6 @@ const deg = (d: number) => (d * Math.PI) / 180
 type Vec3 = [number, number, number]
 
 export type TimeOfDay = 'day' | 'night'
-export type BuddyPose = 'sit' | 'stand'
 
 export const sceneConfig = {
   // ───────── 画布与渲染 ─────────
