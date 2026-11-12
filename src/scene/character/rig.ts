@@ -9,7 +9,7 @@ import {
   type GuestState,
   type Pose,
 } from '../../config/poses'
-import { blushing, expressionTiming as X, faceAtlas, type Expression } from '../../config/expressions'
+import { blushing, eyesOpen, expressionTiming as X, faceAtlas, pickWeighted, type Expression } from '../../config/expressions'
 import { seededRandom } from '../primitives/canvasTexture'
 import { BODY_BOTTOM, EYE_Y } from './parts'
 
@@ -126,6 +126,9 @@ export class Rig {
   private flash: Record<'reading' | 'laptop', Beat>
   private talkSlot = -1
   private talkExpr: Expression = 'happy'
+  /** 阅读 / 办公：这一次"闪一下"挑中的表情 */
+  private flashExpr: Expression = 'happy'
+  private flashStart = -1
   /** 本帧的眼睛 / 腮红在图集里是第几格 */
   eyeCell: number = faceAtlas.cells.default
   blushCell: number = faceAtlas.cells.none
@@ -205,7 +208,13 @@ export class Rig {
         const rule = X[input.state]
         const beat = this.flash[input.state]
         beat.tick(now, true)
-        return beat.progress(now) >= 0 ? rule.flash : rule.base
+        if (beat.progress(now) < 0) return rule.base
+        // 每次新的一闪按权重挑一个表情
+        if (beat.start !== this.flashStart) {
+          this.flashStart = beat.start
+          this.flashExpr = pickWeighted(rule.flashes, this.rand())
+        }
+        return this.flashExpr
       }
       case 'talking': {
         // 跟着气泡轮换：每轮换一次就重新挑一个
@@ -214,8 +223,7 @@ export class Rig {
         const slot = Math.floor((now / T.talk.period + offset) * 2)
         if (slot !== this.talkSlot) {
           this.talkSlot = slot
-          const c = X.talking.choices
-          this.talkExpr = c[Math.floor(this.rand() * c.length)]
+          this.talkExpr = pickWeighted(X.talking.choices, this.rand())
         }
         return this.talkExpr
       }
@@ -326,7 +334,9 @@ export class Rig {
     if (now >= this.blinkAt + B.blink.duration) {
       this.blinkAt = now + B.blink.minInterval + this.rand() * (B.blink.maxInterval - B.blink.minInterval)
     }
-    let eyeScale = now >= this.blinkAt && now < this.blinkAt + B.blink.duration ? B.blink.closedScale : 1
+    // 自然眨眼（闭着眼的表情不眨，见下面）
+    let blink = now >= this.blinkAt && now < this.blinkAt + B.blink.duration ? B.blink.closedScale : 1
+    let eyeScale = 1
 
     // 表情：要变的时候先快速闭眼，闭上的那一刻换，再睁开
     const want = this.desiredExpression(input, now)
@@ -340,7 +350,7 @@ export class Rig {
     if (this.switchPhase === 1) {
       this.switchT += dt
       const p = Math.min(1, this.switchT / X.switchClose)
-      eyeScale = Math.min(eyeScale, MathUtils.lerp(1, B.blink.closedScale, p))
+      eyeScale = MathUtils.lerp(1, B.blink.closedScale, p)
       if (p >= 1) {
         this.expr = want
         this.switchPhase = 2
@@ -349,10 +359,15 @@ export class Rig {
     } else if (this.switchPhase === 2) {
       this.switchT += dt
       const p = Math.min(1, this.switchT / X.switchOpen)
-      eyeScale = Math.min(eyeScale, MathUtils.lerp(B.blink.closedScale, 1, p))
+      eyeScale = MathUtils.lerp(B.blink.closedScale, 1, p)
       if (p >= 1) this.switchPhase = 0
     }
-    this.eyes.scale.y = eyeScale
+    // happy / squint / focus 本身是闭着眼的弧线：不眨眼，切换时也不压扁（只按节奏换图）
+    if (!eyesOpen[this.expr]) {
+      eyeScale = 1
+      blink = 1
+    }
+    this.eyes.scale.y = Math.min(eyeScale, blink)
     this.eyeCell = faceAtlas.cells[this.expr]
     this.blushCell = blushing[this.expr] ? faceAtlas.cells.blush : faceAtlas.cells.none
 

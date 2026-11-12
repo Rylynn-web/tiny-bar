@@ -28,6 +28,27 @@ export const faceAtlas = {
   blush: { color: '#F4A6B4', alpha: 0.5, rx: 14, ry: 7 },
 }
 
+/** 睁着眼的表情才眨眼；happy / squint / focus 本身就是闭着眼的弧线，不眨 */
+export const eyesOpen: Record<Expression, boolean> = {
+  default: true,
+  happy: false,
+  squint: false,
+  surprised: true,
+  focus: false,
+}
+
+/** 按权重随机挑一个表情 */
+export type Weighted = { expression: Expression; weight: number }[]
+export function pickWeighted(list: Weighted, r: number): Expression {
+  const total = list.reduce((a, b) => a + b.weight, 0)
+  let x = r * total
+  for (const it of list) {
+    x -= it.weight
+    if (x <= 0) return it.expression
+  }
+  return list[list.length - 1].expression
+}
+
 /** 有腮红的表情 */
 export const blushing: Record<Expression, boolean> = {
   default: false,
@@ -43,12 +64,31 @@ export const expressionTiming = {
   switchOpen: 0.09,
   // 静坐：喝完一口饮料后开心多久
   afterSip: { expression: 'happy' as Expression, duration: 2 },
-  // 阅读：平时专注，偶尔开心
-  reading: { base: 'focus' as Expression, flash: 'happy' as Expression, interval: [8, 15] as [number, number], duration: 1.5 },
+  // 阅读：平时专注；时不时被书里的内容惊到，偶尔开心（每次按权重挑一个）
+  reading: {
+    base: 'focus' as Expression,
+    flashes: [
+      { expression: 'surprised', weight: 0.7 },
+      { expression: 'happy', weight: 0.3 },
+    ] as Weighted,
+    interval: [5, 10] as [number, number],
+    duration: 1.4,
+  },
   // 办公：平时专注，偶尔眯一下眼（像打错字了）
-  laptop: { base: 'focus' as Expression, flash: 'squint' as Expression, interval: [10, 20] as [number, number], duration: 0.8 },
-  // 交谈：每次气泡轮换时，在这几种里随机挑一个
-  talking: { choices: ['happy', 'surprised'] as Expression[] },
+  laptop: {
+    base: 'focus' as Expression,
+    flashes: [{ expression: 'squint', weight: 1 }] as Weighted,
+    interval: [10, 20] as [number, number],
+    duration: 0.8,
+  },
+  // 交谈：每次气泡轮换时按权重挑一个——开心、惊讶多，偶尔专注
+  talking: {
+    choices: [
+      { expression: 'happy', weight: 0.45 },
+      { expression: 'surprised', weight: 0.4 },
+      { expression: 'focus', weight: 0.15 },
+    ] as Weighted,
+  },
   // 邻座有人坐下：先惊讶，再开心，像在打招呼
   greet: { surprised: 1, happy: 2 },
 }
