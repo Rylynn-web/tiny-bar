@@ -62,8 +62,6 @@ export const expressionTiming = {
   // 切换表情：先快速闭眼，闭上的那一刻换，再睁开（秒）
   switchClose: 0.07,
   switchOpen: 0.09,
-  // 静坐：喝完一口饮料后开心多久
-  afterSip: { expression: 'happy' as Expression, duration: 2 },
   // 阅读：平时专注；时不时被书里的内容惊到，偶尔开心（每次按权重挑一个）
   reading: {
     base: 'focus' as Expression,

@@ -11,6 +11,7 @@ import {
 } from '../../config/poses'
 import { blushing, eyesOpen, expressionTiming as X, faceAtlas, pickWeighted, type Expression } from '../../config/expressions'
 import { seededRandom } from '../primitives/canvasTexture'
+import { menuItems, type MenuId } from '../../config/menu'
 import { BODY_BOTTOM, EYE_Y } from './parts'
 
 // 一个小人的"骨架"：一组不显示的层级节点（身体 → 头、身体 → 手臂、髋 → 腿），姿势靠旋转这些节点来摆。
@@ -79,7 +80,9 @@ class Beat {
 export type RigInput = {
   seat: Seat
   state: GuestState
-  drink: boolean
+  /** 桌上的饮品 / 小食（放在 seat.table） */
+  drink: MenuId | null
+  food: MenuId | null
   /** 交谈对象的座位（没有就是 null） */
   partner: Seat | null
   /** 手动指定的表情（?debug / setEmote）；null = 按自动规则 */
@@ -106,14 +109,16 @@ export class Rig {
   readonly laptop = new Object3D()
   readonly lid = new Object3D()
 
-  readonly pops = { book: new Pop(), laptop: new Pop(), cup: new Pop(), bubble: new Pop() }
+  readonly pops = { book: new Pop(), laptop: new Pop(), drink: new Pop(), food: new Pop(), bubble: new Pop() }
+  /** 正在显示的饮品 / 小食（换了一样会从头弹出来） */
+  shownDrink: MenuId | null = null
+  shownFood: MenuId | null = null
   private pose: Pose = { ...neutralPose }
   private rand: () => number
   private phase: number
   private blinkAt: number
   private look: Beat
   private lookTarget = { yaw: 0, pitch: 0 }
-  private sip: Beat
   private flip: Beat
   private nod: Beat
   private stretch: Beat
@@ -138,7 +143,8 @@ export class Rig {
   eyeCell: number = faceAtlas.cells.default
   blushCell: number = faceAtlas.cells.none
   /** 本帧算好的：杯子、笔记本、气泡的世界位置（道具不跟着手臂转，保持竖直） */
-  readonly cupMatrix = new Matrix4()
+  readonly drinkMatrix = new Matrix4()
+  readonly foodMatrix = new Matrix4()
   readonly bubbleMatrix = new Matrix4()
   readonly tagMatrix = new Matrix4()
   speaking = false
@@ -148,7 +154,6 @@ export class Rig {
     this.phase = this.rand() * Math.PI * 2
     this.blinkAt = now + this.rand() * B.blink.maxInterval
     this.look = new Beat(this.rand, T.lookAround.interval, 2.4 + T.lookAround.hold[1], now)
-    this.sip = new Beat(this.rand, T.sip.interval, T.sip.duration, now)
     this.flip = new Beat(this.rand, T.page.interval, T.page.duration, now)
     this.nod = new Beat(this.rand, T.nod.interval, T.nod.duration, now)
     this.stretch = new Beat(this.rand, T.stretch.interval, T.stretch.duration, now)
@@ -193,6 +198,22 @@ export class Rig {
     this.laptop.add(this.lid)
   }
 
+  /** 点的东西：要显示的换了（替换同类）先把旧的瞬间收掉，再让新的弹出来 */
+  private updateOrder(kind: 'drink' | 'food', want: MenuId | null, dt: number) {
+    const pop = this.pops[kind]
+    const shown = kind === 'drink' ? this.shownDrink : this.shownFood
+    if (want && want !== shown) {
+      pop.t = 0
+      if (kind === 'drink') this.shownDrink = want
+      else this.shownFood = want
+    }
+    pop.update(!!want, dt)
+    if (!want && pop.t <= 0) {
+      if (kind === 'drink') this.shownDrink = null
+      else this.shownFood = null
+    }
+  }
+
   /** 邻座有人坐下：先惊讶、再开心，像在打招呼 */
   greet(now: number) {
     this.greetAt = now
@@ -205,11 +226,8 @@ export class Rig {
     if (g >= 0 && g < X.greet.surprised) return 'surprised'
     if (g >= X.greet.surprised && g < X.greet.surprised + X.greet.happy) return 'happy'
     switch (input.state) {
-      case 'idle': {
-        // 喝完一口之后开心一会儿
-        const end = this.sip.start + this.sip.duration
-        return input.drink && now >= end && now < end + X.afterSip.duration ? X.afterSip.expression : 'default'
-      }
+      case 'idle':
+        return 'default'
       case 'reading':
       case 'laptop': {
         const rule = X[input.state]
@@ -239,7 +257,7 @@ export class Rig {
 
   /** 推进一帧：算目标姿势 → 平滑过渡 → 叠加快速的小动作 → 更新所有节点和道具 */
   update(input: RigInput, now: number, dt: number, cameraQuaternion: Quaternion) {
-    const { seat, state, drink, partner } = input
+    const { seat, state, partner } = input
     const sp = seatPoses[seat.pose]
     const desk = seat.desk
 
@@ -257,12 +275,8 @@ export class Rig {
     const sp2 = statePoses[state]
     const target: Pose = { ...neutralPose, ...sp2.lap, ...(desk && sp2.desk ? sp2.desk : {}) }
     target.lean += sp.lean
-    if (sp.arms) {
-      target.armLPitch = target.armRPitch = sp.arms.pitch
-      target.armLSplay = target.armRSplay = sp.arms.splay
-    }
 
-    // 静坐：偶尔慢慢转头看看四周；点了饮料偶尔喝一口
+    // 静坐：偶尔慢慢转头看看四周
     this.look.tick(now, state === 'idle')
     if (this.look.progress(now) >= 0 && this.look.progress(now) < 0.02) {
       this.lookTarget.yaw = (this.rand() * 2 - 1) * T.lookAround.yaw
@@ -272,11 +286,6 @@ export class Rig {
     target.headYaw += this.lookTarget.yaw * lookW
     target.headPitch += this.lookTarget.pitch * lookW
 
-    this.sip.tick(now, state === 'idle' && drink)
-    const sipW = state === 'idle' && drink ? this.sip.weight(now) : 0
-    target.armRPitch = MathUtils.lerp(target.armRPitch, T.sip.armPitch, sipW)
-    target.armRSplay = MathUtils.lerp(target.armRSplay, T.sip.armSplay, sipW)
-    target.headPitch += T.sip.headPitch * sipW
 
     // 办公：偶尔往后靠伸个懒腰
     this.stretch.tick(now, state === 'laptop')
@@ -402,8 +411,9 @@ export class Rig {
     // ── 道具 ──
     this.pops.book.update(state === 'reading', dt)
     this.pops.laptop.update(state === 'laptop', dt)
-    // 有桌面时杯子一直放在桌上；没有桌面时只在静坐时拿在手里
-    this.pops.cup.update(drink && (!!desk || state === 'idle'), dt)
+    // 点的东西：换了一样就从头弹出来；拿走（null）时缩小消失
+    this.updateOrder('drink', input.drink, dt)
+    this.updateOrder('food', input.food, dt)
     this.pops.bubble.update(this.speaking, dt)
 
     // 书：翻页（一页绕书脊翻过去）
@@ -425,15 +435,22 @@ export class Rig {
     this.lid.rotation.x = -P.laptop.openAngle
     this.laptop.updateMatrixWorld(true)
 
-    // 杯子：桌上（小人右手边）和手里之间按"喝一口"的进度移动；始终保持竖直
-    const handPos = this.hand.getWorldPosition(new Vector3())
-    const cupPos = handPos.clone()
-    if (desk) {
-      const right = new Vector3(-1, 0, 0).applyAxisAngle(up, seat.rotationY).multiplyScalar(P.cupDeskOffset)
-      const deskPos = new Vector3(desk[0], desk[1], desk[2]).add(right)
-      cupPos.lerpVectors(deskPos, handPos, sipW)
+    // 饮品放右手边、小食放左手边；图片竖着立在桌面上，只绕竖轴转向镜头
+    const table = seat.table
+    if (table) {
+      const O = sceneConfig.order
+      const fwd = new Vector3(0, 0, -1).applyQuaternion(cameraQuaternion)
+      const face = new Quaternion().setFromAxisAngle(up, Math.atan2(-fwd.x, -fwd.z))
+      const right = new Vector3(-1, 0, 0).applyAxisAngle(up, seat.rotationY)
+      const toSeat = new Vector3(0, 0, -1).applyAxisAngle(up, seat.rotationY).multiplyScalar(O.towardSeat)
+      const place = (m: Matrix4, id: MenuId | null, pop: Pop, side: number, offset: number) => {
+        const size = id ? menuItems[id].size * pop.scale : 0
+        const p = new Vector3(table[0], table[1] - O.sink, table[2]).addScaledVector(right, side * offset).add(toSeat)
+        m.compose(p, face, new Vector3(size, size, size))
+      }
+      place(this.drinkMatrix, this.shownDrink, this.pops.drink, 1, O.drinkOffset)
+      place(this.foodMatrix, this.shownFood, this.pops.food, -1, O.foodOffset)
     }
-    this.cupMatrix.compose(cupPos, new Quaternion(), new Vector3().setScalar(this.pops.cup.scale))
 
     // 气泡：头顶上方，始终正对镜头
     const headTop = this.head.getWorldPosition(new Vector3())

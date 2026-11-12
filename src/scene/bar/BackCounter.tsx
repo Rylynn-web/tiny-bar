@@ -6,7 +6,7 @@ import { BevelBox } from '../primitives/BevelBox'
 import { Metal } from '../primitives/Metal'
 import { CoffeeStation } from './CoffeeStation'
 import { paletteColor } from '../paletteColor'
-import type { CatalogProps } from '../catalogTypes'
+import type { CatalogProps, SurfaceAnchor } from '../catalogTypes'
 
 const B = sceneConfig.bar
 
@@ -58,3 +58,8 @@ export function BackCounter({ props }: CatalogProps) {
     </group>
   )
 }
+
+/** 台面：小物件可以放上去 */
+BackCounter.surfaces = [
+  { min: [-B.backCounter.width / 2, -B.backCounter.depth / 2], max: [B.backCounter.width / 2, B.backCounter.depth / 2], height: B.backCounter.height },
+] satisfies SurfaceAnchor[]

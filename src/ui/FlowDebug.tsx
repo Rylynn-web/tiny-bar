@@ -37,7 +37,6 @@ export function FlowDebug() {
               roomClient.setStatus(v)
             },
           },
-          点一杯: button(() => roomClient.order('Flat White')),
           点一首歌: button(() => roomClient.requestSong({ title: 'Test Song', artist: 'Test Artist' })),
           离开: button(() => leaveBar()),
           重新进店: button(() => comeBackIn()),

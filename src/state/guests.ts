@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import type { Seat } from '../config/seatConfig'
 import type { GuestState } from '../config/poses'
 import type { Expression } from '../config/expressions'
+import type { MenuId } from '../config/menu'
 
 // 座位上的小人：每个座位坐没坐人、在做什么、点没点饮料、称号，以及每人自己的随机种子（动作相位错开）。
 // 只由 RoomClient 收到的消息改写（src/net/applyServerMessage.ts）；开发环境 ?debug 还能生成假客人（src/state/fakeGuests.ts）。
@@ -9,14 +10,16 @@ import type { Expression } from '../config/expressions'
 export const MAX_GUESTS = 8
 
 /**
- * id：客人 id（房间分配）；title：称号；emote：手动指定的表情（RoomClient.setEmote），没有就按自动规则；
+ * id：客人 id（房间分配）；title：称号；drink / food：桌上的饮品和小食（各最多一份）；
+ * emote：手动指定的表情（RoomClient.setEmote），没有就按自动规则；
  * self：是不是自己；fake：?debug 生成的假客人
  */
 export type Guest = {
   id?: string
   title?: string
   state: GuestState
-  drink: boolean
+  drink: MenuId | null
+  food: MenuId | null
   seed: number
   emote?: Expression | null
   self?: boolean
@@ -65,6 +68,13 @@ export function removeGuestById(id: string) {
   emit(next)
 }
 
+/** 换掉一个座位上的饮品 / 小食（?debug 用；正常点单走 RoomClient.order） */
+export function setGuestOrder(seatId: string, kind: 'drink' | 'food', id: MenuId | null) {
+  const g = guests[seatId]
+  if (!g) return
+  emit({ ...guests, [seatId]: { ...g, [kind]: id } })
+}
+
 /** 自己坐在哪（没坐下为 null） */
 export function findSelfSeat(g: Guests = guests): string | null {
   for (const [seatId, x] of Object.entries(g)) if (x.self) return seatId
@@ -72,12 +82,12 @@ export function findSelfSeat(g: Guests = guests): string | null {
 }
 
 /** 设置一个座位：state 为 null 表示让座位空着 */
-export function setGuest(seatId: string, state: GuestState | null, drink?: boolean) {
+export function setGuest(seatId: string, state: GuestState | null) {
   const next = { ...guests }
   if (!state) delete next[seatId]
   else {
     const prev = next[seatId]
-    next[seatId] = { ...prev, state, drink: drink ?? prev?.drink ?? false, seed: prev?.seed ?? newSeed(), emote: prev?.emote ?? null }
+    next[seatId] = { ...prev, state, drink: prev?.drink ?? null, food: prev?.food ?? null, seed: prev?.seed ?? newSeed(), emote: prev?.emote ?? null }
   }
   emit(next)
 }

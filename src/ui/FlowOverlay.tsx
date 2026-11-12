@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { sceneConfig } from '../config/sceneConfig'
 import { useSeats } from '../config/seatConfig'
 import { useFlow } from '../state/flow'
@@ -6,6 +6,7 @@ import { closeReceipt, comeBackIn, leaveBar, takeSeat } from '../state/flowActio
 import { useGoodChatWatcher } from '../state/goodChat'
 import { copy, fill } from './copy'
 import { EntryScreen } from './EntryScreen'
+import { MenuSheet } from './MenuSheet'
 
 const O = sceneConfig.ui.overlay
 const E = sceneConfig.ui.entry
@@ -17,13 +18,19 @@ export function FlowOverlay() {
   const { phase, title } = useFlow()
   const seats = useSeats()
   const [full, setFull] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   useGoodChatWatcher()
+  // 坐下就自动弹出菜单；离开座位就收起
+  useEffect(() => {
+    setMenuOpen(phase === 'seated')
+  }, [phase])
 
   if (phase === 'entry') return <EntryScreen />
 
   const P = copy.phases
   let text = ''
   let action: { label: string; run: () => void } | null = null
+  let secondary: { label: string; run: () => void } | null = null
   switch (phase) {
     case 'entering':
       text = fill(P.entering, { title: title ?? '' })
@@ -34,6 +41,7 @@ export function FlowOverlay() {
       break
     case 'seated':
       text = P.seated
+      secondary = { label: copy.menu.open, run: () => setMenuOpen(true) }
       action = { label: P.seatedAction, run: leaveBar }
       break
     case 'leaving':
@@ -50,6 +58,7 @@ export function FlowOverlay() {
   }
 
   return (
+    <>
     <div
       className="flow-overlay"
       style={{
@@ -60,6 +69,11 @@ export function FlowOverlay() {
       }}
     >
       <span>{text}</span>
+      {secondary && (
+        <button type="button" className="flow-button" onClick={secondary.run} style={{ background: E.buttonBackground, color: E.buttonColor }}>
+          {secondary.label}
+        </button>
+      )}
       {action && (
         <button
           type="button"
@@ -71,5 +85,7 @@ export function FlowOverlay() {
         </button>
       )}
     </div>
+    {phase === 'seated' && <MenuSheet open={menuOpen} onClose={() => setMenuOpen(false)} />}
+    </>
   )
 }

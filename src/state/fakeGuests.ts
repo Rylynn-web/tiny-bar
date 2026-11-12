@@ -1,12 +1,26 @@
 import type { Seat } from '../config/seatConfig'
 import { guestStates, type GuestState } from '../config/poses'
 import { generateTitle } from '../config/titles'
+import { menuItems, menus, type MenuId } from '../config/menu'
+import type { TimeOfDay } from '../config/sceneConfig'
 import { MAX_GUESTS, getGuests, hasNeighbor, newSeed, replaceGuests, type Guest, type Guests } from './guests'
 
 // 假客人：只给开发环境 ?debug 测试有人的座位用（随机称号、随机状态）。
 // 只被 src/ui/GuestDebug.tsx 引用，而 GuestDebug 只在 import.meta.env.DEV 时加载，生产构建里没有这个文件。
 
 let counter = 0
+/** 假客人点单用哪个时段的菜单（GuestDebug 每次渲染时更新） */
+let menuTime: TimeOfDay = 'day'
+export function setFakeMenuTime(t: TimeOfDay) {
+  menuTime = t
+}
+
+/** 一半概率点一样：从当前时段的菜单里随机挑 */
+function randomPick(kind: 'drink' | 'food'): MenuId | null {
+  if (Math.random() < 0.5) return null
+  const list = menus[menuTime].filter((id) => menuItems[id].kind === kind)
+  return list[Math.floor(Math.random() * list.length)]
+}
 
 /** 随机挑一个状态（交谈只在邻座有人时才会被选中） */
 function randomState(seat: Seat, g: Guests): GuestState {
@@ -23,7 +37,8 @@ function makeFake(g: Guests, selfTitle: string | null): Guest {
     id: `fake-${++counter}`,
     title: generateTitle(takenTitles(g, selfTitle ? [selfTitle] : [])),
     state: 'idle',
-    drink: Math.random() < 0.5,
+    drink: randomPick('drink'),
+    food: randomPick('food'),
     seed: newSeed(),
     fake: true,
   }
@@ -58,7 +73,8 @@ export function randomizeFakes(seats: Seat[]) {
     const g = next[seat.id]
     if (!g?.fake) continue
     g.state = randomState(seat, next)
-    g.drink = Math.random() < 0.5
+    g.drink = randomPick('drink')
+    g.food = randomPick('food')
   }
   replaceGuests(next)
 }

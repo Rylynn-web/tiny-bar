@@ -9,7 +9,7 @@ import { getLayoutItems } from '../../state/layoutStore'
 import { catalog } from '../catalog'
 import { markInteractiveHit } from '../interaction/tap'
 import { boundsOf } from './bounds'
-import { constrain, dragPlane, pickWall, rotateOffsets, round3, wallOf, wallRotation } from './dragMath'
+import { constrain, dragPlane, pickWall, rotateOffsets, round3, surfaceUnder, wallOf, wallRotation } from './dragMath'
 import { wallState } from '../../state/wallVisibility'
 import type { Wall } from '../room/walls'
 import {
@@ -104,6 +104,18 @@ export function EditorItem({ item, children }: { item: LayoutItem; children: Rea
         moving = { ...current, rotationY }
         d.plane = dragPlane(moving, mount)
       }
+    }
+
+    // 台面小物件：指针下面有台面就落到台面高度，没有就落回地面（不再锁死原来的高度）
+    if (mount === 'floor' && catalog[item.type]?.onSurface) {
+      const s = surfaceUnder(e.ray, getLayoutItems(), item.id)
+      const top = s ? s.top : 0
+      if (s) hit.copy(s.point)
+      else if (!e.ray.intersectPlane(dragPlane({ ...moving, position: [0, 0, 0] }, mount), hit)) return
+      const target = hit.clone().add(new Vector3(d.grab!.x, 0, d.grab!.z))
+      const p = constrain(moving, mount, target, d.offMin!, d.offMax!, e.shiftKey)
+      transientUpdate(item.id, { position: round3([p[0], top, p[2]]) })
+      return
     }
 
     if (!e.ray.intersectPlane(d.plane!, hit)) return

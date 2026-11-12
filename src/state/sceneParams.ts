@@ -104,7 +104,7 @@ export const defaultSceneParams: SceneParams = {
   },
 }
 
-export type Ctx = { params: SceneParams; setParams: (p: SceneParams) => void }
+export type Ctx = { params: SceneParams; setParams: (p: SceneParams | ((prev: SceneParams) => SceneParams)) => void }
 
 export const SceneParamsContext = createContext<Ctx | null>(null)
 

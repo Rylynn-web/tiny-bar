@@ -31,7 +31,6 @@ import { BookLedge } from './decor/BookLedge'
 import { ShelfSet } from './decor/ShelfSet'
 import { WallPlate } from './decor/WallPlate'
 import { WallRod } from './decor/WallRod'
-import { Chalkboard } from './decor/Chalkboard'
 
 const D = sceneConfig.decor
 // 画作 / 相框 / 圆盘：换种子 = 换一幅，换配色 = 从强调色里重新组合
@@ -97,20 +96,18 @@ export const catalog: Record<string, CatalogEntry> = {
     defaultProps: { items: 'mug', width: 1.2, seed: 0 },
   },
   door: { label: '门', mount: 'wall', component: Door, colorProps: oneColor('门板', 'slate') },
-  // 木框合并；写字的板面自己标了不合并（粉笔字会跟着称号 / 时段重画）
-  chalkboard: { label: '门口小黑板', mount: 'floor', component: Chalkboard },
   sofa: { label: '双人沙发', mount: 'floor', component: Sofa, defaultProps: { color: 'rust' }, colorProps: oneColor('沙发', 'rust') },
   pouf: { label: '方凳', mount: 'floor', component: Pouf, defaultProps: { color: 'cream' }, colorProps: oneColor('凳面', 'cream') },
   coffeeTable: { label: '茶几', mount: 'floor', component: CoffeeTable, colorProps: oneColor('茶几', 'dark') },
   zebraRug: { label: '斑马纹地毯', mount: 'floor', component: ZebraRug, collide: false },
   bookshelf: { label: '书柜', mount: 'floor', component: Bookshelf, colorProps: oneColor('柜体', 'wood') },
   // 下面这些放在别的家具台面上：也是地面物件，y 设成台面高度，拖动时保持这个高度
-  turntable: { label: '唱机', mount: 'floor', component: Turntable },
-  stackLamp: { label: '叠环台灯', mount: 'floor', component: StackLamp, defaultProps: { color: 'orange' }, colorProps: oneColor('灯身', 'orange'), editableProps: brightness },
-  mushroomLamp: { label: '蘑菇台灯', mount: 'floor', component: MushroomLamp, editableProps: brightness },
+  turntable: { onSurface: true, label: '唱机', mount: 'floor', component: Turntable },
+  stackLamp: { onSurface: true, label: '叠环台灯', mount: 'floor', component: StackLamp, defaultProps: { color: 'orange' }, colorProps: oneColor('灯身', 'orange'), editableProps: brightness },
+  mushroomLamp: { onSurface: true, label: '蘑菇台灯', mount: 'floor', component: MushroomLamp, editableProps: brightness },
   floorLamp: { label: '落地弧灯', mount: 'floor', component: FloorLamp, collide: false, editableProps: brightness },
-  vase: { label: '花瓶', mount: 'floor', component: Vase, defaultProps: { color: 'cream' }, colorProps: oneColor('瓶身', 'cream') },
-  bookStack: { label: '书摞', mount: 'floor', component: BookStack },
+  vase: { onSurface: true, label: '花瓶', mount: 'floor', component: Vase, defaultProps: { color: 'cream' }, colorProps: oneColor('瓶身', 'cream') },
+  bookStack: { onSurface: true, label: '书摞', mount: 'floor', component: BookStack },
   cityWindow: {
     label: '城市落地窗',
     mount: 'wall',

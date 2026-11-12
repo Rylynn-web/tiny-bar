@@ -8,7 +8,7 @@ export type TrackEvent =
   | 'seat_taken'
   | 'status_changed'
   | 'emote_set'
-  | 'order_placed'
+  | 'drink_ordered'
   | 'song_requested'
   | 'good_chat'
   | 'leave'

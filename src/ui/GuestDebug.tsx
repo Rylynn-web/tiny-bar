@@ -2,8 +2,11 @@ import { useEffect } from 'react'
 import { button, folder, useControls } from 'leva'
 import { useSeats } from '../config/seatConfig'
 import { guestStateLabels, guestStates, type GuestState } from '../config/poses'
-import { getGuests, hasNeighbor, setGuest, setGuestEmote, useGuests } from '../state/guests'
-import { addFakeGuest, clearFakes, fillFakes, randomizeFakes, removeFakeGuest } from '../state/fakeGuests'
+import { getGuests, hasNeighbor, setGuest, setGuestEmote, setGuestOrder, useGuests } from '../state/guests'
+import { menuItems, menuAtlasOrder, type MenuId } from '../config/menu'
+import { copy } from './copy'
+import { useSceneParams } from '../state/sceneParams'
+import { addFakeGuest, clearFakes, fillFakes, randomizeFakes, removeFakeGuest, setFakeMenuTime } from '../state/fakeGuests'
 import { getFlow } from '../state/flow'
 import { FlowDebug } from './FlowDebug'
 import { expressionLabels, expressions, type Expression } from '../config/expressions'
@@ -17,6 +20,13 @@ const emoteOptions: Record<string, EmoteChoice> = {
   自动: 'auto',
   ...Object.fromEntries(expressions.map((e) => [expressionLabels[e], e])),
 }
+type OrderChoice = MenuId | 'none'
+const orderOptions = Object.fromEntries(
+  (['drink', 'food'] as const).map((kind) => [
+    kind,
+    { 无: 'none', ...Object.fromEntries(menuAtlasOrder.filter((id) => menuItems[id].kind === kind).map((id) => [copy.menu.items[id], id])) },
+  ]),
+) as unknown as Record<'drink' | 'food', Record<string, OrderChoice>>
 const options: Record<string, Choice> = {
   空着: 'none',
   ...Object.fromEntries(guestStates.map((s) => [guestStateLabels[s], s])),
@@ -25,6 +35,8 @@ const options: Record<string, Choice> = {
 export function GuestDebug() {
   const seats = useSeats()
   const guests = useGuests()
+  // 假客人从当前时段的菜单里点
+  setFakeMenuTime(useSceneParams().timeOfDay)
 
   const [, set] = useControls(
     () => ({
@@ -64,18 +76,18 @@ export function GuestDebug() {
                   },
                 },
               ],
-              [
-                `${seat.id}·饮料`,
+              ...(['drink', 'food'] as const).map((kind) => [
+                `${seat.id}·${kind}`,
                 {
-                  value: getGuests()[seat.id]?.drink ?? false,
-                  label: '  点了饮料',
-                  onChange: (v: boolean, _path: string, ctx: { initial: boolean; fromPanel: boolean }) => {
+                  value: (getGuests()[seat.id]?.[kind] ?? 'none') as OrderChoice,
+                  options: orderOptions[kind],
+                  label: kind === 'drink' ? '  饮品' : '  小食',
+                  onChange: (v: OrderChoice, _path: string, ctx: { initial: boolean; fromPanel: boolean }) => {
                     if (ctx.initial || !ctx.fromPanel) return
-                    const g = getGuests()[seat.id]
-                    if (g) setGuest(seat.id, g.state, v)
+                    setGuestOrder(seat.id, kind, v === 'none' ? null : v)
                   },
                 },
-              ],
+              ]),
             ]),
           ),
         },
@@ -87,11 +99,12 @@ export function GuestDebug() {
 
   // 按钮改了座位以后，把面板上的值同步过来；选了交谈但邻座没人时，面板上照样显示（实际按静坐）
   useEffect(() => {
-    const values: Record<string, Choice | EmoteChoice | boolean> = {}
+    const values: Record<string, Choice | EmoteChoice | OrderChoice> = {}
     for (const seat of seats) {
       const g = guests[seat.id]
       values[`${seat.id}·状态`] = g?.state ?? 'none'
-      values[`${seat.id}·饮料`] = g?.drink ?? false
+      values[`${seat.id}·drink`] = g?.drink ?? 'none'
+      values[`${seat.id}·food`] = g?.food ?? 'none'
       values[`${seat.id}·表情`] = g?.emote ?? 'auto'
     }
     set(values as never)

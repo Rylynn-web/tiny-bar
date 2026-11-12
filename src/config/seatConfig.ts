@@ -8,8 +8,8 @@ import { sceneConfig } from './sceneConfig'
 import { catalog } from '../scene/catalog'
 import { useLayoutItems } from '../state/layoutStore'
 
-/** 坐姿类型：小人按它切换腿和手臂；stand = 站着（进店 / 离店时在门口） */
-export type SeatPose = 'chair' | 'stool' | 'sofa' | 'pouf' | 'stand'
+/** 坐姿类型：小人按它切换腿和手臂 */
+export type SeatPose = 'chair' | 'stool' | 'sofa' | 'pouf'
 
 export type Seat = {
   /** 家具只有一个座位时等于家具 id；多个座位时为 `家具id:序号` */
@@ -30,6 +30,11 @@ export type Seat = {
   desk: Vec3 | null
   /** 桌面属于哪件家具（同一张桌子的座位算一组：拼桌 / 一起来的朋友） */
   deskItemId: string | null
+  /**
+   * 点的东西放在哪（世界坐标，桌面高度）：有正前方的桌面就用它；没有（沙发、方凳）就用附近最近的桌面上、
+   * 离座位最近的那一点；附近都没有桌面为 null（点了也不显示）
+   */
+  table: Vec3 | null
 }
 
 const up = new Vector3(0, 1, 0)
@@ -66,6 +71,7 @@ export function deriveSeats(items: LayoutItem[]): Seat[] {
         neighbors: [],
         desk: null,
         deskItemId: null,
+        table: null,
       })
     })
   }
@@ -117,6 +123,33 @@ export function deriveSeats(items: LayoutItem[]): Seat[] {
       break
     }
   }
+  // 放点单的位置：没有正前方桌面时，找最近的桌面上离座位最近的点（往桌里收一点）
+  const O = sceneConfig.order
+  for (const seat of seats) {
+    if (seat.desk) {
+      seat.table = seat.desk
+      continue
+    }
+    let best: Vec3 | null = null
+    let bestD: number = O.nearestSurface
+    for (const { item, yaw, scale, s } of surfaces) {
+      // 太高的台面（书柜顶、吧台）不算
+      if (item.position[1] + s.height * scale > seat.position[1] + D.maxRise) continue
+      local.set(seat.position[0] - item.position[0], 0, seat.position[2] - item.position[2]).applyAxisAngle(up, -yaw).divideScalar(scale)
+      const inset = O.surfaceInset / scale
+      const cx = MathUtils.clamp(local.x, Math.min(s.min[0] + inset, (s.min[0] + s.max[0]) / 2), Math.max(s.max[0] - inset, (s.min[0] + s.max[0]) / 2))
+      const cz = MathUtils.clamp(local.z, Math.min(s.min[1] + inset, (s.min[1] + s.max[1]) / 2), Math.max(s.max[1] - inset, (s.min[1] + s.max[1]) / 2))
+      const p = new Vector3(cx, 0, cz).multiplyScalar(scale).applyAxisAngle(up, yaw)
+      const wx = item.position[0] + p.x
+      const wz = item.position[2] + p.z
+      const d = Math.hypot(wx - seat.position[0], wz - seat.position[2])
+      if (d < bestD) {
+        bestD = d
+        best = [wx, item.position[1] + s.height * scale, wz]
+      }
+    }
+    seat.table = best
+  }
   return seats
 }
 
@@ -126,25 +159,3 @@ export function useSeats() {
   return useMemo(() => deriveSeats(items), [items])
 }
 
-/** 门口的"站位"：进店 / 离店时自己的小人站在这里（门口地毯中心往室内挪一点，面朝室内） */
-export const ENTRANCE_ID = '__entrance'
-export function entranceSpot(items: LayoutItem[]): Seat {
-  const E = sceneConfig.flow.entrance
-  const mat = items.find((i) => i.type === 'doorMat')
-  const yaw = mat ? MathUtils.degToRad(mat.rotationY) : 0
-  const base: Vec3 = mat ? [mat.position[0], 0, mat.position[2]] : E.fallback
-  const position: Vec3 = [base[0] + Math.sin(yaw) * E.inward, 0, base[2] + Math.cos(yaw) * E.inward]
-  const f = sceneConfig.seating.focus
-  return {
-    id: ENTRANCE_ID,
-    itemId: ENTRANCE_ID,
-    type: 'entrance',
-    position,
-    rotationY: yaw,
-    pose: 'stand',
-    focus: { target: [position[0], f.lift, position[2]], azimuthDeg: f.azimuthDeg, depressionDeg: f.depressionDeg, viewSize: f.viewSize },
-    neighbors: [],
-    desk: null,
-    deskItemId: null,
-  }
-}

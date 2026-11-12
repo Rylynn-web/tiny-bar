@@ -268,18 +268,49 @@ export const sceneConfig = {
       color: '#F3E9DC',
       margin: 16,
     },
+    // 底部弹出的菜单卡片
+    menu: {
+      background: '#F3E9DC',
+      color: '#3B3A40',
+      cardBackground: '#FFFFFF',
+      // 已经在桌上的那一项：描边颜色
+      selected: '#C4573A',
+      shadow: '0 -8px 30px rgba(0, 0, 0, 0.18)',
+      radius: 20,
+    },
   },
 
   // ───────── 单人流程（P2） ─────────
   flow: {
-    // 进店后在门口站多久再进入选座（秒）
-    enteringSeconds: 2.5,
-    // 起身离开后多久出小票（秒）
-    leavingSeconds: 1.5,
+    // 进店的过渡多久进入选座、起身后多久出小票（秒）
+    enteringSeconds: 0.6,
+    leavingSeconds: 0.6,
     // 和同一个人连续交谈这么多秒，记一次"聊得开心"
     goodChatSeconds: 20,
-    // 门口站的位置：门口地毯（layout 里 type = doorMat）中心往室内挪多少（米）；找不到地毯时用 fallback
-    entrance: { inward: 0.15, fallback: [2.2, 0, -2.5] as Vec3 },
+  },
+  // ───────── 时段：按访客选的时区（默认浏览器本地时区）切换白天 / 夜晚，菜单跟着场景时段换 ─────────
+  clock: {
+    // 白天从几点开始、到几点结束（24 小时制，含开始、不含结束）
+    dayStart: 7,
+    dayEnd: 18,
+    // 多久检查一次是否跨过了边界（秒）
+    checkSeconds: 60,
+  },
+  // ───────── 点单：桌上的饮品 / 小食 ─────────
+  order: {
+    // 饮品放在小人右手边、小食放在左手边，离桌面锚点多远（米）
+    drinkOffset: 0.15,
+    foodOffset: 0.17,
+    // 再往座位方向挪一点（让东西靠近自己这一侧）
+    towardSeat: 0.02,
+    // 没有正前方桌面的座位（沙发、方凳）：在这个距离内找最近的桌面
+    nearestSurface: 1.2,
+    // 放到最近桌面上时，离桌边往里收多少
+    surfaceInset: 0.1,
+    // 图集：每格像素（8 格排成 4 × 2）
+    atlasCell: 128,
+    // 图片底部贴桌面时往下压一点，避免看起来悬空（米）
+    sink: 0.004,
   },
   // 头顶称号标签：canvas 贴图的小牌子，正对镜头。尺寸米，贴图像素
   titleTag: {
@@ -291,23 +322,6 @@ export const sceneConfig = {
     font: "600 34px 'Avenir Next', 'Helvetica Neue', sans-serif",
     background: 'rgba(59, 58, 64, 0.82)',
     color: '#F3E9DC',
-  },
-  // 门口 A 字小黑板：原点在地面中心，+Z 是写字的一面
-  chalkboard: {
-    width: 0.46,
-    height: 0.62,
-    // 板面离地高度、两条腿张开的角度
-    bottom: 0.12,
-    tilt: deg(12),
-    frame: 0.03,
-    thickness: 0.018,
-    boardColor: 'dark',
-    frameColor: 'wood',
-    chalkColor: 'cream',
-    accentColor: 'warmLight',
-    textureSize: [384, 512] as [number, number],
-    // 粉笔字：店名 / 欢迎语 / 称号
-    font: "'Chalkboard SE', 'Comic Sans MS', 'Marker Felt', cursive",
   },
 
   // ───────── 房间 ─────────
@@ -1014,9 +1028,6 @@ export const sceneConfig = {
     detail: { bodySegments: 20, bodyProfilePoints: 18, headSegments: [20, 14] as [number, number], eyeSegments: [8, 6] as [number, number], limbSegments: [3, 10] as [number, number] },
     // 道具（米）：所有小人共享同一套几何体和材质，颜色是调色板键名
     props: {
-      cupColor: 'cream',
-      // 桌上的杯子在小人右手边多远
-      cupDeskOffset: 0.17,
       book: { width: 0.2, height: 0.15, thickness: 0.012, coverColor: 'navy', pageColor: 'cream', openAngle: 0.14 },
       // 书在身体前方（身体坐标，设计单位）和往脸的方向倾斜的角度
       bookAt: [0, 0.8, 0.66] as Vec3,

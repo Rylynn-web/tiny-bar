@@ -28,6 +28,8 @@ export type CatalogEntry = {
   collide?: boolean
   /** 不参与网格合并（以后需要单独动起来的物件设为 false） */
   merge?: boolean
+  /** 台面小物件（唱机、台灯、花瓶…）：编辑器里拖到哪件家具的台面上，就落到那个台面的高度 */
+  onSurface?: boolean
   /** 墙面物件只能沿墙水平移动、高度固定 */
   lockY?: boolean
   /** 编辑器侧边栏里可以直接改的数值属性（写进 layout 的 props） */

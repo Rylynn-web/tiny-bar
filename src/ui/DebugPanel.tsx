@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react'
 import { Leva, folder, useControls } from 'leva'
-import { defaultSceneParams, useSetSceneParams, type SceneParams } from '../state/sceneParams'
+import { defaultSceneParams, useSceneParams, useSetSceneParams, type SceneParams } from '../state/sceneParams'
 
 // 只在网址带 ?debug 时按需加载。初始值全部来自 sceneConfig（经 defaultSceneParams）。
 
@@ -45,8 +45,10 @@ function pick(v: Record<string, unknown>, key: 'day' | 'night'): SceneParams['li
 
 export default function DebugPanel() {
   const setParams = useSetSceneParams()
+  const params = useSceneParams()
 
-  const v = useControls({
+  // 函数形式：拿到 set，时段跟着访客时区的钟点变化时同步到面板上
+  const [v, setControls] = useControls(() => ({
     小人: folder({
       bodyColor: { value: d.buddy.bodyColor, label: '身体' },
       eyeColor: { value: d.buddy.eyeColor, label: '眼睛' },
@@ -140,12 +142,17 @@ export default function DebugPanel() {
     }),
     // 白天 / 夜晚切换和两套灯光放在一起
     时段: {
-      value: d.timeOfDay,
+      value: params.timeOfDay,
       options: { 白天: 'day', 夜晚: 'night' },
     },
     白天灯光: folder(lightingFolder('day'), { collapsed: true }),
     夜晚灯光: folder(lightingFolder('night'), { collapsed: true }),
-  }) as Record<string, unknown>
+  })) as unknown as [Record<string, unknown>, (values: Record<string, unknown>) => void]
+
+  // 钟点跨过白天 / 夜晚边界（或换了时区）时，面板上的时段跟着变
+  useEffect(() => {
+    setControls({ 时段: params.timeOfDay })
+  }, [params.timeOfDay, setControls])
 
   const key = JSON.stringify(v)
   useEffect(() => {

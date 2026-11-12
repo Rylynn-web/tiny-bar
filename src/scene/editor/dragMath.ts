@@ -4,6 +4,7 @@ import { sceneConfig } from '../../config/sceneConfig'
 import { editorConfig } from '../../config/editorConfig'
 import { roomBounds } from '../../state/layoutStore'
 import { normalizeDeg, wallOf, type Wall } from '../room/walls'
+import { catalog } from '../catalog'
 
 /** 当前房间范围（房间尺寸可以在编辑器里改，所以每次现取） */
 export function roomLimits() {
@@ -118,4 +119,38 @@ export function constrain(
 /** 保留三位小数，避免 JSON 里出现 0.30000000000000004 */
 export function round3(v: Vec3): Vec3 {
   return v.map((n) => Math.round(n * 1000) / 1000) as Vec3
+}
+
+const surfacePlane = new Plane(new Vector3(0, 1, 0), 0)
+const surfaceHit = new Vector3()
+const surfaceLocal = new Vector3()
+const yAxis = new Vector3(0, 1, 0)
+
+/**
+ * 台面小物件：指针下面最先碰到的台面（沿视线最近的那块，通常也是最高的）。
+ * 返回台面上的落点和台面高度；指针下面没有台面时返回 null（落回地面）
+ */
+export function surfaceUnder(ray: Ray, items: LayoutItem[], excludeId: string): { point: Vector3; top: number } | null {
+  let best: { point: Vector3; top: number } | null = null
+  let bestDist = Infinity
+  for (const it of items) {
+    if (it.id === excludeId) continue
+    const list = catalog[it.type]?.component.surfaces
+    if (!list?.length) continue
+    const yaw = MathUtils.degToRad(it.rotationY)
+    const scale = it.scale ?? 1
+    for (const s of list) {
+      const top = it.position[1] + s.height * scale
+      surfacePlane.constant = -top
+      if (!ray.intersectPlane(surfacePlane, surfaceHit)) continue
+      surfaceLocal.set(surfaceHit.x - it.position[0], 0, surfaceHit.z - it.position[2]).applyAxisAngle(yAxis, -yaw).divideScalar(scale)
+      if (surfaceLocal.x < s.min[0] || surfaceLocal.x > s.max[0] || surfaceLocal.z < s.min[1] || surfaceLocal.z > s.max[1]) continue
+      const dist = ray.origin.distanceTo(surfaceHit)
+      if (dist < bestDist) {
+        bestDist = dist
+        best = { point: surfaceHit.clone(), top }
+      }
+    }
+  }
+  return best
 }

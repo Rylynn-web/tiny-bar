@@ -6,7 +6,7 @@ import { BevelBox } from '../primitives/BevelBox'
 import { InstancedMatte, type InstanceItem } from '../primitives/InstancedLathe'
 import { seededRandom } from '../primitives/canvasTexture'
 import { paletteColor } from '../paletteColor'
-import type { CatalogProps } from '../catalogTypes'
+import type { CatalogProps, SurfaceAnchor } from '../catalogTypes'
 
 const B = sceneConfig.lounge.bookshelf
 // 书和唱片封套共用一个单位方块，按实例缩放（太小，不做倒角）
@@ -77,3 +77,6 @@ export function Bookshelf({ props }: CatalogProps) {
     </group>
   )
 }
+
+/** 顶面：唱机、台灯这类小物件可以放上去 */
+Bookshelf.surfaces = [{ min: [-B.width / 2, -B.depth / 2], max: [B.width / 2, B.depth / 2], height: B.height }] satisfies SurfaceAnchor[]

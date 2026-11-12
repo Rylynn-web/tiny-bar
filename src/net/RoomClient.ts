@@ -1,6 +1,7 @@
 import type { Expression } from '../config/expressions'
 import type { GuestState } from '../config/poses'
 import { generateTitle } from '../config/titles'
+import { menuItems, type MenuId } from '../config/menu'
 import { MAX_GUESTS, getGuests, newSeed } from '../state/guests'
 import { getNowPlaying } from '../state/nowPlaying'
 import { logLeft, logOrder, logSong } from '../state/sessionLog'
@@ -21,8 +22,8 @@ export interface RoomClient {
   setStatus(state: GuestState): void
   /** 设置自己小人的表情；null = 回到自动表情 */
   setEmote(expression: Expression | null): void
-  /** 点单（饮料 / 咖啡的名字） */
-  order(item: string): void
+  /** 点单：桌上最多一杯饮品 + 一份小食，再点同类会替换原来的 */
+  order(item: MenuId): void
   /** 点歌 */
   requestSong(song: Track): void
   /** 店里正在放的歌（变化用 state/nowPlaying 的 useNowPlaying / subscribeNowPlaying 监听） */
@@ -50,9 +51,9 @@ abstract class BaseRoomClient implements RoomClient {
     track('emote_set', { expression })
     this.send({ type: 'emote', expression })
   }
-  order(item: string) {
+  order(item: MenuId) {
     logOrder(item)
-    track('order_placed', { item })
+    track('drink_ordered', { item, kind: menuItems[item].kind })
     this.send({ type: 'order', item })
   }
   requestSong(song: Track) {
@@ -91,7 +92,7 @@ export class LocalRoomClient extends BaseRoomClient {
       case 'join': {
         const taken = Object.values(guests).map((g) => g.title ?? '')
         const title = generateTitle(taken)
-        this.me = { id: `local-${++this.ids}`, title, seatId: null, state: 'idle', drink: false, emote: null, seed: newSeed() }
+        this.me = { id: `local-${++this.ids}`, title, seatId: null, state: 'idle', drink: null, food: null, emote: null, seed: newSeed() }
         const others: GuestSnapshot[] = []
         this.reply({ type: 'welcome', you: { id: this.me.id, title }, guests: others, nowPlaying: getNowPlaying() })
         break
@@ -111,8 +112,8 @@ export class LocalRoomClient extends BaseRoomClient {
         this.update({ emote: msg.expression })
         break
       case 'order':
-        // 假装做好了：立刻端上来
-        this.update({ drink: true })
+        // 假装做好了：立刻端上来，同类的替换掉
+        this.update({ [menuItems[msg.item].kind]: msg.item })
         this.reply({ type: 'orderReady', item: msg.item })
         break
       case 'requestSong':

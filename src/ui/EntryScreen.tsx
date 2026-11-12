@@ -3,6 +3,7 @@ import { sceneConfig } from '../config/sceneConfig'
 import { track } from '../net/track'
 import { stepInside } from '../state/flowActions'
 import { copy } from './copy'
+import { TimeZonePicker } from './TimeZonePicker'
 
 const E = sceneConfig.ui.entry
 
@@ -21,6 +22,7 @@ export function EntryScreen() {
       >
         {copy.entry.stepInside}
       </button>
+      <TimeZonePicker className="entry-tz" />
     </div>
   )
 }

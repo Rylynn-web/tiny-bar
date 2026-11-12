@@ -3,8 +3,7 @@ import type { Mesh } from 'three'
 import { useFrame } from '@react-three/fiber'
 import { DoubleSide, InstancedBufferAttribute, Matrix4, MeshBasicMaterial, MeshPhysicalMaterial, type BufferGeometry, type InstancedMesh } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
-import { ENTRANCE_ID, entranceSpot, useSeats } from '../../config/seatConfig'
-import { useLayoutItems } from '../../state/layoutStore'
+import { useSeats } from '../../config/seatConfig'
 import { useFlow } from '../../state/flow'
 import { TitleTag } from './TitleTag'
 import { MAX_GUESTS, choosePartner, effectiveState, useGuests } from '../../state/guests'
@@ -14,6 +13,8 @@ import { bookHalfGeometry, bubbleTexture, partGeometry as G } from './parts'
 import { Rig, type RigInput } from './rig'
 import { cellOffset, getFaceAtlas } from './faceAtlas'
 import { faceAtlas } from '../../config/expressions'
+import type { MenuId } from '../../config/menu'
+import { createMenuMaterial, menuCell, menuPlaneGeometry } from './menuAtlas'
 
 const B = sceneConfig.buddy
 const P = B.props
@@ -28,7 +29,8 @@ const SLOTS = {
   head: 1,
   eyes: 1,
   cheeks: 1,
-  cup: 1,
+  drink: 1,
+  food: 1,
   bookHalves: 2,
   page: 1,
   laptopBase: 1,
@@ -46,8 +48,6 @@ export function Guests() {
   const seats = useSeats()
   const guests = useGuests()
   const flow = useFlow()
-  const items = useLayoutItems()
-  const entrance = useMemo(() => entranceSpot(items), [items])
   const tagRef = useRef<Mesh>(null)
   const { palette, buddy } = useSceneParams()
   const rigs = useRef(new Map<string, Rig>())
@@ -77,12 +77,15 @@ export function Guests() {
     faceMat.needsUpdate = true
   }, [faceMat, atlas])
   const eyesGeo = useMemo(() => withCells(G.eyes), [])
+  const menuMat = useMemo(() => createMenuMaterial(), [])
+  const drinkGeo = useMemo(() => withCells(menuPlaneGeometry()), [])
+  const foodGeo = useMemo(() => withCells(menuPlaneGeometry()), [])
   const cheeksGeo = useMemo(() => withCells(G.cheeks), [])
   const bookHalf = useMemo(() => bookHalfGeometry(palette[P.book.pageColor], palette[P.book.coverColor]), [palette])
   const bubbleMap = useMemo(() => bubbleTexture(), [])
   useEffect(() => () => bookHalf.dispose(), [bookHalf])
 
-  // 当前坐着的人（最多 8 个）和每人的交谈对象；进店 / 选座 / 离店时自己站在门口
+  // 当前坐着的人（最多 8 个）和每人的交谈对象
   const active = useMemo(() => {
     const byId = new Map(seats.map((s) => [s.id, s]))
     const list: (RigInput & { seed: number; self: boolean })[] = []
@@ -101,19 +104,14 @@ export function Guests() {
         others,
         state: effectiveState(seat, g, guests),
         drink: g.drink,
+        food: g.food,
         seed: g.seed,
         emote: g.emote ?? null,
         self: !!g.self,
       })
     }
-    const standing = flow.phase === 'entering' || flow.phase === 'seating' || flow.phase === 'leaving'
-    if (standing && flow.title && !flow.seatId && list.length < MAX_GUESTS) {
-      let seed = 1
-      for (const ch of flow.selfId ?? flow.title) seed = (seed * 31 + ch.charCodeAt(0)) % 1e6
-      list.push({ seat: entrance, partner: null, others: [], state: 'idle', drink: false, seed, emote: null, self: true })
-    }
     return list
-  }, [seats, guests, flow, entrance])
+  }, [seats, guests])
 
   const seen = useRef<Set<string> | null>(null)
   useFrame(({ camera, clock }, delta) => {
@@ -125,7 +123,7 @@ export function Guests() {
     // 有人新坐下：已经坐着的邻座跟他打个招呼（开场时坐着的人不算）
     if (seen.current) {
       for (const a of active) {
-        if (seen.current.has(a.seat.id) || a.seat.id === ENTRANCE_ID) continue
+        if (seen.current.has(a.seat.id)) continue
         for (const n of a.seat.neighbors) rigs.current.get(n)?.greet(now)
       }
     }
@@ -155,7 +153,11 @@ export function Guests() {
       write('laptopBase', i, laptopOn ? rig.laptop.matrixWorld : hidden)
       write('laptopLid', i, laptopOn ? rig.lid.matrixWorld : hidden)
       write('screen', i, laptopOn ? rig.lid.matrixWorld : hidden)
-      write('cup', i, rig.pops.cup.scale > 0 ? rig.cupMatrix : hidden)
+      const onTable = !!a.seat.table
+      write('drink', i, onTable && rig.shownDrink ? rig.drinkMatrix : hidden)
+      write('food', i, onTable && rig.shownFood ? rig.foodMatrix : hidden)
+      if (rig.shownDrink) setMenuCell(drinkGeo, i, rig.shownDrink)
+      if (rig.shownFood) setMenuCell(foodGeo, i, rig.shownFood)
       write('bubble', i, rig.pops.bubble.scale > 0 ? rig.bubbleMatrix : hidden)
     })
     // 自己头顶的称号标签
@@ -173,6 +175,8 @@ export function Guests() {
       mesh.count = active.length * SLOTS[slot]
       mesh.instanceMatrix.needsUpdate = true
     }
+    ;(drinkGeo.attributes.instanceCell as InstancedBufferAttribute).needsUpdate = true
+    ;(foodGeo.attributes.instanceCell as InstancedBufferAttribute).needsUpdate = true
     ;(eyesGeo.attributes.instanceCell as InstancedBufferAttribute).needsUpdate = true
     ;(cheeksGeo.attributes.instanceCell as InstancedBufferAttribute).needsUpdate = true
   })
@@ -195,9 +199,9 @@ export function Guests() {
       <instancedMesh ref={ref('eyes')} args={[eyesGeo, faceMat, max('eyes')]} frustumCulled={false} renderOrder={2} />
       <instancedMesh ref={ref('cheeks')} args={[cheeksGeo, faceMat, max('cheeks')]} frustumCulled={false} renderOrder={1} />
 
-      <instancedMesh ref={ref('cup')} args={[G.cup, undefined, max('cup')]} {...prop}>
-        <meshStandardMaterial color={palette[P.cupColor]} roughness={M.roughness} metalness={0} envMapIntensity={M.envMapIntensity} side={DoubleSide} />
-      </instancedMesh>
+      {/* 桌上点的东西：图片立在桌面上（图集 + 每个实例的格子），饮品一组、小食一组 */}
+      <instancedMesh ref={ref('drink')} args={[drinkGeo, menuMat, max('drink')]} {...prop} />
+      <instancedMesh ref={ref('food')} args={[foodGeo, menuMat, max('food')]} {...prop} />
       <instancedMesh ref={ref('bookHalves')} args={[bookHalf, undefined, max('bookHalves')]} {...prop}>
         <meshStandardMaterial vertexColors roughness={M.roughness} metalness={0} envMapIntensity={M.envMapIntensity} />
       </instancedMesh>
@@ -250,6 +254,11 @@ function withCells(source: BufferGeometry) {
   }
   g.setAttribute('instanceCell', new InstancedBufferAttribute(arr, 2))
   return g
+}
+
+function setMenuCell(g: BufferGeometry, i: number, id: MenuId) {
+  const [u, v] = menuCell(id)
+  ;(g.attributes.instanceCell as InstancedBufferAttribute).setXY(i, u, v)
 }
 
 function setCell(g: BufferGeometry, i: number, cell: number) {

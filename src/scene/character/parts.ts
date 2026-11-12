@@ -17,7 +17,6 @@ import {
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { buddyShape as S, sceneConfig } from '../../config/sceneConfig'
-import { getLathe } from '../primitives/useLathe'
 
 // 小人零件和道具的共享几何体：所有小人共用一份（实例化绘制），只在模块加载时生成一次。
 // 小人零件用设计单位（全身高 2.8），道具用米。
@@ -190,7 +189,6 @@ export const partGeometry = {
   // 眼睛贴片（原点在眼睛那一行，方便眨眼时沿 Y 压扁）、腮红贴片（原点在头中心）
   eyes: faceGeometry(sceneConfig.buddy.face.eyesLift, EYE_Y),
   cheeks: faceGeometry(sceneConfig.buddy.face.cheeksLift, 0),
-  cup: getLathe(sceneConfig.bar.cup.profile, sceneConfig.detail.smallLatheSegments),
   page: pageGeometry(),
   laptopBase: laptopBase(),
   laptopLid: laptopLid(),

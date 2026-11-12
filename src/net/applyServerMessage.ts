@@ -8,7 +8,7 @@ import { logSeat, logTitle } from '../state/sessionLog'
 // 所以 UI 只需要读状态（flow / guests / nowPlaying / sessionLog），不用管消息从哪来。
 
 function toGuest(s: GuestSnapshot, selfId: string | null): Guest {
-  return { id: s.id, title: s.title, state: s.state, drink: s.drink, emote: s.emote, seed: s.seed, self: s.id === selfId }
+  return { id: s.id, title: s.title, state: s.state, drink: s.drink, food: s.food, emote: s.emote, seed: s.seed, self: s.id === selfId }
 }
 
 /** 按 id 放进 / 挪到对应座位（没坐下就从座位上拿掉） */
@@ -48,7 +48,7 @@ export function applyServerMessage(msg: ServerMessage) {
       setNowPlaying(msg.track)
       break
     case 'orderReady':
-      // 饮料的显示已经跟着 guestUpdated 的 drink 走；这里留给之后的提示界面
+      // 桌上的显示已经跟着 guestUpdated 的 drink / food 走；这里留给之后的提示界面
       break
     case 'error':
       console.warn('[room]', msg.reason)
