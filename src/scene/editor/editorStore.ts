@@ -4,15 +4,11 @@ import type { LayoutItem, RoomSize } from '../../config/layoutTypes'
 import { editorConfig } from '../../config/editorConfig'
 import { fileLayoutItems, fileRoom, getLayoutItems, getRoom, setLayoutItems, setRoom } from '../../state/layoutStore'
 import { catalog } from '../catalog'
-import { setWallMode } from '../../state/wallVisibility'
 import { normalizeDeg, roomLimits, wallOf } from './dragMath'
 
 // 编辑器状态：选中、撤销历史、未保存标记、本地备份、保存。只在开发环境 ?edit 下加载。
 
 const E = editorConfig
-
-// 编辑时默认显示全部墙，方便摆放墙面物件；面板里可以切到「跟随视角」
-setWallMode('showAll')
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
