@@ -125,5 +125,7 @@ export const poseTiming = {
     gesturePitch: deg(-72),
     gestureSplay: deg(18),
     gestureWave: deg(6),
+    // 一群人一起时（沙发区坐满）：偶尔扭头看看群里的其他人，只转头、身体还对着说话的那个人
+    glance: { interval: [5, 9] as [number, number], duration: 1.8, minOthers: 2 },
   },
 }

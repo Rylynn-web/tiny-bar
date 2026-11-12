@@ -59,6 +59,34 @@ export function hasNeighbor(seat: Seat, g: Guests = guests) {
   return seat.neighbors.some((id) => !!g[id])
 }
 
+/**
+ * 交谈对象：在有人坐的邻座里挑"最像同伴"的那个——
+ * 同一件家具（沙发的两个位置）或同一张桌子（拼桌 / 一起来的朋友）最优先，其次同类座位（两个方凳），
+ * 再其次是不用怎么转身就能面对的人（转向角越小越优先）
+ */
+export function choosePartner(seat: Seat, byId: Map<string, Seat>, g: Guests = guests): Seat | null {
+  let best: Seat | null = null
+  let bestScore = Infinity
+  for (const id of seat.neighbors) {
+    const other = byId.get(id)
+    if (!other || !g[id]) continue
+    const sameGroup = other.itemId === seat.itemId || (!!seat.deskItemId && other.deskItemId === seat.deskItemId)
+    const sameType = other.type === seat.type
+    // 在自己座位坐标里，对方在哪个方向（0 = 正前方）
+    const dx = other.position[0] - seat.position[0]
+    const dz = other.position[2] - seat.position[2]
+    const c = Math.cos(-seat.rotationY)
+    const s = Math.sin(-seat.rotationY)
+    const turn = Math.abs(Math.atan2(dx * c + dz * s, -dx * s + dz * c))
+    const score = (sameGroup ? 0 : sameType ? 10 : 20) + turn
+    if (score < bestScore) {
+      bestScore = score
+      best = other
+    }
+  }
+  return best
+}
+
 /** 当前真正生效的状态：选了交谈但邻座没人时退回静坐 */
 export function effectiveState(seat: Seat, guest: Guest, g: Guests = guests): GuestState {
   return guest.state === 'talking' && !hasNeighbor(seat, g) ? 'idle' : guest.state

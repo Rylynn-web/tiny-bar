@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { DoubleSide, InstancedBufferAttribute, Matrix4, MeshBasicMaterial, MeshPhysicalMaterial, type BufferGeometry, type InstancedMesh } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
 import { useSeats } from '../../config/seatConfig'
-import { MAX_GUESTS, effectiveState, useGuests } from '../../state/guests'
+import { MAX_GUESTS, choosePartner, effectiveState, useGuests } from '../../state/guests'
 import { useSceneParams } from '../../state/sceneParams'
 import { Glow } from '../primitives/Glow'
 import { bookHalfGeometry, bubbleTexture, partGeometry as G } from './parts'
@@ -81,10 +81,16 @@ export function Guests() {
     for (const seat of seats) {
       const g = guests[seat.id]
       if (!g || list.length >= MAX_GUESTS) continue
-      const partnerId = seat.neighbors.find((id) => guests[id])
+      // 交谈对象：同桌 / 同一件家具优先；群里其他有人的座位（不含对象、不在桌边的）用来偶尔扭头看看
+      const partner = choosePartner(seat, byId, guests)
+      const others = seat.neighbors
+        .filter((id) => guests[id] && id !== partner?.id)
+        .map((id) => byId.get(id)!)
+        .filter((o) => o && !o.desk && !seat.desk)
       list.push({
         seat,
-        partner: partnerId ? byId.get(partnerId) ?? null : null,
+        partner,
+        others,
         state: effectiveState(seat, g, guests),
         drink: g.drink,
         seed: g.seed,

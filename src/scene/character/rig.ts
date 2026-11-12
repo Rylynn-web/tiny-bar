@@ -84,6 +84,8 @@ export type RigInput = {
   partner: Seat | null
   /** 手动指定的表情（?debug / setEmote）；null = 按自动规则 */
   emote: Expression | null
+  /** 同一群里其他有人的座位（不含交谈对象）：人够多时偶尔扭头看看他们 */
+  others: Seat[]
 }
 
 export class Rig {
@@ -115,6 +117,9 @@ export class Rig {
   private flip: Beat
   private nod: Beat
   private stretch: Beat
+  private glance: Beat
+  private glanceAt: Seat | null = null
+  private glanceStart = -1
   private first = true
   private first2 = true
   // 表情
@@ -146,6 +151,7 @@ export class Rig {
     this.flip = new Beat(this.rand, T.page.interval, T.page.duration, now)
     this.nod = new Beat(this.rand, T.nod.interval, T.nod.duration, now)
     this.stretch = new Beat(this.rand, T.stretch.interval, T.stretch.duration, now)
+    this.glance = new Beat(this.rand, T.talk.glance.interval, T.talk.glance.duration, now)
     this.flash = {
       reading: new Beat(this.rand, X.reading.interval, X.reading.duration, now),
       laptop: new Beat(this.rand, X.laptop.interval, X.laptop.duration, now),
@@ -279,14 +285,31 @@ export class Rig {
 
     // 交谈：身体和头转向对方；两人轮流说话（座位 id 排在前面的先说）
     this.speaking = false
-    if (state === 'talking' && partner) {
-      const v = new Vector3(partner.position[0] - seat.position[0], 0, partner.position[2] - seat.position[2]).applyAxisAngle(
+    /** 某个座位在自己座位坐标里的方向角（0 = 正前方） */
+    const angleTo = (other: Seat) => {
+      const v = new Vector3(other.position[0] - seat.position[0], 0, other.position[2] - seat.position[2]).applyAxisAngle(
         up,
         -seat.rotationY,
       )
-      const ang = MathUtils.clamp(Math.atan2(v.x, v.z), -T.talk.maxTurn, T.talk.maxTurn)
+      return Math.atan2(v.x, v.z)
+    }
+    if (state === 'talking' && partner) {
+      const ang = MathUtils.clamp(angleTo(partner), -T.talk.maxTurn, T.talk.maxTurn)
       target.turn = ang * T.talk.torsoShare
       target.headYaw += ang * (1 - T.talk.torsoShare)
+      // 群里人够多时：偶尔扭头看一眼别人（身体不动）
+      const many = input.others.length >= T.talk.glance.minOthers
+      this.glance.tick(now, many)
+      if (many && this.glance.progress(now) >= 0) {
+        if (this.glance.start !== this.glanceStart) {
+          this.glanceStart = this.glance.start
+          this.glanceAt = input.others[Math.floor(this.rand() * input.others.length)]
+        }
+        if (this.glanceAt) {
+          const look = MathUtils.clamp(angleTo(this.glanceAt) - target.turn, -T.talk.maxTurn, T.talk.maxTurn)
+          target.headYaw = MathUtils.lerp(target.headYaw, look, this.glance.weight(now))
+        }
+      }
       const offset = seat.id < partner.id ? 0 : 0.5
       this.speaking = ((now / T.talk.period + offset) % 1) < 0.5
       if (this.speaking) {
