@@ -19,6 +19,15 @@ const defaultPolar = polarFromDepression(cam.defaultDepressionDeg)
 const ty = cam.target[1]
 const R = sceneConfig.room
 
+/** 主要输入方式是手指（手机、平板）：和画质档自动判断用同一个条件 */
+const isTouch = (() => {
+  try {
+    return window.matchMedia('(pointer: coarse)').matches
+  } catch {
+    return false
+  }
+})()
+
 /** 默认相机位置：焦点 + 球坐标偏移 */
 function defaultPositionFor(tx: number, tz: number) {
   return new Vector3().setFromSphericalCoords(cam.distance, defaultPolar, defaultAzimuth).add(new Vector3(tx, ty, tz))
@@ -98,7 +107,8 @@ export function CameraRig() {
     c.azimuthRotateSpeed = p.rotateSpeed
     c.polarRotateSpeed = p.rotateSpeed
     c.truckSpeed = p.truckSpeed
-    c.dollySpeed = p.dollySpeed
+    // 触屏设备双指缩放用单独的速度（捏合一次变化更大），电脑滚轮不变
+    c.dollySpeed = isTouch ? p.touchDollySpeed : p.dollySpeed
     c.minZoom = fullZoom
     c.maxZoom = closeZoom
 

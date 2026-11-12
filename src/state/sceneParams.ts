@@ -19,6 +19,7 @@ export type CameraParams = {
   rotateSpeed: number
   truckSpeed: number
   dollySpeed: number
+  touchDollySpeed: number
 }
 
 export type CityViewParams = {
@@ -97,6 +98,7 @@ export const defaultSceneParams: SceneParams = {
     rotateSpeed: sceneConfig.controls.rotateSpeed,
     truckSpeed: sceneConfig.controls.truckSpeed,
     dollySpeed: sceneConfig.controls.dollySpeed,
+    touchDollySpeed: sceneConfig.controls.touchDollySpeed,
   },
   buddy: {
     bodyColor: sceneConfig.buddy.bodyColor,

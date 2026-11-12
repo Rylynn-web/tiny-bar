@@ -119,6 +119,7 @@ export default function DebugPanel() {
       rotateSpeed: { value: d.camera.rotateSpeed, min: 0.1, max: 2, step: 0.05, label: '旋转速度' },
       truckSpeed: { value: d.camera.truckSpeed, min: 0.1, max: 3, step: 0.05, label: '平移速度' },
       dollySpeed: { value: d.camera.dollySpeed, min: 0.1, max: 3, step: 0.05, label: '缩放速度' },
+      touchDollySpeed: { value: d.camera.touchDollySpeed, min: 0.1, max: 4, step: 0.05, label: '手机缩放速度' },
     }),
     // 白天 / 夜晚切换和两套灯光放在一起
     时段: {
@@ -176,6 +177,7 @@ export default function DebugPanel() {
         rotateSpeed: v.rotateSpeed as number,
         truckSpeed: v.truckSpeed as number,
         dollySpeed: v.dollySpeed as number,
+        touchDollySpeed: v.touchDollySpeed as number,
       },
       buddy: {
         bodyColor: v.bodyColor as string,
