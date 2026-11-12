@@ -1,7 +1,7 @@
 {
   "room": {"width":7,"depth":6.8},
   "items": [
-    {"id":"door","type":"door","position":[1.5,0,-3.2],"rotationY":0},
+    {"id":"door","type":"door","position":[2.5,0,-3.2],"rotationY":0},
     {"id":"back-counter","type":"backCounter","position":[-2.2,0,-2.9],"rotationY":0},
     {"id":"shelf-mugs","type":"wallShelf","position":[-3.2,2,-3.2],"rotationY":0,"props":{"items":"mug","width":1.1}},
     {"id":"shelf-cups","type":"wallShelf","position":[-3.2,1.7,-3.2],"rotationY":0,"props":{"items":"cup","width":1.1}},
@@ -35,6 +35,13 @@
     {"id":"plant-monstera","type":"plant","position":[-0.7,0,2.918],"rotationY":20,"props":{"species":"monstera"}},
     {"id":"plant-banana","type":"plant","position":[-0.05,0,-2.7],"rotationY":-165,"props":{"species":"banana"}},
     {"id":"plant-pothos","type":"plant","position":[-3.7,1,-0.7],"rotationY":0,"props":{"species":"pothos"}},
-    {"id":"city-window","type":"cityWindow","position":[3,0,0.2],"rotationY":-90,"props":{"width":7}}
+    {"id":"city-window","type":"cityWindow","position":[3,0,0.2],"rotationY":-90,"props":{"width":7}},
+    {"id":"art-orb","type":"artOrb","position":[1.12,1.62,-3.2],"rotationY":0,"props":{"seed":7,"paletteSeed":0}},
+    {"id":"mirror-strip","type":"mirrorStrip","position":[1.12,0.98,-3.2],"rotationY":0,"props":{"count":4}},
+    {"id":"wall-plate","type":"wallPlate","position":[1.8,1.86,-3.2],"rotationY":0,"props":{"seed":3,"paletteSeed":2}},
+    {"id":"art-bokeh","type":"artBokeh","position":[-4,1.48,2],"rotationY":90,"props":{"seed":5,"paletteSeed":1}},
+    {"id":"art-horizon","type":"artHorizon","position":[-4,1.38,0.82],"rotationY":90,"props":{"seed":2,"paletteSeed":3}},
+    {"id":"orb-sconce","type":"orbSconce","position":[-2.38,1.95,-3.2],"rotationY":0},
+    {"id":"shelf-set","type":"shelfSet","position":[-4,1.3,-1.9],"rotationY":90,"props":{"seed":4,"paletteSeed":5}}
   ]
 }

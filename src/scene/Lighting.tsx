@@ -1,6 +1,12 @@
 import { Environment, Lightformer } from '@react-three/drei'
+import type { DirectionalLight } from 'three'
 import { sceneConfig } from '../config/sceneConfig'
 import { useLighting } from '../state/sceneParams'
+
+/** 主光的阴影相机额外渲染"只投影"层（隐形投影墙） */
+function enableShadowOnlyLayer(light: DirectionalLight | null) {
+  light?.shadow.camera.layers.enable(sceneConfig.shadows.shadowOnlyLayer)
+}
 
 /** 背景 + 环境光（天空/地面两色）+ 唯一一盏投影主光 + 程序化环境反射 */
 export function Lighting() {
@@ -13,6 +19,7 @@ export function Lighting() {
       <color attach="background" args={[l.background]} />
       <hemisphereLight args={[l.ambientSky, l.ambientGround, l.ambientIntensity]} />
       <directionalLight
+        ref={enableShadowOnlyLayer}
         position={sceneConfig.lighting.sunPosition}
         color={l.sunColor}
         intensity={l.sunIntensity}

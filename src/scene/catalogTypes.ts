@@ -29,4 +29,6 @@ export type CatalogEntry = {
   lockY?: boolean
   /** 编辑器侧边栏里可以直接改的数值属性（写进 layout 的 props） */
   editableProps?: { key: string; label: string; min: number; max: number; step: number }[]
+  /** 编辑器里的按钮：点一下把这个数值属性换成一个新的随机种子（如画作的"换一幅 / 换配色"） */
+  editorActions?: { label: string; reseed: string }[]
 }

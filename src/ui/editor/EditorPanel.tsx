@@ -135,6 +135,19 @@ export function EditorPanel() {
                 />
               )
             })}
+            {selectedEntry.editorActions && (
+              <div className="editor-panel__row">
+                {selectedEntry.editorActions.map((a) => (
+                  <button
+                    key={a.reseed}
+                    type="button"
+                    onClick={() => updateProp(selected.id, a.reseed, 1 + Math.floor(Math.random() * 999999))}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="editor-panel__row">
               <button type="button" onClick={() => rotateSelected(1)} disabled={selectedEntry.mount === 'wall'}>
                 旋转 15°

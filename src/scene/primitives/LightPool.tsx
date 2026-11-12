@@ -6,7 +6,7 @@ import { useLighting, useSceneParams } from '../../state/sceneParams'
 let texture: CanvasTexture | null = null
 
 /** 白色径向渐变，全场景共用一张 */
-function getPoolTexture() {
+export function getPoolTexture() {
   if (!texture) {
     const { textureSize: n, midStop, midAlpha } = sceneConfig.lightPool
     const canvas = document.createElement('canvas')

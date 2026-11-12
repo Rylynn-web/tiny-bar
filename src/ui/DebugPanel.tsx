@@ -59,6 +59,12 @@ export default function DebugPanel() {
       orange: { value: d.palette.orange, label: '橙' },
       leaf: { value: d.palette.leaf, label: '叶子' },
       leafDark: { value: d.palette.leafDark, label: '深色叶子' },
+      accentCobalt: { value: d.palette.accentCobalt, label: '强调·钴蓝' },
+      accentVermilion: { value: d.palette.accentVermilion, label: '强调·橘红' },
+      accentGrass: { value: d.palette.accentGrass, label: '强调·草绿' },
+      accentLemon: { value: d.palette.accentLemon, label: '强调·柠檬黄' },
+      accentPink: { value: d.palette.accentPink, label: '强调·粉' },
+      accentCyan: { value: d.palette.accentCyan, label: '强调·青蓝' },
     }),
     造型: folder({
       bevel: { value: d.bevel, min: 0, max: 0.08, step: 0.002, label: '倒角半径' },
@@ -69,6 +75,7 @@ export default function DebugPanel() {
       emScreen: { value: d.emissive.screen, min: 0, max: 10, step: 0.1, label: '屏幕' },
       emLamp: { value: d.emissive.lamp, min: 0, max: 20, step: 0.5, label: '台灯' },
       emPool: { value: d.emissive.pool, min: 0, max: 1, step: 0.05, label: '光斑' },
+      emSconce: { value: d.emissive.sconce, min: 0, max: 20, step: 0.5, label: '球壁灯' },
     }),
     性能: folder({
       mergeStatic: { value: d.mergeStatic, label: '合并网格' },
@@ -150,6 +157,7 @@ export default function DebugPanel() {
         screen: v.emScreen as number,
         lamp: v.emLamp as number,
         pool: v.emPool as number,
+        sconce: v.emSconce as number,
       },
       camera: {
         azimuthMinDeg: v.azimuthMinDeg as number,

@@ -23,6 +23,8 @@ export const sceneConfig = {
     normalBias: 0.02,
     // 主光阴影相机覆盖范围（世界单位，正交），要盖住整个房间
     cameraExtent: 5.8,
+    // 只投影、不显示的物体（侧墙的隐形投影墙）放在这一层：主相机不画它们，只有主光的阴影相机画，省掉主画面的绘制调用
+    shadowOnlyLayer: 1,
   },
   performance: {
     // 每个物件内部把同材质零件合并成一个网格（减少绘制调用）；leva 里可开关对比
@@ -52,6 +54,8 @@ export const sceneConfig = {
       { position: [0, 5, 0] as Vec3, scale: [10, 10] as [number, number], intensity: 1.2, rotationX: Math.PI / 2 },
       { position: [5, 2, 3] as Vec3, scale: [6, 3] as [number, number], intensity: 1.6, rotationX: 0 },
       { position: [-5, 2, -2] as Vec3, scale: [6, 3] as [number, number], intensity: 0.6, rotationX: 0 },
+      // 前方低处的一块：墙上的镜子从默认视角反射的是这个方向，没有它镜子会发灰
+      { position: [0, -5, 5] as Vec3, scale: [14, 7] as [number, number], intensity: 0.8, rotationX: 0 },
     ],
   },
 
@@ -76,6 +80,13 @@ export const sceneConfig = {
     orange: '#E07B39',
     leaf: '#6E9461',
     leafDark: '#4A6E4C',
+    // 饱和强调色：只用在墙面装饰品上，而且面积要小（家具和墙面保持低饱和）
+    accentCobalt: '#2F5BD3',
+    accentVermilion: '#F0582A',
+    accentGrass: '#62C14C',
+    accentLemon: '#F4D23C',
+    accentPink: '#F59AC2',
+    accentCyan: '#1FA2CF',
   },
   // 统一倒角半径（世界单位），分三档：大件家具 / 小件 / 细杆（乘以 bevel）
   bevel: 0.03,
@@ -107,6 +118,8 @@ export const sceneConfig = {
     lamp: 7,
     // 灯具下方的假光斑（叠加混合的径向渐变），不是真实光源
     pool: 0.55,
+    // 粉色发光球壁灯
+    sconce: 7,
   },
   // 光斑贴图：径向渐变，启动时生成一次
   lightPool: {
@@ -120,6 +133,9 @@ export const sceneConfig = {
     roughness: 0.35,
     metalness: 1,
     envMapIntensity: 1,
+    // 镜子：同一套金属材质，粗糙度低得多；反射的是只渲染一次的环境柔光板，不做实时反射
+    mirrorRoughness: 0.08,
+    mirrorEnvMapIntensity: 1.6,
   },
   // 玻璃 / 亚克力：半透明，不用折射
   glass: {
@@ -680,6 +696,116 @@ export const sceneConfig = {
     neighborDistance: 1.3,
     // 镜头飞向座位时的默认取景（之后用）
     focus: { lift: 0.45, azimuthDeg: 45, depressionDeg: 38, viewSize: 2.4 },
+  },
+
+  // ───────── 墙面装饰 ─────────
+  // 尺寸单位：米。画作、圆盘、相框的原点都在墙面上、画面中心高度；局部 +Z 朝室内
+  decor: {
+    // 强调色池：画作和小摆件只从这里取色（"换配色"从中重新组合）
+    accents: ['accentCobalt', 'accentVermilion', 'accentGrass', 'accentLemon', 'accentPink', 'accentCyan'] as const,
+    // 画作贴图：长边像素（高画质 / 手机与低画质），只生成一次并缓存
+    textureSize: { high: 1024, low: 512 },
+    // 画布：厚度、圆角、离墙距离（留一条缝让 AO 在边缘压出淡阴影）、侧边颜色
+    canvas: { depth: 0.028, radius: 0.01, wallGap: 0.014, edge: 'cream', roughness: 0.92 },
+    bokeh: {
+      width: 0.62,
+      height: 0.9,
+      // 光斑个数、半径（占画面短边的比例）、不透明度
+      spots: [16, 26] as [number, number],
+      spotRadius: [0.05, 0.2] as [number, number],
+      spotAlpha: [0.25, 0.75] as [number, number],
+      base: 'dark',
+    },
+    orb: {
+      size: 0.86,
+      // 中间浅色圆的半径（占画面边长）、外圈柔光的范围
+      orbRadius: 0.2,
+      haloRadius: 0.42,
+      orbColor: 'cream',
+    },
+    horizon: {
+      width: 0.4,
+      height: 0.3,
+      bands: [2, 4] as [number, number],
+      sunRadius: [0.12, 0.2] as [number, number],
+      base: 'cream',
+    },
+    plate: {
+      radius: 0.17,
+      thickness: 0.022,
+      // 正面同心圆圈数
+      rings: [4, 7] as [number, number],
+      base: 'cream',
+      textureSize: 512,
+    },
+    mirror: {
+      count: 4,
+      countRange: [3, 6] as [number, number],
+      width: 0.22,
+      height: 0.12,
+      gap: 0.035,
+      depth: 0.012,
+      wallGap: 0.006,
+    },
+    sconce: {
+      radius: 0.1,
+      // 墙上的金属底座和伸出的短杆
+      baseRadius: 0.04,
+      baseDepth: 0.014,
+      armRadius: 0.008,
+      armLength: 0.1,
+      color: 'accentPink',
+      // 墙上的假光晕（叠加混合）
+      haloRadius: 0.55,
+      haloOpacity: 0.6,
+    },
+    shelfSet: {
+      width: 0.86,
+      depth: 0.15,
+      thickness: 0.024,
+      // 上层板相对下层板的高度
+      gap: 0.34,
+      color: 'cream',
+      // 相框：外框宽、厚，里面是抽象色块
+      frames: [
+        { shelf: 1, x: -0.22, width: 0.2, height: 0.26, color: 'dark' },
+        { shelf: 1, x: 0.04, width: 0.16, height: 0.2, color: 'accentVermilion' },
+        { shelf: 0, x: 0.24, width: 0.18, height: 0.14, color: 'cream' },
+      ],
+      frameBorder: 0.014,
+      frameDepth: 0.016,
+      // 相框往后靠墙的倾角（度）
+      frameLeanDeg: 8,
+      frameTextureSize: 256,
+      vase: {
+        x: -0.24,
+        // 旋转体轮廓 [半径, 高度]
+        profile: [
+          [0, 0],
+          [0.028, 0],
+          [0.034, 0.03],
+          [0.026, 0.075],
+          [0.012, 0.1],
+          [0.014, 0.11],
+        ] as [number, number][],
+        color: 'accentCobalt',
+        stemLength: 0.2,
+        stemRadius: 0.0025,
+        flowerRadius: 0.022,
+        flowerColor: 'accentLemon',
+      },
+      // 小摆件：圆环
+      ornament: { x: 0.02, radius: 0.04, tube: 0.016, color: 'accentGrass' },
+    },
+    rod: {
+      length: 2.4,
+      lengthRange: [0.6, 6] as [number, number],
+      radius: 0.008,
+      // 两端固定座
+      mountRadius: 0.014,
+      mountLength: 0.05,
+      color: 'dark',
+    },
   },
 
   // ───────── 脸部可见性检查（只在 ?debug 下）─────────

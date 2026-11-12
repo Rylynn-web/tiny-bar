@@ -50,6 +50,8 @@ function toBlocks(pieces: Piece[]): Block[] {
 // 隐形投影墙的材质：不写颜色、不写深度，只进阴影贴图（墙降下时光影不跳变）
 const shadowOnly = <meshBasicMaterial colorWrite={false} depthWrite={false} />
 const noMerge = { noMerge: true }
+// "只投影"层：主相机看不到，主光的阴影相机能看到
+const shadowLayer = sceneConfig.shadows.shadowOnlyLayer
 
 /**
  * 侧墙（左 / 右）：墙体 + 压边 + 踢脚线，背对摄像机时整面不显示（不留墙基）。
@@ -121,7 +123,7 @@ function SideWall({
         />
       </group>
 
-      {/* 隐形投影墙：始终在 */}
+      {/* 隐形投影墙：始终在，只在阴影相机的那一层（主画面不画） */}
       <group userData={{ editorIgnore: true }}>
         {blocks.map((b, i) => (
           <BevelBox
@@ -131,6 +133,7 @@ function SideWall({
             position={[x, (b.y0 + b.y1) / 2, (b.from + b.to) / 2]}
             color={palette.wall}
             surface={shadowOnly}
+            layers={shadowLayer}
             receiveShadow={false}
             raycast={() => null}
             userData={noMerge}
@@ -142,6 +145,7 @@ function SideWall({
           position={[x, trimY, trimZ]}
           color={palette.slate}
           surface={shadowOnly}
+          layers={shadowLayer}
           receiveShadow={false}
           raycast={() => null}
           userData={noMerge}

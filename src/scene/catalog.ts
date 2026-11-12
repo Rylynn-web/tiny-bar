@@ -22,6 +22,20 @@ import { StackLamp } from './lounge/StackLamp'
 import { Turntable } from './lounge/Turntable'
 import { Vase } from './lounge/Vase'
 import { ZebraRug } from './lounge/ZebraRug'
+import { ArtBokeh, ArtHorizon, ArtOrb } from './decor/ArtPieces'
+import { MirrorStrip } from './decor/MirrorStrip'
+import { OrbSconce } from './decor/OrbSconce'
+import { ShelfSet } from './decor/ShelfSet'
+import { WallPlate } from './decor/WallPlate'
+import { WallRod } from './decor/WallRod'
+
+const D = sceneConfig.decor
+// 画作 / 相框 / 圆盘：换种子 = 换一幅，换配色 = 从强调色里重新组合
+const reseed = [
+  { label: '换一幅', reseed: 'seed' },
+  { label: '换配色', reseed: 'paletteSeed' },
+]
+const seeds = { seed: 1, paletteSeed: 0 }
 
 /** 物件目录：layout.json 里的 type → 组件、安装方式、默认参数 */
 export const catalog: Record<string, CatalogEntry> = {
@@ -68,6 +82,27 @@ export const catalog: Record<string, CatalogEntry> = {
         step: 0.1,
       },
     ],
+  },
+  // ── 墙面装饰（强调色只用在这里）──
+  artBokeh: { label: '画·光斑', mount: 'wall', component: ArtBokeh, defaultProps: { ...seeds }, editorActions: reseed },
+  artOrb: { label: '画·光球', mount: 'wall', component: ArtOrb, defaultProps: { ...seeds }, editorActions: reseed },
+  artHorizon: { label: '画·地平线', mount: 'wall', component: ArtHorizon, defaultProps: { ...seeds }, editorActions: reseed },
+  wallPlate: { label: '墙上圆盘', mount: 'wall', component: WallPlate, defaultProps: { ...seeds }, editorActions: reseed },
+  mirrorStrip: {
+    label: '镜子条',
+    mount: 'wall',
+    component: MirrorStrip,
+    defaultProps: { count: D.mirror.count },
+    editableProps: [{ key: 'count', label: '块数', min: D.mirror.countRange[0], max: D.mirror.countRange[1], step: 1 }],
+  },
+  orbSconce: { label: '球形壁灯', mount: 'wall', component: OrbSconce },
+  shelfSet: { label: '层板组', mount: 'wall', component: ShelfSet, defaultProps: { ...seeds }, editorActions: reseed },
+  wallRod: {
+    label: '墙面细杆',
+    mount: 'wall',
+    component: WallRod,
+    defaultProps: { length: D.rod.length },
+    editableProps: [{ key: 'length', label: '长度（米）', min: D.rod.lengthRange[0], max: D.rod.lengthRange[1], step: 0.1 }],
   },
   // 植物：叶片会自然地和别的东西交叠，不参与重叠检测
   plant: {
