@@ -254,6 +254,60 @@ export const sceneConfig = {
       color: '#F3E9DC',
       shadow: '0 4px 14px rgba(0, 0, 0, 0.18)',
     },
+    // 开始画面 / 流程占位层（P2 骨架：样式极简，之后做正式界面）
+    entry: {
+      // 场景上盖的一层半透明遮罩
+      scrim: 'rgba(48, 35, 28, 0.42)',
+      buttonBackground: '#F3E9DC',
+      buttonColor: '#3B3A40',
+      buttonShadow: '0 6px 20px rgba(0, 0, 0, 0.22)',
+      fontFamily: "'Avenir Next', 'Helvetica Neue', system-ui, sans-serif",
+    },
+    overlay: {
+      background: 'rgba(59, 58, 64, 0.72)',
+      color: '#F3E9DC',
+      margin: 16,
+    },
+  },
+
+  // ───────── 单人流程（P2） ─────────
+  flow: {
+    // 进店后在门口站多久再进入选座（秒）
+    enteringSeconds: 2.5,
+    // 起身离开后多久出小票（秒）
+    leavingSeconds: 1.5,
+    // 和同一个人连续交谈这么多秒，记一次"聊得开心"
+    goodChatSeconds: 20,
+    // 门口站的位置：门口地毯（layout 里 type = doorMat）中心往室内挪多少（米）；找不到地毯时用 fallback
+    entrance: { inward: 0.15, fallback: [2.2, 0, -2.5] as Vec3 },
+  },
+  // 头顶称号标签：canvas 贴图的小牌子，正对镜头。尺寸米，贴图像素
+  titleTag: {
+    height: 0.16,
+    // 比"…"气泡再高一点，交谈时不挡
+    lift: 0.36,
+    textureHeight: 64,
+    paddingX: 18,
+    font: "600 34px 'Avenir Next', 'Helvetica Neue', sans-serif",
+    background: 'rgba(59, 58, 64, 0.82)',
+    color: '#F3E9DC',
+  },
+  // 门口 A 字小黑板：原点在地面中心，+Z 是写字的一面
+  chalkboard: {
+    width: 0.46,
+    height: 0.62,
+    // 板面离地高度、两条腿张开的角度
+    bottom: 0.12,
+    tilt: deg(12),
+    frame: 0.03,
+    thickness: 0.018,
+    boardColor: 'dark',
+    frameColor: 'wood',
+    chalkColor: 'cream',
+    accentColor: 'warmLight',
+    textureSize: [384, 512] as [number, number],
+    // 粉笔字：店名 / 欢迎语 / 称号
+    font: "'Chalkboard SE', 'Comic Sans MS', 'Marker Felt', cursive",
   },
 
   // ───────── 房间 ─────────

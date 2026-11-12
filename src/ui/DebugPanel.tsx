@@ -1,11 +1,13 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Leva, folder, useControls } from 'leva'
-import { GuestDebug } from './GuestDebug'
 import { defaultSceneParams, useSetSceneParams, type SceneParams } from '../state/sceneParams'
 
 // 只在网址带 ?debug 时按需加载。初始值全部来自 sceneConfig（经 defaultSceneParams）。
 
 const d = defaultSceneParams
+
+// 假客人和流程调试只在开发环境有：生产构建里 import.meta.env.DEV 为 false，这段连同 GuestDebug 一起被删掉
+const GuestDebug = import.meta.env.DEV ? lazy(() => import('./GuestDebug').then((m) => ({ default: m.GuestDebug }))) : null
 
 const emissiveLabels: Record<keyof typeof d.emissive, string> = {
   bulb: '吊灯灯泡',
@@ -200,7 +202,11 @@ export default function DebugPanel() {
 
   return (
     <>
-      <GuestDebug />
+      {GuestDebug && (
+        <Suspense fallback={null}>
+          <GuestDebug />
+        </Suspense>
+      )}
       <Leva collapsed={false} titleBar={{ title: '小酒馆 · 调参' }} />
     </>
   )

@@ -44,6 +44,7 @@
     {"id":"orb-sconce","type":"orbSconce","position":[0.5,2.2,-3.2],"rotationY":0,"props":{"brightness":1.2}},
     {"id":"shelf-set","type":"shelfSet","position":[-4,1.3,-1.9],"rotationY":90,"props":{"seed":4,"paletteSeed":5}},
     {"id":"record-wall","type":"recordWall","position":[-4,1.86,-0.1],"rotationY":90,"props":{"seed":3,"paletteSeed":519573,"cols":3,"rows":1}},
+    {"id":"chalkboard","type":"chalkboard","position":[3.1,0,-2.7],"rotationY":40},
     {"id":"door-mat","type":"doorMat","position":[2.2,0,-2.6],"rotationY":0,"props":{"color":"navy","pattern":0,"seed":1}},
     {"id":"bookLedge-1","type":"bookLedge","position":[1,0.04,-3.2],"rotationY":0,"props":{"seed":47924,"rows":3,"width":1.1}},
     {"id":"orbSconce-1","type":"orbSconce","position":[-4,1.4,-2.8],"rotationY":90,"props":{"brightness":0.4}},

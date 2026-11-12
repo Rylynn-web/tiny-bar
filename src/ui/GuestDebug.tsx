@@ -2,10 +2,14 @@ import { useEffect } from 'react'
 import { button, folder, useControls } from 'leva'
 import { useSeats } from '../config/seatConfig'
 import { guestStateLabels, guestStates, type GuestState } from '../config/poses'
-import { clearGuests, fillGuests, getGuests, hasNeighbor, randomizeAll, setGuest, setGuestEmote, useGuests } from '../state/guests'
+import { getGuests, hasNeighbor, setGuest, setGuestEmote, useGuests } from '../state/guests'
+import { addFakeGuest, clearFakes, fillFakes, randomizeFakes, removeFakeGuest } from '../state/fakeGuests'
+import { getFlow } from '../state/flow'
+import { FlowDebug } from './FlowDebug'
 import { expressionLabels, expressions, type Expression } from '../config/expressions'
 
-// ?debug 面板「座位」：给每个座位单独设状态、是否点了饮料；全部随机 / 坐满 8 人 / 清空
+// 开发环境 ?debug 面板「座位」：在任意座位生成假客人（随机称号、随机状态），单独设状态 / 表情 / 饮料；
+// 全部随机 / 坐满 8 人 / 清空假客人。只在 import.meta.env.DEV 时加载，生产构建里没有假客人。
 
 type Choice = GuestState | 'none'
 type EmoteChoice = Expression | 'auto'
@@ -26,9 +30,9 @@ export function GuestDebug() {
     () => ({
       座位: folder(
         {
-          全部随机: button(() => randomizeAll(seats)),
-          坐满8人: button(() => fillGuests(seats)),
-          清空: button(() => clearGuests()),
+          全部随机: button(() => randomizeFakes(seats)),
+          坐满8人: button(() => fillFakes(seats, getFlow().title)),
+          清空假客人: button(() => clearFakes()),
           ...Object.fromEntries(
             seats.flatMap((seat) => [
               [
@@ -39,7 +43,12 @@ export function GuestDebug() {
                   label: seat.id,
                   onChange: (v: Choice, _path: string, ctx: { initial: boolean; fromPanel: boolean }) => {
                     if (ctx.initial || !ctx.fromPanel) return
-                    setGuest(seat.id, v === 'none' ? null : v)
+                    const g = getGuests()[seat.id]
+                    if (v === 'none') {
+                      if (g?.self) return
+                      removeFakeGuest(seat.id)
+                    } else if (!g) addFakeGuest(seat, getFlow().title, v)
+                    else setGuest(seat.id, v)
                   },
                 },
               ],
@@ -90,5 +99,5 @@ export function GuestDebug() {
     if (lonely.length) console.info('[座位] 邻座没人，交谈按静坐处理：', lonely)
   }, [guests, seats, set])
 
-  return null
+  return <FlowDebug />
 }

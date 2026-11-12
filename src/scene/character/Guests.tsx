@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useRef } from 'react'
+import type { Mesh } from 'three'
 import { useFrame } from '@react-three/fiber'
 import { DoubleSide, InstancedBufferAttribute, Matrix4, MeshBasicMaterial, MeshPhysicalMaterial, type BufferGeometry, type InstancedMesh } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
-import { useSeats } from '../../config/seatConfig'
+import { ENTRANCE_ID, entranceSpot, useSeats } from '../../config/seatConfig'
+import { useLayoutItems } from '../../state/layoutStore'
+import { useFlow } from '../../state/flow'
+import { TitleTag } from './TitleTag'
 import { MAX_GUESTS, choosePartner, effectiveState, useGuests } from '../../state/guests'
 import { useSceneParams } from '../../state/sceneParams'
 import { Glow } from '../primitives/Glow'
@@ -41,6 +45,10 @@ type Slot = keyof typeof SLOTS
 export function Guests() {
   const seats = useSeats()
   const guests = useGuests()
+  const flow = useFlow()
+  const items = useLayoutItems()
+  const entrance = useMemo(() => entranceSpot(items), [items])
+  const tagRef = useRef<Mesh>(null)
   const { palette, buddy } = useSceneParams()
   const rigs = useRef(new Map<string, Rig>())
   const meshes = useRef<Partial<Record<Slot, InstancedMesh | null>>>({})
@@ -74,10 +82,10 @@ export function Guests() {
   const bubbleMap = useMemo(() => bubbleTexture(), [])
   useEffect(() => () => bookHalf.dispose(), [bookHalf])
 
-  // 当前坐着的人（最多 8 个），以及每人的交谈对象（邻座里第一个有人的座位）
+  // 当前坐着的人（最多 8 个）和每人的交谈对象；进店 / 选座 / 离店时自己站在门口
   const active = useMemo(() => {
     const byId = new Map(seats.map((s) => [s.id, s]))
-    const list: (RigInput & { seed: number })[] = []
+    const list: (RigInput & { seed: number; self: boolean })[] = []
     for (const seat of seats) {
       const g = guests[seat.id]
       if (!g || list.length >= MAX_GUESTS) continue
@@ -95,10 +103,17 @@ export function Guests() {
         drink: g.drink,
         seed: g.seed,
         emote: g.emote ?? null,
+        self: !!g.self,
       })
     }
+    const standing = flow.phase === 'entering' || flow.phase === 'seating' || flow.phase === 'leaving'
+    if (standing && flow.title && !flow.seatId && list.length < MAX_GUESTS) {
+      let seed = 1
+      for (const ch of flow.selfId ?? flow.title) seed = (seed * 31 + ch.charCodeAt(0)) % 1e6
+      list.push({ seat: entrance, partner: null, others: [], state: 'idle', drink: false, seed, emote: null, self: true })
+    }
     return list
-  }, [seats, guests])
+  }, [seats, guests, flow, entrance])
 
   const seen = useRef<Set<string> | null>(null)
   useFrame(({ camera, clock }, delta) => {
@@ -110,7 +125,7 @@ export function Guests() {
     // 有人新坐下：已经坐着的邻座跟他打个招呼（开场时坐着的人不算）
     if (seen.current) {
       for (const a of active) {
-        if (seen.current.has(a.seat.id)) continue
+        if (seen.current.has(a.seat.id) || a.seat.id === ENTRANCE_ID) continue
         for (const n of a.seat.neighbors) rigs.current.get(n)?.greet(now)
       }
     }
@@ -143,6 +158,15 @@ export function Guests() {
       write('cup', i, rig.pops.cup.scale > 0 ? rig.cupMatrix : hidden)
       write('bubble', i, rig.pops.bubble.scale > 0 ? rig.bubbleMatrix : hidden)
     })
+    // 自己头顶的称号标签
+    const tag = tagRef.current
+    if (tag) {
+      const me = active.find((a) => a.self)
+      const rig = me && rigs.current.get(me.seat.id)
+      tag.visible = !!rig
+      if (rig) tag.matrix.copy(rig.tagMatrix)
+      tag.matrixWorldNeedsUpdate = true
+    }
     for (const slot of Object.keys(SLOTS) as Slot[]) {
       const mesh = meshes.current[slot]
       if (!mesh) continue
@@ -190,6 +214,7 @@ export function Guests() {
       <instancedMesh ref={ref('screen')} args={[G.laptopScreen, undefined, max('screen')]} frustumCulled={false}>
         <Glow color={palette[P.laptop.screenColor]} group="screen" />
       </instancedMesh>
+      {flow.title && <TitleTag title={flow.title} meshRef={tagRef} />}
       {/* "…" 气泡：正对镜头，不受光照 */}
       <instancedMesh ref={ref('bubble')} args={[G.bubble, undefined, max('bubble')]} frustumCulled={false} renderOrder={8}>
         <meshBasicMaterial map={bubbleMap} transparent depthWrite={false} toneMapped={false} />

@@ -1,18 +1,30 @@
 import { useSyncExternalStore } from 'react'
 import type { Seat } from '../config/seatConfig'
-import { guestStates, type GuestState } from '../config/poses'
+import type { GuestState } from '../config/poses'
 import type { Expression } from '../config/expressions'
 
-// 座位上的小人：每个座位坐没坐人、在做什么、点没点饮料，以及每人自己的随机种子（动作相位错开）。
-// P3 联网前是本地假数据；?debug 面板可以逐个设置、全部随机、坐满 8 人。
+// 座位上的小人：每个座位坐没坐人、在做什么、点没点饮料、称号，以及每人自己的随机种子（动作相位错开）。
+// 只由 RoomClient 收到的消息改写（src/net/applyServerMessage.ts）；开发环境 ?debug 还能生成假客人（src/state/fakeGuests.ts）。
 
 export const MAX_GUESTS = 8
 
-/** emote：手动指定的表情（?debug / RoomClient.setEmote），没有就按自动规则 */
-export type Guest = { state: GuestState; drink: boolean; seed: number; emote?: Expression | null }
+/**
+ * id：客人 id（房间分配）；title：称号；emote：手动指定的表情（RoomClient.setEmote），没有就按自动规则；
+ * self：是不是自己；fake：?debug 生成的假客人
+ */
+export type Guest = {
+  id?: string
+  title?: string
+  state: GuestState
+  drink: boolean
+  seed: number
+  emote?: Expression | null
+  self?: boolean
+  fake?: boolean
+}
 export type Guests = Record<string, Guest>
 
-let guests: Guests = { 'chair-a1': { state: 'idle', drink: false, seed: 1 } }
+let guests: Guests = {}
 const listeners = new Set<() => void>()
 
 function emit(next: Guests) {
@@ -34,7 +46,30 @@ export function useGuests() {
   )
 }
 
-const newSeed = () => 1 + Math.floor(Math.random() * 1e6)
+export const newSeed = () => 1 + Math.floor(Math.random() * 1e6)
+
+/** 整体替换（RoomClient / 假客人用） */
+export function replaceGuests(next: Guests) {
+  emit(next)
+}
+
+/** 在座位上放一个客人（覆盖原来的） */
+export function putGuest(seatId: string, guest: Guest) {
+  emit({ ...guests, [seatId]: guest })
+}
+
+/** 按客人 id 移除（不管坐在哪） */
+export function removeGuestById(id: string) {
+  const next = { ...guests }
+  for (const [seatId, g] of Object.entries(next)) if (g.id === id) delete next[seatId]
+  emit(next)
+}
+
+/** 自己坐在哪（没坐下为 null） */
+export function findSelfSeat(g: Guests = guests): string | null {
+  for (const [seatId, x] of Object.entries(g)) if (x.self) return seatId
+  return null
+}
 
 /** 设置一个座位：state 为 null 表示让座位空着 */
 export function setGuest(seatId: string, state: GuestState | null, drink?: boolean) {
@@ -42,7 +77,7 @@ export function setGuest(seatId: string, state: GuestState | null, drink?: boole
   if (!state) delete next[seatId]
   else {
     const prev = next[seatId]
-    next[seatId] = { state, drink: drink ?? prev?.drink ?? false, seed: prev?.seed ?? newSeed(), emote: prev?.emote ?? null }
+    next[seatId] = { ...prev, state, drink: drink ?? prev?.drink ?? false, seed: prev?.seed ?? newSeed(), emote: prev?.emote ?? null }
   }
   emit(next)
 }
@@ -90,39 +125,4 @@ export function choosePartner(seat: Seat, byId: Map<string, Seat>, g: Guests = g
 /** 当前真正生效的状态：选了交谈但邻座没人时退回静坐 */
 export function effectiveState(seat: Seat, guest: Guest, g: Guests = guests): GuestState {
   return guest.state === 'talking' && !hasNeighbor(seat, g) ? 'idle' : guest.state
-}
-
-/** 随机挑一个状态（交谈只在邻座有人时才会被选中） */
-function randomState(seat: Seat, g: Guests): GuestState {
-  const pool = guestStates.filter((s) => s !== 'talking' || hasNeighbor(seat, g))
-  return pool[Math.floor(Math.random() * pool.length)]
-}
-
-/** 已经坐着的人全部随机换一个状态、随机点不点饮料 */
-export function randomizeAll(seats: Seat[]) {
-  const next: Guests = {}
-  for (const id of Object.keys(guests)) next[id] = { ...guests[id] }
-  for (const seat of seats) {
-    const g = next[seat.id]
-    if (!g) continue
-    g.state = randomState(seat, next)
-    g.drink = Math.random() < 0.5
-  }
-  emit(next)
-}
-
-/** 坐满 8 人（座位多于 8 个时随机挑），每人随机状态 */
-export function fillGuests(seats: Seat[]) {
-  const pick = [...seats].sort(() => Math.random() - 0.5).slice(0, MAX_GUESTS)
-  const next: Guests = {}
-  for (const seat of pick) next[seat.id] = { state: 'idle', drink: false, seed: newSeed() }
-  for (const seat of pick) {
-    next[seat.id].state = randomState(seat, next)
-    next[seat.id].drink = Math.random() < 0.5
-  }
-  emit(next)
-}
-
-export function clearGuests() {
-  emit({})
 }

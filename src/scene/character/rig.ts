@@ -140,6 +140,7 @@ export class Rig {
   /** 本帧算好的：杯子、笔记本、气泡的世界位置（道具不跟着手臂转，保持竖直） */
   readonly cupMatrix = new Matrix4()
   readonly bubbleMatrix = new Matrix4()
+  readonly tagMatrix = new Matrix4()
   speaking = false
 
   constructor(seed: number, now: number) {
@@ -256,6 +257,10 @@ export class Rig {
     const sp2 = statePoses[state]
     const target: Pose = { ...neutralPose, ...sp2.lap, ...(desk && sp2.desk ? sp2.desk : {}) }
     target.lean += sp.lean
+    if (sp.arms) {
+      target.armLPitch = target.armRPitch = sp.arms.pitch
+      target.armLSplay = target.armRSplay = sp.arms.splay
+    }
 
     // 静坐：偶尔慢慢转头看看四周；点了饮料偶尔喝一口
     this.look.tick(now, state === 'idle')
@@ -434,5 +439,8 @@ export class Rig {
     const headTop = this.head.getWorldPosition(new Vector3())
     headTop.y += S.head.radius * S.head.squashY * BUDDY_SCALE + P.bubble.lift
     this.bubbleMatrix.compose(headTop, cameraQuaternion, new Vector3().setScalar(this.pops.bubble.scale))
+    // 称号标签：再高一点（只有自己的小人用）
+    headTop.y += sceneConfig.titleTag.lift - P.bubble.lift
+    this.tagMatrix.compose(headTop, cameraQuaternion, new Vector3(1, 1, 1))
   }
 }

@@ -8,8 +8,8 @@ import { sceneConfig } from './sceneConfig'
 import { catalog } from '../scene/catalog'
 import { useLayoutItems } from '../state/layoutStore'
 
-/** 坐姿类型：小人按它切换腿和手臂 */
-export type SeatPose = 'chair' | 'stool' | 'sofa' | 'pouf'
+/** 坐姿类型：小人按它切换腿和手臂；stand = 站着（进店 / 离店时在门口） */
+export type SeatPose = 'chair' | 'stool' | 'sofa' | 'pouf' | 'stand'
 
 export type Seat = {
   /** 家具只有一个座位时等于家具 id；多个座位时为 `家具id:序号` */
@@ -124,4 +124,27 @@ export function deriveSeats(items: LayoutItem[]): Seat[] {
 export function useSeats() {
   const items = useLayoutItems()
   return useMemo(() => deriveSeats(items), [items])
+}
+
+/** 门口的"站位"：进店 / 离店时自己的小人站在这里（门口地毯中心往室内挪一点，面朝室内） */
+export const ENTRANCE_ID = '__entrance'
+export function entranceSpot(items: LayoutItem[]): Seat {
+  const E = sceneConfig.flow.entrance
+  const mat = items.find((i) => i.type === 'doorMat')
+  const yaw = mat ? MathUtils.degToRad(mat.rotationY) : 0
+  const base: Vec3 = mat ? [mat.position[0], 0, mat.position[2]] : E.fallback
+  const position: Vec3 = [base[0] + Math.sin(yaw) * E.inward, 0, base[2] + Math.cos(yaw) * E.inward]
+  const f = sceneConfig.seating.focus
+  return {
+    id: ENTRANCE_ID,
+    itemId: ENTRANCE_ID,
+    type: 'entrance',
+    position,
+    rotationY: yaw,
+    pose: 'stand',
+    focus: { target: [position[0], f.lift, position[2]], azimuthDeg: f.azimuthDeg, depressionDeg: f.depressionDeg, viewSize: f.viewSize },
+    neighbors: [],
+    desk: null,
+    deskItemId: null,
+  }
 }

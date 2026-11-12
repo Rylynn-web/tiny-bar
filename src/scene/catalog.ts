@@ -31,6 +31,7 @@ import { BookLedge } from './decor/BookLedge'
 import { ShelfSet } from './decor/ShelfSet'
 import { WallPlate } from './decor/WallPlate'
 import { WallRod } from './decor/WallRod'
+import { Chalkboard } from './decor/Chalkboard'
 
 const D = sceneConfig.decor
 // 画作 / 相框 / 圆盘：换种子 = 换一幅，换配色 = 从强调色里重新组合
@@ -96,6 +97,8 @@ export const catalog: Record<string, CatalogEntry> = {
     defaultProps: { items: 'mug', width: 1.2, seed: 0 },
   },
   door: { label: '门', mount: 'wall', component: Door, colorProps: oneColor('门板', 'slate') },
+  // 木框合并；写字的板面自己标了不合并（粉笔字会跟着称号 / 时段重画）
+  chalkboard: { label: '门口小黑板', mount: 'floor', component: Chalkboard },
   sofa: { label: '双人沙发', mount: 'floor', component: Sofa, defaultProps: { color: 'rust' }, colorProps: oneColor('沙发', 'rust') },
   pouf: { label: '方凳', mount: 'floor', component: Pouf, defaultProps: { color: 'cream' }, colorProps: oneColor('凳面', 'cream') },
   coffeeTable: { label: '茶几', mount: 'floor', component: CoffeeTable, colorProps: oneColor('茶几', 'dark') },
