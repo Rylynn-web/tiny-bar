@@ -945,6 +945,17 @@ export const sceneConfig = {
     sheen: 0.6,
     sheenRoughness: 0.8,
     // 坐姿的下沉、往后挪、腿的摆法按座位类型放在 src/config/poses.ts；坐在哪由 src/state/guests.ts 决定
+    // 脸：贴在头部正面的曲面贴片（表情图集贴在上面）。左右 ±yawRange 度、上下 pitchRange 度，
+    // 离头面一点点（设计单位），眼睛在外、腮红在里，避免闪烁；细分 [左右, 上下]
+    face: {
+      yawRange: 40,
+      pitchRange: [-24, 16] as [number, number],
+      eyesLift: 0.008,
+      cheeksLift: 0.004,
+      segments: [10, 6] as [number, number],
+      // 腮红在脸上的位置（度）
+      blush: { yawDeg: 33, pitchDeg: -17 },
+    },
     // 几何细分：8 个小人同屏，按默认视距（小人约 60 像素高）取够用就好的分段数
     detail: { bodySegments: 20, bodyProfilePoints: 18, headSegments: [20, 14] as [number, number], eyeSegments: [8, 6] as [number, number], limbSegments: [3, 10] as [number, number] },
     // 道具（米）：所有小人共享同一套几何体和材质，颜色是调色板键名

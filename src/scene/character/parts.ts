@@ -1,6 +1,8 @@
 import {
   BoxGeometry,
   BufferAttribute,
+  BufferGeometry,
+  Float32BufferAttribute,
   CanvasTexture,
   CapsuleGeometry,
   CatmullRomCurve3,
@@ -8,12 +10,10 @@ import {
   CylinderGeometry,
   LatheGeometry,
   PlaneGeometry,
-  Quaternion,
   SphereGeometry,
   SRGBColorSpace,
   Vector2,
   Vector3,
-  type BufferGeometry,
 } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { buddyShape as S, sceneConfig } from '../../config/sceneConfig'
@@ -53,25 +53,49 @@ function headGeometry() {
   return new SphereGeometry(S.head.radius, D.headSegments[0], D.headSegments[1]).scale(1, S.head.squashY, 1)
 }
 
-/** 眼睛的中心高度（相对头中心）：两只眼睛合成一块，眨眼时绕这个高度沿 Y 压扁 */
+/** 眼睛的中心高度（相对头中心）：眼睛贴片眨眼时绕这个高度沿 Y 压扁 */
 export const EYE_Y = (S.head.radius - S.eye.inset) * Math.sin(S.eye.pitch) * S.head.squashY
 
-function eyesGeometry() {
-  const { radius, squashY } = S.head
-  const parts = ([-1, 1] as const).map((side) => {
-    const dir = new Vector3(
-      side * Math.sin(S.eye.yaw) * Math.cos(S.eye.pitch),
-      Math.sin(S.eye.pitch),
-      Math.cos(S.eye.yaw) * Math.cos(S.eye.pitch),
-    )
-    const r = radius - S.eye.inset
-    const g = new SphereGeometry(1, D.eyeSegments[0], D.eyeSegments[1])
-    g.scale(...S.eye.size)
-    g.applyQuaternion(new Quaternion().setFromUnitVectors(new Vector3(0, 0, 1), dir))
-    g.translate(dir.x * r, dir.y * r * squashY - EYE_Y, dir.z * r)
-    return g
-  })
-  return mergeGeometries(parts)!
+/**
+ * 脸部贴片：从（压扁的）头部球面上切下来的一小块，离头面 lift，贴合球面弧度。
+ * UV 和表情图集的格子一一对应：u = 观看者的左 → 右（左右角度），v = 下 → 上（上下角度）。原点在头中心，再整体下移 shiftY
+ */
+function faceGeometry(lift: number, shiftY: number) {
+  const F = sceneConfig.buddy.face
+  const [nx, ny] = F.segments
+  const r = S.head.radius + lift
+  const pos: number[] = []
+  const nor: number[] = []
+  const uv: number[] = []
+  const idx: number[] = []
+  const rad = Math.PI / 180
+  for (let j = 0; j <= ny; j++) {
+    const v = j / ny
+    const pitch = (F.pitchRange[0] + v * (F.pitchRange[1] - F.pitchRange[0])) * rad
+    for (let i = 0; i <= nx; i++) {
+      const u = i / nx
+      // u = 0 在观看者的左边 = 小人自己的右边（-X 那侧往 +X 反过来），所以角度从 +yawRange 走到 -yawRange
+      const yaw = (F.yawRange - u * 2 * F.yawRange) * rad
+      const d = new Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch))
+      pos.push(d.x * r, d.y * r * S.head.squashY - shiftY, d.z * r)
+      nor.push(d.x, d.y, d.z)
+      uv.push(u, v)
+    }
+  }
+  for (let j = 0; j < ny; j++)
+    for (let i = 0; i < nx; i++) {
+      const a = j * (nx + 1) + i
+      const b = a + 1
+      const c = a + nx + 1
+      const e = c + 1
+      idx.push(a, c, b, b, c, e)
+    }
+  const g = new BufferGeometry()
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3))
+  g.setAttribute('normal', new Float32BufferAttribute(nor, 3))
+  g.setAttribute('uv', new Float32BufferAttribute(uv, 2))
+  g.setIndex(idx)
+  return g
 }
 
 /** 给几何体整块刷上顶点颜色（多块颜色不同的零件合成一个网格用） */
@@ -163,7 +187,9 @@ export const partGeometry = {
   leg: limb(S.leg.radius, S.leg.length),
   arm: limb(S.arm.radius, S.arm.length),
   head: headGeometry(),
-  eyes: eyesGeometry(),
+  // 眼睛贴片（原点在眼睛那一行，方便眨眼时沿 Y 压扁）、腮红贴片（原点在头中心）
+  eyes: faceGeometry(sceneConfig.buddy.face.eyesLift, EYE_Y),
+  cheeks: faceGeometry(sceneConfig.buddy.face.cheeksLift, 0),
   cup: getLathe(sceneConfig.bar.cup.profile, sceneConfig.detail.smallLatheSegments),
   page: pageGeometry(),
   laptopBase: laptopBase(),

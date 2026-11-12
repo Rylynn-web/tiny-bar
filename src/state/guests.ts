@@ -1,13 +1,15 @@
 import { useSyncExternalStore } from 'react'
 import type { Seat } from '../config/seatConfig'
 import { guestStates, type GuestState } from '../config/poses'
+import type { Expression } from '../config/expressions'
 
 // 座位上的小人：每个座位坐没坐人、在做什么、点没点饮料，以及每人自己的随机种子（动作相位错开）。
 // P3 联网前是本地假数据；?debug 面板可以逐个设置、全部随机、坐满 8 人。
 
 export const MAX_GUESTS = 8
 
-export type Guest = { state: GuestState; drink: boolean; seed: number }
+/** emote：手动指定的表情（?debug / RoomClient.setEmote），没有就按自动规则 */
+export type Guest = { state: GuestState; drink: boolean; seed: number; emote?: Expression | null }
 export type Guests = Record<string, Guest>
 
 let guests: Guests = { 'chair-a1': { state: 'idle', drink: false, seed: 1 } }
@@ -40,9 +42,16 @@ export function setGuest(seatId: string, state: GuestState | null, drink?: boole
   if (!state) delete next[seatId]
   else {
     const prev = next[seatId]
-    next[seatId] = { state, drink: drink ?? prev?.drink ?? false, seed: prev?.seed ?? newSeed() }
+    next[seatId] = { state, drink: drink ?? prev?.drink ?? false, seed: prev?.seed ?? newSeed(), emote: prev?.emote ?? null }
   }
   emit(next)
+}
+
+/** 手动设一个座位的表情；null = 回到自动规则。座位上没人时不做事 */
+export function setGuestEmote(seatId: string, emote: Expression | null) {
+  const g = guests[seatId]
+  if (!g) return
+  emit({ ...guests, [seatId]: { ...g, emote } })
 }
 
 /** 邻座里有没有人：交谈只在有人可聊时可用 */

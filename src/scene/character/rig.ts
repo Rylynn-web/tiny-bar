@@ -9,6 +9,7 @@ import {
   type GuestState,
   type Pose,
 } from '../../config/poses'
+import { blushing, expressionTiming as X, faceAtlas, type Expression } from '../../config/expressions'
 import { seededRandom } from '../primitives/canvasTexture'
 import { BODY_BOTTOM, EYE_Y } from './parts'
 
@@ -81,6 +82,8 @@ export type RigInput = {
   drink: boolean
   /** 交谈对象的座位（没有就是 null） */
   partner: Seat | null
+  /** 手动指定的表情（?debug / setEmote）；null = 按自动规则 */
+  emote: Expression | null
 }
 
 export class Rig {
@@ -113,6 +116,19 @@ export class Rig {
   private nod: Beat
   private stretch: Beat
   private first = true
+  private first2 = true
+  // 表情
+  private expr: Expression = 'default'
+  /** 切换表情的过渡：0 = 没在切换，1 = 正在闭眼，2 = 正在睁眼 */
+  private switchPhase = 0
+  private switchT = 0
+  private greetAt = -1e9
+  private flash: Record<'reading' | 'laptop', Beat>
+  private talkSlot = -1
+  private talkExpr: Expression = 'happy'
+  /** 本帧的眼睛 / 腮红在图集里是第几格 */
+  eyeCell: number = faceAtlas.cells.default
+  blushCell: number = faceAtlas.cells.none
   /** 本帧算好的：杯子、笔记本、气泡的世界位置（道具不跟着手臂转，保持竖直） */
   readonly cupMatrix = new Matrix4()
   readonly bubbleMatrix = new Matrix4()
@@ -127,6 +143,10 @@ export class Rig {
     this.flip = new Beat(this.rand, T.page.interval, T.page.duration, now)
     this.nod = new Beat(this.rand, T.nod.interval, T.nod.duration, now)
     this.stretch = new Beat(this.rand, T.stretch.interval, T.stretch.duration, now)
+    this.flash = {
+      reading: new Beat(this.rand, X.reading.interval, X.reading.duration, now),
+      laptop: new Beat(this.rand, X.laptop.interval, X.laptop.duration, now),
+    }
 
     // 层级：root → 髋（腿）；root → 身体支点 → 呼吸 → 身体 / 肩（手臂 → 手）；身体支点 → 头 → 眼睛；身体支点 → 书
     const r = this.root
@@ -161,6 +181,45 @@ export class Rig {
     r.add(this.lapAnchor)
     // 笔记本自己在世界坐标（米），不挂在小人身上
     this.laptop.add(this.lid)
+  }
+
+  /** 邻座有人坐下：先惊讶、再开心，像在打招呼 */
+  greet(now: number) {
+    this.greetAt = now
+  }
+
+  /** 按优先级决定现在该是什么表情：手动 > 打招呼 > 状态规则 > 默认 */
+  private desiredExpression(input: RigInput, now: number): Expression {
+    if (input.emote) return input.emote
+    const g = now - this.greetAt
+    if (g >= 0 && g < X.greet.surprised) return 'surprised'
+    if (g >= X.greet.surprised && g < X.greet.surprised + X.greet.happy) return 'happy'
+    switch (input.state) {
+      case 'idle': {
+        // 喝完一口之后开心一会儿
+        const end = this.sip.start + this.sip.duration
+        return input.drink && now >= end && now < end + X.afterSip.duration ? X.afterSip.expression : 'default'
+      }
+      case 'reading':
+      case 'laptop': {
+        const rule = X[input.state]
+        const beat = this.flash[input.state]
+        beat.tick(now, true)
+        return beat.progress(now) >= 0 ? rule.flash : rule.base
+      }
+      case 'talking': {
+        // 跟着气泡轮换：每轮换一次就重新挑一个
+        if (!input.partner) return 'default'
+        const offset = input.seat.id < input.partner.id ? 0 : 0.5
+        const slot = Math.floor((now / T.talk.period + offset) * 2)
+        if (slot !== this.talkSlot) {
+          this.talkSlot = slot
+          const c = X.talking.choices
+          this.talkExpr = c[Math.floor(this.rand() * c.length)]
+        }
+        return this.talkExpr
+      }
+    }
   }
 
   /** 推进一帧：算目标姿势 → 平滑过渡 → 叠加快速的小动作 → 更新所有节点和道具 */
@@ -267,7 +326,35 @@ export class Rig {
     if (now >= this.blinkAt + B.blink.duration) {
       this.blinkAt = now + B.blink.minInterval + this.rand() * (B.blink.maxInterval - B.blink.minInterval)
     }
-    this.eyes.scale.y = now >= this.blinkAt && now < this.blinkAt + B.blink.duration ? B.blink.closedScale : 1
+    let eyeScale = now >= this.blinkAt && now < this.blinkAt + B.blink.duration ? B.blink.closedScale : 1
+
+    // 表情：要变的时候先快速闭眼，闭上的那一刻换，再睁开
+    const want = this.desiredExpression(input, now)
+    if (this.first2) {
+      this.expr = want
+      this.first2 = false
+    } else if (this.switchPhase === 0 && want !== this.expr) {
+      this.switchPhase = 1
+      this.switchT = 0
+    }
+    if (this.switchPhase === 1) {
+      this.switchT += dt
+      const p = Math.min(1, this.switchT / X.switchClose)
+      eyeScale = Math.min(eyeScale, MathUtils.lerp(1, B.blink.closedScale, p))
+      if (p >= 1) {
+        this.expr = want
+        this.switchPhase = 2
+        this.switchT = 0
+      }
+    } else if (this.switchPhase === 2) {
+      this.switchT += dt
+      const p = Math.min(1, this.switchT / X.switchOpen)
+      eyeScale = Math.min(eyeScale, MathUtils.lerp(B.blink.closedScale, 1, p))
+      if (p >= 1) this.switchPhase = 0
+    }
+    this.eyes.scale.y = eyeScale
+    this.eyeCell = faceAtlas.cells[this.expr]
+    this.blushCell = blushing[this.expr] ? faceAtlas.cells.blush : faceAtlas.cells.none
 
     // ── 道具 ──
     this.pops.book.update(state === 'reading', dt)

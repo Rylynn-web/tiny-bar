@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { DoubleSide, Matrix4, MeshPhysicalMaterial, MeshStandardMaterial, type InstancedMesh } from 'three'
+import { DoubleSide, InstancedBufferAttribute, Matrix4, MeshBasicMaterial, MeshPhysicalMaterial, type BufferGeometry, type InstancedMesh } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
-import { useSeats, type Seat } from '../../config/seatConfig'
+import { useSeats } from '../../config/seatConfig'
 import { MAX_GUESTS, effectiveState, useGuests } from '../../state/guests'
 import { useSceneParams } from '../../state/sceneParams'
 import { Glow } from '../primitives/Glow'
 import { bookHalfGeometry, bubbleTexture, partGeometry as G } from './parts'
-import { Rig } from './rig'
+import { Rig, type RigInput } from './rig'
+import { cellOffset, getFaceAtlas } from './faceAtlas'
+import { faceAtlas } from '../../config/expressions'
 
 const B = sceneConfig.buddy
 const P = B.props
@@ -21,6 +23,7 @@ const SLOTS = {
   arms: 2,
   head: 1,
   eyes: 1,
+  cheeks: 1,
   cup: 1,
   bookHalves: 2,
   page: 1,
@@ -55,11 +58,18 @@ export function Guests() {
       }),
     [],
   )
-  const eyeMat = useMemo(() => new MeshStandardMaterial({ roughness: 0.6, metalness: 0 }), [])
   useEffect(() => {
     bodyMat.color.set(buddy.bodyColor)
-    eyeMat.color.set(buddy.eyeColor)
-  }, [bodyMat, eyeMat, buddy.bodyColor, buddy.eyeColor])
+  }, [bodyMat, buddy.bodyColor])
+  // 脸：表情图集 + 每个实例自己的格子偏移（切换表情只改偏移）
+  const atlas = useMemo(() => getFaceAtlas(buddy.eyeColor), [buddy.eyeColor])
+  const faceMat = useMemo(() => createFaceMaterial(), [])
+  useEffect(() => {
+    faceMat.map = atlas
+    faceMat.needsUpdate = true
+  }, [faceMat, atlas])
+  const eyesGeo = useMemo(() => withCells(G.eyes), [])
+  const cheeksGeo = useMemo(() => withCells(G.cheeks), [])
   const bookHalf = useMemo(() => bookHalfGeometry(palette[P.book.pageColor], palette[P.book.coverColor]), [palette])
   const bubbleMap = useMemo(() => bubbleTexture(), [])
   useEffect(() => () => bookHalf.dispose(), [bookHalf])
@@ -67,7 +77,7 @@ export function Guests() {
   // 当前坐着的人（最多 8 个），以及每人的交谈对象（邻座里第一个有人的座位）
   const active = useMemo(() => {
     const byId = new Map(seats.map((s) => [s.id, s]))
-    const list: { seat: Seat; partner: Seat | null; state: ReturnType<typeof effectiveState>; drink: boolean; seed: number }[] = []
+    const list: (RigInput & { seed: number })[] = []
     for (const seat of seats) {
       const g = guests[seat.id]
       if (!g || list.length >= MAX_GUESTS) continue
@@ -78,17 +88,27 @@ export function Guests() {
         state: effectiveState(seat, g, guests),
         drink: g.drink,
         seed: g.seed,
+        emote: g.emote ?? null,
       })
     }
     return list
   }, [seats, guests])
 
+  const seen = useRef<Set<string> | null>(null)
   useFrame(({ camera, clock }, delta) => {
     const now = clock.elapsedTime
     const dt = Math.min(delta, 0.1)
     // 离开座位的人：丢掉他的骨架
     const ids = new Set(active.map((a) => a.seat.id))
     for (const id of rigs.current.keys()) if (!ids.has(id)) rigs.current.delete(id)
+    // 有人新坐下：已经坐着的邻座跟他打个招呼（开场时坐着的人不算）
+    if (seen.current) {
+      for (const a of active) {
+        if (seen.current.has(a.seat.id)) continue
+        for (const n of a.seat.neighbors) rigs.current.get(n)?.greet(now)
+      }
+    }
+    seen.current = ids
 
     const write = (slot: Slot, i: number, m: Matrix4) => meshes.current[slot]?.setMatrixAt(i, m)
     active.forEach((a, i) => {
@@ -101,6 +121,9 @@ export function Guests() {
       write('body', i, rig.body.matrixWorld)
       write('head', i, rig.head.matrixWorld)
       write('eyes', i, rig.eyes.matrixWorld)
+      write('cheeks', i, rig.head.matrixWorld)
+      setCell(eyesGeo, i, rig.eyeCell)
+      setCell(cheeksGeo, i, rig.blushCell)
       for (let s = 0; s < 2; s++) {
         write('legs', i * 2 + s, rig.hips[s].matrixWorld)
         write('arms', i * 2 + s, rig.shoulders[s].matrixWorld)
@@ -120,6 +143,8 @@ export function Guests() {
       mesh.count = active.length * SLOTS[slot]
       mesh.instanceMatrix.needsUpdate = true
     }
+    ;(eyesGeo.attributes.instanceCell as InstancedBufferAttribute).needsUpdate = true
+    ;(cheeksGeo.attributes.instanceCell as InstancedBufferAttribute).needsUpdate = true
   })
 
   const max = (slot: Slot) => MAX_GUESTS * SLOTS[slot]
@@ -136,7 +161,9 @@ export function Guests() {
       <instancedMesh ref={ref('legs')} args={[G.leg, bodyMat, max('legs')]} {...part} />
       <instancedMesh ref={ref('arms')} args={[G.arm, bodyMat, max('arms')]} {...part} />
       <instancedMesh ref={ref('head')} args={[G.head, bodyMat, max('head')]} {...part} />
-      <instancedMesh ref={ref('eyes')} args={[G.eyes, eyeMat, max('eyes')]} frustumCulled={false} />
+      {/* 脸：眼睛贴片（眨眼沿 Y 压扁）、腮红贴片，共用一张表情图集 */}
+      <instancedMesh ref={ref('eyes')} args={[eyesGeo, faceMat, max('eyes')]} frustumCulled={false} renderOrder={2} />
+      <instancedMesh ref={ref('cheeks')} args={[cheeksGeo, faceMat, max('cheeks')]} frustumCulled={false} renderOrder={1} />
 
       <instancedMesh ref={ref('cup')} args={[G.cup, undefined, max('cup')]} {...prop}>
         <meshStandardMaterial color={palette[P.cupColor]} roughness={M.roughness} metalness={0} envMapIntensity={M.envMapIntensity} side={DoubleSide} />
@@ -163,4 +190,39 @@ export function Guests() {
       </instancedMesh>
     </group>
   )
+}
+
+/** 脸部贴片的材质：不受光照（眼睛始终是纯色），透明叠在头上；贴图坐标按每个实例的格子偏移 */
+function createFaceMaterial() {
+  const m = new MeshBasicMaterial({ transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 })
+  const scaleU = 1 / faceAtlas.cols
+  const scaleV = 1 / faceAtlas.rows
+  m.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec2 instanceCell;')
+      .replace(
+        '#include <uv_vertex>',
+        `#include <uv_vertex>\n#ifdef USE_MAP\n  vMapUv = vMapUv * vec2(${scaleU.toFixed(4)}, ${scaleV.toFixed(4)}) + instanceCell;\n#endif`,
+      )
+  }
+  return m
+}
+
+/** 给贴片几何体加上每个实例的"图集格子偏移"属性（复制一份，眼睛和腮红各用各的） */
+function withCells(source: BufferGeometry) {
+  const g = source.clone()
+  const arr = new Float32Array(MAX_GUESTS * 2)
+  const [u, v] = cellOffset(faceAtlas.cells.default)
+  for (let i = 0; i < MAX_GUESTS; i++) {
+    arr[i * 2] = u
+    arr[i * 2 + 1] = v
+  }
+  g.setAttribute('instanceCell', new InstancedBufferAttribute(arr, 2))
+  return g
+}
+
+function setCell(g: BufferGeometry, i: number, cell: number) {
+  const [u, v] = cellOffset(cell)
+  const a = g.attributes.instanceCell as InstancedBufferAttribute
+  a.setXY(i, u, v)
 }
