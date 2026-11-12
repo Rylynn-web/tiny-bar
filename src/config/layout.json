@@ -42,6 +42,7 @@
     {"id":"art-bokeh","type":"artBokeh","position":[-4,1.48,2],"rotationY":90,"props":{"seed":5,"paletteSeed":1}},
     {"id":"art-horizon","type":"artHorizon","position":[-4,1.38,0.82],"rotationY":90,"props":{"seed":2,"paletteSeed":3}},
     {"id":"orb-sconce","type":"orbSconce","position":[-2.38,1.95,-3.2],"rotationY":0},
-    {"id":"shelf-set","type":"shelfSet","position":[-4,1.3,-1.9],"rotationY":90,"props":{"seed":4,"paletteSeed":5}}
+    {"id":"shelf-set","type":"shelfSet","position":[-4,1.3,-1.9],"rotationY":90,"props":{"seed":4,"paletteSeed":5}},
+    {"id":"record-wall","type":"recordWall","position":[-4,1.86,-0.1],"rotationY":90,"props":{"seed":3,"paletteSeed":4,"cols":3,"rows":1}}
   ]
 }

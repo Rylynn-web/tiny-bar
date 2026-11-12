@@ -797,6 +797,28 @@ export const sceneConfig = {
       // 小摆件：圆环
       ornament: { x: 0.02, radius: 0.04, tube: 0.016, color: 'accentGrass' },
     },
+    // 唱片墙：一排（或几排）亚克力展示格，每格夹一张封套或一张黑胶。原点在墙面上、整组的中心
+    recordWall: {
+      cols: 3,
+      rows: 1,
+      colsRange: [1, 6] as [number, number],
+      rowsRange: [1, 3] as [number, number],
+      // 每格的亚克力板边长、格间距
+      cell: 0.36,
+      gap: 0.05,
+      sleeve: 0.31,
+      discRadius: 0.15,
+      discThickness: 0.004,
+      // 封套 / 唱片离墙的距离，亚克力板厚度和它离墙的距离
+      itemZ: 0.022,
+      acrylicDepth: 0.008,
+      acrylicZ: 0.042,
+      // 四角的金属支钉
+      standoffRadius: 0.007,
+      standoffInset: 0.022,
+      // 每格贴图的像素（全部格子拼成一张贴图）
+      textureCell: 256,
+    },
     rod: {
       length: 2.4,
       lengthRange: [0.6, 6] as [number, number],

@@ -25,6 +25,7 @@ import { ZebraRug } from './lounge/ZebraRug'
 import { ArtBokeh, ArtHorizon, ArtOrb } from './decor/ArtPieces'
 import { MirrorStrip } from './decor/MirrorStrip'
 import { OrbSconce } from './decor/OrbSconce'
+import { RecordWall } from './decor/RecordWall'
 import { ShelfSet } from './decor/ShelfSet'
 import { WallPlate } from './decor/WallPlate'
 import { WallRod } from './decor/WallRod'
@@ -96,6 +97,17 @@ export const catalog: Record<string, CatalogEntry> = {
     editableProps: [{ key: 'count', label: '块数', min: D.mirror.countRange[0], max: D.mirror.countRange[1], step: 1 }],
   },
   orbSconce: { label: '球形壁灯', mount: 'wall', component: OrbSconce },
+  recordWall: {
+    label: '唱片墙',
+    mount: 'wall',
+    component: RecordWall,
+    defaultProps: { ...seeds, cols: D.recordWall.cols, rows: D.recordWall.rows },
+    editableProps: [
+      { key: 'cols', label: '列数', min: D.recordWall.colsRange[0], max: D.recordWall.colsRange[1], step: 1 },
+      { key: 'rows', label: '行数', min: D.recordWall.rowsRange[0], max: D.recordWall.rowsRange[1], step: 1 },
+    ],
+    editorActions: reseed,
+  },
   shelfSet: { label: '层板组', mount: 'wall', component: ShelfSet, defaultProps: { ...seeds }, editorActions: reseed },
   wallRod: {
     label: '墙面细杆',

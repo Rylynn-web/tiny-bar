@@ -7,7 +7,7 @@ import { seededRandom } from '../primitives/canvasTexture'
 
 const D = sceneConfig.decor
 type Palette = Record<string, string>
-export type ArtKind = 'bokeh' | 'orb' | 'horizon' | 'plate' | 'frame'
+export type ArtKind = 'bokeh' | 'orb' | 'horizon' | 'plate' | 'frame' | 'sleeve' | 'disc'
 
 const cache = new Map<string, CanvasTexture>()
 
@@ -176,12 +176,98 @@ const drawFrame: Draw = (ctx, w, h, rand, accents, palette) => {
   }
 }
 
+/** 唱片封套：一种底色 + 一种抽象构成（大圆 / 条纹 / 点阵 / 半圆叠放），没有文字 */
+const drawSleeve: Draw = (ctx, w, h, rand, accents, palette) => {
+  // 浅底更常见，深色底少一些（墙上大面积留白）
+  const bgPool = [palette.cream, palette.cream, accents[0], palette.dark]
+  const bg = bgPool[Math.floor(rand() * bgPool.length)]
+  ctx.fillStyle = bg
+  ctx.fillRect(0, 0, w, h)
+  const fg = accents.filter((c) => c !== bg)
+  const s = Math.min(w, h)
+  const kind = Math.floor(rand() * 4)
+  if (kind === 0) {
+    // 大圆，偏离中心
+    ctx.fillStyle = fg[0]
+    ctx.beginPath()
+    ctx.arc(w * (0.35 + rand() * 0.3), h * (0.35 + rand() * 0.3), s * (0.22 + rand() * 0.14), 0, Math.PI * 2)
+    ctx.fill()
+  } else if (kind === 1) {
+    // 横条纹
+    const n = 3 + Math.floor(rand() * 4)
+    for (let i = 0; i < n; i++) {
+      ctx.fillStyle = fg[i % 2]
+      const y = h * (0.15 + (i / n) * 0.7)
+      ctx.fillRect(0, y, w, (h * 0.7) / n / 2)
+    }
+  } else if (kind === 2) {
+    // 点阵
+    const n = 3 + Math.floor(rand() * 3)
+    const step = s / (n + 1)
+    ctx.fillStyle = fg[0]
+    for (let i = 1; i <= n; i++)
+      for (let j = 1; j <= n; j++) {
+        ctx.beginPath()
+        ctx.arc(i * step, j * step, step * 0.28, 0, Math.PI * 2)
+        ctx.fill()
+      }
+  } else {
+    // 两个半圆上下叠放
+    const r = s * (0.25 + rand() * 0.1)
+    ctx.fillStyle = fg[0]
+    ctx.beginPath()
+    ctx.arc(w / 2, h / 2, r, Math.PI, 0)
+    ctx.fill()
+    ctx.fillStyle = fg[1]
+    ctx.beginPath()
+    ctx.arc(w / 2, h / 2 + r * 0.15, r, 0, Math.PI)
+    ctx.fill()
+  }
+}
+
+/** 黑胶唱片正面：深色底 + 细细的纹路 + 中间彩色贴标和中心孔（画在方块里，圆形以外透明） */
+const drawDisc: Draw = (ctx, w, h, rand, accents, palette) => {
+  const cx = w / 2
+  const cy = h / 2
+  const R = Math.min(w, h) / 2
+  ctx.fillStyle = palette.dark
+  ctx.beginPath()
+  ctx.arc(cx, cy, R, 0, Math.PI * 2)
+  ctx.fill()
+  // 纹路：几十圈很淡的细环
+  ctx.lineWidth = Math.max(1, R / 140)
+  for (let r = R * 0.38; r < R * 0.97; r += R / (34 + rand() * 10)) {
+    ctx.strokeStyle = `rgba(255,255,255,${0.035 + rand() * 0.05})`
+    ctx.beginPath()
+    ctx.arc(cx, cy, r, 0, Math.PI * 2)
+    ctx.stroke()
+  }
+  // 贴标：一种强调色，有时再叠一个半圆
+  const lr = R * 0.34
+  ctx.fillStyle = accents[0]
+  ctx.beginPath()
+  ctx.arc(cx, cy, lr, 0, Math.PI * 2)
+  ctx.fill()
+  if (rand() < 0.6) {
+    ctx.fillStyle = accents[1]
+    ctx.beginPath()
+    ctx.arc(cx, cy, lr, rand() * Math.PI, rand() * Math.PI + Math.PI)
+    ctx.fill()
+  }
+  ctx.fillStyle = palette.dark
+  ctx.beginPath()
+  ctx.arc(cx, cy, R * 0.035, 0, Math.PI * 2)
+  ctx.fill()
+}
+
 const drawers: Record<ArtKind, Draw> = {
   bokeh: drawBokeh,
   orb: drawOrb,
   horizon: drawHorizon,
   plate: drawPlate,
   frame: drawFrame,
+  sleeve: drawSleeve,
+  disc: drawDisc,
 }
 
 /**
