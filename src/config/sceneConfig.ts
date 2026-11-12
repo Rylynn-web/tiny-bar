@@ -172,7 +172,7 @@ export const sceneConfig = {
     distance: 20,
     near: 0.1,
     far: 100,
-    // 默认视角：方位角从 +Z 起绕 Y 轴；45° 正对墙角
+    // 默认视角：方位角从 +Z 起绕 Y 轴（正 = 右前方）；45° 从右前方正对后墙和左墙的墙角
     defaultAzimuthDeg: 45,
     // 默认俯角（与地面夹角）
     defaultDepressionDeg: 45,
@@ -263,7 +263,8 @@ export const sceneConfig = {
   cityWindow: {
     defaultWidth: 3.0,
     minWidth: 1.0,
-    maxWidth: 4.0,
+    // 上限比墙长：设到最大就铺满整面墙（实际宽度会自动收到墙内）
+    maxWidth: 7.0,
     // 窗洞下沿、上沿高度（米）
     sillHeight: 0.1,
     headHeight: 2.35,

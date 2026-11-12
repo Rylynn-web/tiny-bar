@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { BufferAttribute, BufferGeometry, Color, MathUtils, Quaternion, Vector3, type Group } from 'three'
+import { BufferAttribute, BufferGeometry, Color, MathUtils, Quaternion, Vector3, type Group, type Object3D } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { resolveQuality } from '../../state/quality'
@@ -28,9 +28,13 @@ function makeQuad() {
 
 // 默认视线方向（世界坐标，指向远离相机）
 const cam = sceneConfig.camera
-const defaultDir = new Vector3()
-  .setFromSphericalCoords(1, MathUtils.degToRad(90 - cam.defaultDepressionDeg), MathUtils.degToRad(cam.defaultAzimuthDeg))
-  .negate()
+const viewDir = (azimuthDeg: number) =>
+  new Vector3()
+    .setFromSphericalCoords(1, MathUtils.degToRad(90 - cam.defaultDepressionDeg), MathUtils.degToRad(azimuthDeg))
+    .negate()
+const defaultDir = viewDir(cam.defaultAzimuthDeg)
+// 窗所在的墙背对默认视角时（例如默认从右前方看、窗在右墙），改用左右镜像的视角来对齐天际线
+const mirroredDir = viewDir(-cam.defaultAzimuthDeg)
 
 const noRaycast = () => null
 
@@ -142,10 +146,13 @@ export function CityWindow({ props, item }: CatalogProps) {
   useFrame(({ camera, clock }, delta) => {
     const g = group.current
     if (!g) return
+    // 窗不显示（所在的墙背对摄像机）时不用更新投影
+    for (let o: Object3D | null = g; o; o = o.parent) if (!o.visible) return
     // 视线方向换到窗户的局部坐标
     g.getWorldQuaternion(q).invert()
     camera.getWorldDirection(dir).applyQuaternion(q)
     dir0.copy(defaultDir).applyQuaternion(q)
+    if (dir0.z > -0.05) dir0.copy(mirroredDir).applyQuaternion(q)
     // 窗户沿墙的位置：挪动窗户时看到城市的不同部分，而不是城市跟着窗户走
     g.getWorldPosition(worldPos)
     xAxis.set(1, 0, 0).applyQuaternion(q.clone().invert())
