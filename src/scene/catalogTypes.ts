@@ -11,7 +11,10 @@ export type CatalogProps = { props: LayoutProps; item?: LayoutItem }
  */
 export type SeatAnchor = { position: Vec3; rotationY: number; pose: SeatPose }
 
-export type SeatableComponent = ComponentType<CatalogProps> & { seats?: SeatAnchor[] }
+/** 桌面：家具局部坐标里的一块水平矩形（x / z 范围）和台面高度。座位会沿正前方找最近的桌面放道具 */
+export type SurfaceAnchor = { min: [number, number]; max: [number, number]; height: number }
+
+export type SeatableComponent = ComponentType<CatalogProps> & { seats?: SeatAnchor[]; surfaces?: SurfaceAnchor[] }
 
 /** 安装方式：地面物件在地板平面上拖动，墙面物件沿所在的墙拖动 */
 export type Mount = 'floor' | 'wall'

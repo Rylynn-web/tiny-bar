@@ -3,7 +3,7 @@ import { useSceneParams } from '../../state/sceneParams'
 import { BevelBox } from '../primitives/BevelBox'
 import { RoundedCylinder } from '../primitives/RoundedCylinder'
 import { paletteColor } from '../paletteColor'
-import type { CatalogProps } from '../catalogTypes'
+import type { CatalogProps, SurfaceAnchor } from '../catalogTypes'
 
 /** 方桌：奶白台面 + 深色立柱 + 圆底盘。原点在地面中心 */
 export function DiningTable({ props }: CatalogProps) {
@@ -30,3 +30,8 @@ export function DiningTable({ props }: CatalogProps) {
     </group>
   )
 }
+
+const T = sceneConfig.diningTable
+DiningTable.surfaces = [
+  { min: [-T.topSize / 2, -T.topSize / 2], max: [T.topSize / 2, T.topSize / 2], height: T.height },
+] satisfies SurfaceAnchor[]

@@ -2,7 +2,7 @@ import { sceneConfig } from '../../config/sceneConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { BevelBox } from '../primitives/BevelBox'
 import { paletteColor } from '../paletteColor'
-import type { CatalogProps } from '../catalogTypes'
+import type { CatalogProps, SurfaceAnchor } from '../catalogTypes'
 
 const C = sceneConfig.lounge.coffeeTable
 
@@ -17,3 +17,7 @@ export function CoffeeTable({ props }: CatalogProps) {
     </group>
   )
 }
+
+CoffeeTable.surfaces = [
+  { min: [-C.topSize[0] / 2, -C.topSize[2] / 2], max: [C.topSize[0] / 2, C.topSize[2] / 2], height: C.baseSize[1] + C.topSize[1] },
+] satisfies SurfaceAnchor[]

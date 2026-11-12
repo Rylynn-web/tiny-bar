@@ -26,6 +26,8 @@ export type Seat = {
   focus: { target: Vec3; azimuthDeg: number; depressionDeg: number; viewSize: number }
   /** 邻座的 id（水平距离小于 seating.neighborDistance） */
   neighbors: string[]
+  /** 正前方的桌面锚点（世界坐标，放杯子 / 笔记本）；前面没有桌面时为 null */
+  desk: Vec3 | null
 }
 
 const up = new Vector3(0, 1, 0)
@@ -60,6 +62,7 @@ export function deriveSeats(items: LayoutItem[]): Seat[] {
           viewSize: f.viewSize,
         },
         neighbors: [],
+        desk: null,
       })
     })
   }
@@ -74,6 +77,40 @@ export function deriveSeats(items: LayoutItem[]): Seat[] {
         seats[i].neighbors.push(seats[j].id)
         seats[j].neighbors.push(seats[i].id)
       }
+    }
+  }
+  // 桌面锚点：沿座位正前方往外找，第一个落在某块桌面里、且高度合适的点
+  const D = sceneConfig.seating.desk
+  const surfaces = items.flatMap((item) => {
+    const list = catalog[item.type]?.component.surfaces
+    if (!list?.length) return []
+    const yaw = MathUtils.degToRad(item.rotationY)
+    const scale = item.scale ?? 1
+    return list.map((s) => ({ item, yaw, scale, s }))
+  })
+  const probe = new Vector3()
+  const local = new Vector3()
+  const inside = (p: Vector3, seatY: number) => {
+    for (const { item, yaw, scale, s } of surfaces) {
+      const top = item.position[1] + s.height * scale
+      if (top <= seatY + 0.05 || top > seatY + D.maxRise) continue
+      local.set(p.x - item.position[0], 0, p.z - item.position[2]).applyAxisAngle(up, -yaw).divideScalar(scale)
+      if (local.x >= s.min[0] && local.x <= s.max[0] && local.z >= s.min[1] && local.z <= s.max[1]) return top
+    }
+    return null
+  }
+  for (const seat of seats) {
+    const fx = Math.sin(seat.rotationY)
+    const fz = Math.cos(seat.rotationY)
+    for (let d = D.reach[0]; d <= D.reach[1] + 1e-6; d += D.step) {
+      probe.set(seat.position[0] + fx * d, 0, seat.position[2] + fz * d)
+      const top = inside(probe, seat.position[1])
+      if (top === null) continue
+      // 往桌里再挪一点；挪出桌面就用找到的那个点
+      const inner = probe.clone().add(new Vector3(fx * D.inset, 0, fz * D.inset))
+      const p = inside(inner, seat.position[1]) !== null ? inner : probe
+      seat.desk = [p.x, top, p.z]
+      break
     }
   }
   return seats

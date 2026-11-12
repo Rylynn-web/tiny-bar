@@ -8,7 +8,7 @@ import { Matte } from '../primitives/Matte'
 import { Metal } from '../primitives/Metal'
 import { getLathe } from '../primitives/useLathe'
 import { paletteColor } from '../paletteColor'
-import type { CatalogProps } from '../catalogTypes'
+import type { CatalogProps, SurfaceAnchor } from '../catalogTypes'
 
 const B = sceneConfig.bar
 const C = B.counter
@@ -152,3 +152,9 @@ export function BarCounter({ props }: CatalogProps) {
     </group>
   )
 }
+
+// 台面：长边一段 + 右端折回段（不算圆角）
+BarCounter.surfaces = [
+  { min: [X_FROM - C.overhang, FRONT_Z - C.depth - C.overhang], max: [X_TO + C.overhang, FRONT_Z + C.overhang], height: C.height },
+  { min: [X_TO - C.depth - C.overhang, RETURN_Z - C.overhang], max: [X_TO + C.overhang, FRONT_Z + C.overhang], height: C.height },
+] satisfies SurfaceAnchor[]

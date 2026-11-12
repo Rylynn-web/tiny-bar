@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Leva, folder, useControls } from 'leva'
+import { GuestDebug } from './GuestDebug'
 import { defaultSceneParams, useSetSceneParams, type SceneParams } from '../state/sceneParams'
 
 // 只在网址带 ?debug 时按需加载。初始值全部来自 sceneConfig（经 defaultSceneParams）。
@@ -45,8 +46,6 @@ export default function DebugPanel() {
 
   const v = useControls({
     小人: folder({
-      pose: { value: d.buddy.pose, options: { 坐: 'sit', 站: 'stand' }, label: '姿势' },
-      outline: { value: d.buddy.outline, label: '描边' },
       bodyColor: { value: d.buddy.bodyColor, label: '身体' },
       eyeColor: { value: d.buddy.eyeColor, label: '眼睛' },
     }),
@@ -193,13 +192,19 @@ export default function DebugPanel() {
       buddy: {
         bodyColor: v.bodyColor as string,
         eyeColor: v.eyeColor as string,
-        outline: v.outline as boolean,
-        pose: v.pose as SceneParams['buddy']['pose'],
+        // 小人现在都坐在座位上、共用实例化零件：没有站姿，也不支持描边
+        outline: false,
+        pose: 'sit',
       },
     })
     // v 每次渲染都是新对象，用序列化后的 key 判断是否真的变了
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, setParams])
 
-  return <Leva collapsed={false} titleBar={{ title: '小酒馆 · 调参' }} />
+  return (
+    <>
+      <GuestDebug />
+      <Leva collapsed={false} titleBar={{ title: '小酒馆 · 调参' }} />
+    </>
+  )
 }

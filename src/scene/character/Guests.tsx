@@ -1,0 +1,166 @@
+import { useEffect, useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { DoubleSide, Matrix4, MeshPhysicalMaterial, MeshStandardMaterial, type InstancedMesh } from 'three'
+import { sceneConfig } from '../../config/sceneConfig'
+import { useSeats, type Seat } from '../../config/seatConfig'
+import { MAX_GUESTS, effectiveState, useGuests } from '../../state/guests'
+import { useSceneParams } from '../../state/sceneParams'
+import { Glow } from '../primitives/Glow'
+import { bookHalfGeometry, bubbleTexture, partGeometry as G } from './parts'
+import { Rig } from './rig'
+
+const B = sceneConfig.buddy
+const P = B.props
+const M = sceneConfig.material
+const hidden = new Matrix4().makeScale(0, 0, 0)
+
+// 每种零件 / 道具一组实例：名字 → 每个小人几份
+const SLOTS = {
+  body: 1,
+  legs: 2,
+  arms: 2,
+  head: 1,
+  eyes: 1,
+  cup: 1,
+  bookHalves: 2,
+  page: 1,
+  laptopBase: 1,
+  laptopLid: 1,
+  screen: 1,
+  bubble: 1,
+} as const
+type Slot = keyof typeof SLOTS
+
+/**
+ * 座位上的所有小人：每人一套不显示的层级节点（rig.ts）摆姿势，
+ * 所有人的同一种零件 / 道具合成一组实例化网格（几何体和材质共享），8 个人也只多十几次绘制。
+ */
+export function Guests() {
+  const seats = useSeats()
+  const guests = useGuests()
+  const { palette, buddy } = useSceneParams()
+  const rigs = useRef(new Map<string, Rig>())
+  const meshes = useRef<Partial<Record<Slot, InstancedMesh | null>>>({})
+
+  // 共享材质：小人是黑白的（不用调色板），道具颜色来自调色板
+  const bodyMat = useMemo(
+    () =>
+      new MeshPhysicalMaterial({
+        roughness: B.roughness,
+        metalness: 0,
+        sheen: B.sheen,
+        sheenRoughness: B.sheenRoughness,
+        sheenColor: '#ffffff',
+        envMapIntensity: M.envMapIntensity,
+      }),
+    [],
+  )
+  const eyeMat = useMemo(() => new MeshStandardMaterial({ roughness: 0.6, metalness: 0 }), [])
+  useEffect(() => {
+    bodyMat.color.set(buddy.bodyColor)
+    eyeMat.color.set(buddy.eyeColor)
+  }, [bodyMat, eyeMat, buddy.bodyColor, buddy.eyeColor])
+  const bookHalf = useMemo(() => bookHalfGeometry(palette[P.book.pageColor], palette[P.book.coverColor]), [palette])
+  const bubbleMap = useMemo(() => bubbleTexture(), [])
+  useEffect(() => () => bookHalf.dispose(), [bookHalf])
+
+  // 当前坐着的人（最多 8 个），以及每人的交谈对象（邻座里第一个有人的座位）
+  const active = useMemo(() => {
+    const byId = new Map(seats.map((s) => [s.id, s]))
+    const list: { seat: Seat; partner: Seat | null; state: ReturnType<typeof effectiveState>; drink: boolean; seed: number }[] = []
+    for (const seat of seats) {
+      const g = guests[seat.id]
+      if (!g || list.length >= MAX_GUESTS) continue
+      const partnerId = seat.neighbors.find((id) => guests[id])
+      list.push({
+        seat,
+        partner: partnerId ? byId.get(partnerId) ?? null : null,
+        state: effectiveState(seat, g, guests),
+        drink: g.drink,
+        seed: g.seed,
+      })
+    }
+    return list
+  }, [seats, guests])
+
+  useFrame(({ camera, clock }, delta) => {
+    const now = clock.elapsedTime
+    const dt = Math.min(delta, 0.1)
+    // 离开座位的人：丢掉他的骨架
+    const ids = new Set(active.map((a) => a.seat.id))
+    for (const id of rigs.current.keys()) if (!ids.has(id)) rigs.current.delete(id)
+
+    const write = (slot: Slot, i: number, m: Matrix4) => meshes.current[slot]?.setMatrixAt(i, m)
+    active.forEach((a, i) => {
+      let rig = rigs.current.get(a.seat.id)
+      if (!rig) {
+        rig = new Rig(a.seed, now)
+        rigs.current.set(a.seat.id, rig)
+      }
+      rig.update(a, now, dt, camera.quaternion)
+      write('body', i, rig.body.matrixWorld)
+      write('head', i, rig.head.matrixWorld)
+      write('eyes', i, rig.eyes.matrixWorld)
+      for (let s = 0; s < 2; s++) {
+        write('legs', i * 2 + s, rig.hips[s].matrixWorld)
+        write('arms', i * 2 + s, rig.shoulders[s].matrixWorld)
+        write('bookHalves', i * 2 + s, rig.pops.book.scale > 0 ? rig.bookHalves[s].matrixWorld : hidden)
+      }
+      write('page', i, rig.pops.book.scale > 0 ? rig.page.matrixWorld : hidden)
+      const laptopOn = rig.pops.laptop.scale > 0
+      write('laptopBase', i, laptopOn ? rig.laptop.matrixWorld : hidden)
+      write('laptopLid', i, laptopOn ? rig.lid.matrixWorld : hidden)
+      write('screen', i, laptopOn ? rig.lid.matrixWorld : hidden)
+      write('cup', i, rig.pops.cup.scale > 0 ? rig.cupMatrix : hidden)
+      write('bubble', i, rig.pops.bubble.scale > 0 ? rig.bubbleMatrix : hidden)
+    })
+    for (const slot of Object.keys(SLOTS) as Slot[]) {
+      const mesh = meshes.current[slot]
+      if (!mesh) continue
+      mesh.count = active.length * SLOTS[slot]
+      mesh.instanceMatrix.needsUpdate = true
+    }
+  })
+
+  const max = (slot: Slot) => MAX_GUESTS * SLOTS[slot]
+  const ref = (slot: Slot) => (m: InstancedMesh | null) => {
+    meshes.current[slot] = m
+  }
+  // 小人零件投影；道具是小物件，只接收阴影
+  const part = { castShadow: true, receiveShadow: true, frustumCulled: false }
+  const prop = { castShadow: false, receiveShadow: true, frustumCulled: false }
+
+  return (
+    <group>
+      <instancedMesh ref={ref('body')} args={[G.body, bodyMat, max('body')]} {...part} />
+      <instancedMesh ref={ref('legs')} args={[G.leg, bodyMat, max('legs')]} {...part} />
+      <instancedMesh ref={ref('arms')} args={[G.arm, bodyMat, max('arms')]} {...part} />
+      <instancedMesh ref={ref('head')} args={[G.head, bodyMat, max('head')]} {...part} />
+      <instancedMesh ref={ref('eyes')} args={[G.eyes, eyeMat, max('eyes')]} frustumCulled={false} />
+
+      <instancedMesh ref={ref('cup')} args={[G.cup, undefined, max('cup')]} {...prop}>
+        <meshStandardMaterial color={palette[P.cupColor]} roughness={M.roughness} metalness={0} envMapIntensity={M.envMapIntensity} side={DoubleSide} />
+      </instancedMesh>
+      <instancedMesh ref={ref('bookHalves')} args={[bookHalf, undefined, max('bookHalves')]} {...prop}>
+        <meshStandardMaterial vertexColors roughness={M.roughness} metalness={0} envMapIntensity={M.envMapIntensity} />
+      </instancedMesh>
+      <instancedMesh ref={ref('page')} args={[G.page, undefined, max('page')]} {...prop}>
+        <meshStandardMaterial color={palette[P.book.pageColor]} roughness={M.roughness} metalness={0} side={DoubleSide} />
+      </instancedMesh>
+      <instancedMesh ref={ref('laptopBase')} args={[G.laptopBase, undefined, max('laptopBase')]} {...prop}>
+        <meshStandardMaterial color={palette[P.laptop.color]} roughness={M.roughness} metalness={0} envMapIntensity={M.envMapIntensity} />
+      </instancedMesh>
+      <instancedMesh ref={ref('laptopLid')} args={[G.laptopLid, undefined, max('laptopLid')]} {...prop}>
+        <meshStandardMaterial color={palette[P.laptop.color]} roughness={M.roughness} metalness={0} envMapIntensity={M.envMapIntensity} />
+      </instancedMesh>
+      {/* 屏幕：夜晚微微发光（和收银屏幕同一组亮度） */}
+      <instancedMesh ref={ref('screen')} args={[G.laptopScreen, undefined, max('screen')]} frustumCulled={false}>
+        <Glow color={palette[P.laptop.screenColor]} group="screen" />
+      </instancedMesh>
+      {/* "…" 气泡：正对镜头，不受光照 */}
+      <instancedMesh ref={ref('bubble')} args={[G.bubble, undefined, max('bubble')]} frustumCulled={false} renderOrder={8}>
+        <meshBasicMaterial map={bubbleMap} transparent depthWrite={false} toneMapped={false} />
+      </instancedMesh>
+    </group>
+  )
+}

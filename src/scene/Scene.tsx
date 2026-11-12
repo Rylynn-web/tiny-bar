@@ -11,7 +11,7 @@ import { Lighting } from './Lighting'
 import { LayoutRenderer } from './LayoutRenderer'
 import { Room } from './room/Room'
 import { WallVisibilityDriver } from './room/WallVisibilityDriver'
-import { BarBuddy } from './character/BarBuddy'
+import { Guests } from './character/Guests'
 import { DoubleTapReset } from './interaction/tap'
 
 // 脸部可见性检查：只在 ?debug 时加载
@@ -48,7 +48,7 @@ export function Scene() {
           <Room />
         </MergeStatic>
         <LayoutRenderer />
-        <BarBuddy />
+        <Guests />
         {Extras && <Extras />}
         {FaceCheck && (
           <Suspense fallback={null}>

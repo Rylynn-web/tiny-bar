@@ -736,7 +736,10 @@ export const sceneConfig = {
   // ───────── 座位 ─────────
   seating: {
     // 两个座位水平距离小于这个值就算邻座
-    neighborDistance: 1.3,
+    // 1.9：隔着一张方桌面对面坐的两个人（约 1.8 米）也算邻座，可以交谈
+    neighborDistance: 1.9,
+    // 桌面锚点：沿座位正前方 reach 范围内找桌面；找到后再往桌里挪 inset；桌面要比座面高、但不超过 maxRise
+    desk: { reach: [0.15, 0.75] as [number, number], step: 0.05, inset: 0.14, maxRise: 0.7 },
     // 镜头飞向座位时的默认取景（之后用）
     focus: { lift: 0.45, azimuthDeg: 45, depressionDeg: 38, viewSize: 2.4 },
   },
@@ -942,21 +945,21 @@ export const sceneConfig = {
     // 绒面高光，模拟陶土边缘的柔光
     sheen: 0.6,
     sheenRoughness: 0.8,
-    outline: false,
-    outlineColor: '#141414',
-    // 描边粗细（绘制缓冲区像素，不随缩放变化）。
-    // 注意：drei 10.7.9 的 Outlines 里 screenspace 开关是反的——不开时才是像素宽度，所以组件里保持不开
-    outlineThickness: 4,
-    pose: 'sit' as BuddyPose,
-    // 坐姿时相对椅面的下沉（设计单位），让屁股和腿落在座面上
-    sitSink: 0.2,
-    // 坐姿时相对座位中心往后挪一点（米），坐得更深
-    sitBack: 0.03,
-    // 默认坐在哪个座位（座位 id = 家具在 layout.json 里的 id；多座家具为 id:序号）
-    seatId: 'chair-a1',
-    // 站姿时站在这里（用来对照设计稿看比例）
-    standPosition: [0.4, 0, 1.6] as Vec3,
-    standRotationY: deg(45),
+    // 坐姿的下沉、往后挪、腿的摆法按座位类型放在 src/config/poses.ts；坐在哪由 src/state/guests.ts 决定
+    // 几何细分：8 个小人同屏，按默认视距（小人约 60 像素高）取够用就好的分段数
+    detail: { bodySegments: 20, bodyProfilePoints: 18, headSegments: [20, 14] as [number, number], eyeSegments: [8, 6] as [number, number], limbSegments: [3, 10] as [number, number] },
+    // 道具（米）：所有小人共享同一套几何体和材质，颜色是调色板键名
+    props: {
+      cupColor: 'cream',
+      // 桌上的杯子在小人右手边多远
+      cupDeskOffset: 0.17,
+      book: { width: 0.2, height: 0.15, thickness: 0.012, coverColor: 'navy', pageColor: 'cream', openAngle: 0.14 },
+      // 书在身体前方（身体坐标，设计单位）和往脸的方向倾斜的角度
+      bookAt: [0, 0.8, 0.66] as Vec3,
+      bookTilt: deg(-55),
+      laptop: { width: 0.3, depth: 0.21, baseThickness: 0.016, lidThickness: 0.01, openAngle: deg(108), color: 'slate', screenColor: 'steel', screenInset: 0.015 },
+      bubble: { width: 0.2, height: 0.13, lift: 0.12, textureSize: 128, color: '#FFFFFF', dotColor: '#3B3A40' },
+    },
     blink: {
       minInterval: 3,
       maxInterval: 6,
