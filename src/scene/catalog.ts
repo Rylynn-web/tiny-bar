@@ -39,6 +39,8 @@ const reseed = [
   { label: '换配色', reseed: 'paletteSeed' },
 ]
 const seeds = { seed: 1, paletteSeed: 0 }
+/** 灯具的单件亮度滑杆（乘在这一类灯的分组强度上） */
+const brightness = [{ key: 'brightness', label: '亮度', min: 0, max: 2, step: 0.05, default: 1 }]
 /** 只有一个可换色部位的家具 */
 const oneColor = (label: string, fallback: string) => [{ key: 'color', label, fallback }]
 
@@ -73,6 +75,8 @@ export const catalog: Record<string, CatalogEntry> = {
       { key: 'color', label: '柜身', fallback: 'blush' },
       { key: 'topColor', label: '台面', fallback: 'navy' },
     ],
+    // 灯带和收银屏幕的亮度
+    editableProps: [{ key: 'brightness', label: '灯带亮度', min: 0, max: 2, step: 0.05, default: 1 }],
   },
   backCounter: {
     label: '后操作台',
@@ -84,7 +88,7 @@ export const catalog: Record<string, CatalogEntry> = {
     ],
   },
   barStool: { label: '吧凳', mount: 'floor', component: BarStool, colorProps: oneColor('坐面', 'dark') },
-  pendantLamp: { label: '吊灯', mount: 'floor', component: PendantLamp, collide: false, colorProps: oneColor('灯罩', 'pendantGreen') },
+  pendantLamp: { label: '吊灯', mount: 'floor', component: PendantLamp, collide: false, colorProps: oneColor('灯罩', 'pendantGreen'), editableProps: brightness },
   wallShelf: {
     label: '浮板置物架',
     mount: 'wall',
@@ -99,9 +103,9 @@ export const catalog: Record<string, CatalogEntry> = {
   bookshelf: { label: '书柜', mount: 'floor', component: Bookshelf, colorProps: oneColor('柜体', 'wood') },
   // 下面这些放在别的家具台面上：也是地面物件，y 设成台面高度，拖动时保持这个高度
   turntable: { label: '唱机', mount: 'floor', component: Turntable },
-  stackLamp: { label: '叠环台灯', mount: 'floor', component: StackLamp, defaultProps: { color: 'orange' }, colorProps: oneColor('灯身', 'orange') },
-  mushroomLamp: { label: '蘑菇台灯', mount: 'floor', component: MushroomLamp },
-  floorLamp: { label: '落地弧灯', mount: 'floor', component: FloorLamp, collide: false },
+  stackLamp: { label: '叠环台灯', mount: 'floor', component: StackLamp, defaultProps: { color: 'orange' }, colorProps: oneColor('灯身', 'orange'), editableProps: brightness },
+  mushroomLamp: { label: '蘑菇台灯', mount: 'floor', component: MushroomLamp, editableProps: brightness },
+  floorLamp: { label: '落地弧灯', mount: 'floor', component: FloorLamp, collide: false, editableProps: brightness },
   vase: { label: '花瓶', mount: 'floor', component: Vase, defaultProps: { color: 'cream' }, colorProps: oneColor('瓶身', 'cream') },
   bookStack: { label: '书摞', mount: 'floor', component: BookStack },
   cityWindow: {
@@ -134,7 +138,7 @@ export const catalog: Record<string, CatalogEntry> = {
     defaultProps: { count: D.mirror.count },
     editableProps: [{ key: 'count', label: '块数', min: D.mirror.countRange[0], max: D.mirror.countRange[1], step: 1 }],
   },
-  orbSconce: { label: '球形壁灯', mount: 'wall', component: OrbSconce },
+  orbSconce: { label: '球形壁灯', mount: 'wall', component: OrbSconce, editableProps: brightness },
   bookLedge: {
     label: '墙挂书架',
     mount: 'wall',

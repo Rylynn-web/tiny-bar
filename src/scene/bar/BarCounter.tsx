@@ -74,6 +74,8 @@ function ledPath(y: number, o: number) {
 /** L 形吧台（地面物件）：粉色立面 + 深蓝台面 + 外沿灯带 + 收银机等小物 + 摇酒壶。原点在长边正面中点 */
 export function BarCounter({ props }: CatalogProps) {
   const { palette, bevel } = useSceneParams()
+  // 单件灯的亮度倍数（编辑器里的「亮度」滑杆）
+  const brightness = typeof props.brightness === 'number' ? props.brightness : 1
   const b = bevel * sceneConfig.bevelTiers.small
   const bodyHeight = C.height - C.topThickness
 
@@ -109,7 +111,7 @@ export function BarCounter({ props }: CatalogProps) {
         <Matte color={paletteColor(palette, props.topColor, 'navy')} />
       </mesh>
       <mesh geometry={led}>
-        <Glow color={palette.warmLight} group="ledStrip" />
+        <Glow color={palette.warmLight} group="ledStrip" multiplier={brightness} />
       </mesh>
 
       {/* 收银机、刷卡机、纸巾盒 */}
@@ -119,7 +121,7 @@ export function BarCounter({ props }: CatalogProps) {
           <BevelBox tier="rod" size={pos.screenSize} color={palette.dark} />
           <mesh position={[0, 0, pos.screenSize[2] / 2 + 1e-3]}>
             <planeGeometry args={[pos.screenSize[0] * 0.86, pos.screenSize[1] * 0.8]} />
-            <Glow color={palette.steel} group="screen" />
+            <Glow color={palette.steel} group="screen" multiplier={brightness} />
           </mesh>
         </group>
         <BevelBox

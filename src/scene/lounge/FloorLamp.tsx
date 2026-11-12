@@ -8,6 +8,7 @@ import { LightPool } from '../primitives/LightPool'
 import { RoundedCylinder } from '../primitives/RoundedCylinder'
 import { useLathe } from '../primitives/useLathe'
 import type { CatalogProps } from '../catalogTypes'
+import { LightCone } from '../primitives/LightCone'
 
 const F = sceneConfig.lounge.floorLamp
 
@@ -23,6 +24,8 @@ export function FloorLamp({ props }: CatalogProps) {
   const [ex, ey, ez] = F.arc[F.arc.length - 1]
   const shadeBottom = ey - shadeHeight
   const poolHeight = typeof props.poolHeight === 'number' ? props.poolHeight : F.poolHeight
+  // 单件灯的亮度倍数（编辑器里的「亮度」滑杆）
+  const brightness = typeof props.brightness === 'number' ? props.brightness : 1
 
   return (
     <group>
@@ -36,9 +39,18 @@ export function FloorLamp({ props }: CatalogProps) {
       </mesh>
       <mesh position={[ex, shadeBottom, ez]}>
         <sphereGeometry args={[F.bulbRadius, 16, 12]} />
-        <Glow color={palette.warmLight} group="lamp" />
+        <Glow color={palette.warmLight} group="floorLamp" multiplier={brightness} />
       </mesh>
-      <LightPool position={[ex, poolHeight, ez]} radius={F.poolRadius} />
+      {/* 灯罩开口往下的光锥，落到沙发区的光斑 */}
+      <LightCone
+        position={[ex, shadeBottom, ez]}
+        radiusTop={F.shade[0][0] * 0.95}
+        radiusBottom={F.poolRadius * sceneConfig.lightCone.bottomRatio}
+        height={shadeBottom - poolHeight}
+        group="coneFloorLamp"
+        multiplier={brightness}
+      />
+      <LightPool position={[ex, poolHeight, ez]} radius={F.poolRadius} group="poolFloorLamp" multiplier={brightness} />
     </group>
   )
 }

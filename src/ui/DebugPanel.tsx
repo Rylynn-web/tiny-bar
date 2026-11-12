@@ -6,6 +6,21 @@ import { defaultSceneParams, useSetSceneParams, type SceneParams } from '../stat
 
 const d = defaultSceneParams
 
+const emissiveLabels: Record<keyof typeof d.emissive, string> = {
+  bulb: '吊灯灯泡',
+  floorLamp: '落地弧灯',
+  mushroomLamp: '蘑菇台灯',
+  stackLamp: '叠环台灯',
+  sconce: '球壁灯',
+  ledStrip: '吧台灯带',
+  screen: '收银屏幕',
+  pool: '吊灯光斑',
+  poolFloorLamp: '落地灯光斑',
+  poolMushroom: '台灯光斑',
+  conePendant: '吊灯光锥',
+  coneFloorLamp: '落地灯光锥',
+}
+
 function lightingFolder(key: 'day' | 'night') {
   const l = d.lighting[key]
   return {
@@ -65,14 +80,15 @@ export default function DebugPanel() {
     造型: folder({
       bevel: { value: d.bevel, min: 0, max: 0.08, step: 0.002, label: '倒角半径' },
     }),
-    自发光: folder({
-      emBulb: { value: d.emissive.bulb, min: 0, max: 20, step: 0.5, label: '灯泡' },
-      emLed: { value: d.emissive.ledStrip, min: 0, max: 20, step: 0.5, label: '灯带' },
-      emScreen: { value: d.emissive.screen, min: 0, max: 10, step: 0.1, label: '屏幕' },
-      emLamp: { value: d.emissive.lamp, min: 0, max: 20, step: 0.5, label: '台灯' },
-      emPool: { value: d.emissive.pool, min: 0, max: 1, step: 0.05, label: '光斑' },
-      emSconce: { value: d.emissive.sconce, min: 0, max: 20, step: 0.5, label: '球壁灯' },
-    }),
+    // 每种灯分开调：发光强度、光斑浓度、光锥浓度
+    自发光: folder(
+      Object.fromEntries(
+        (Object.keys(d.emissive) as (keyof typeof d.emissive)[]).map((k) => {
+          const fx = k.startsWith('pool') || k.startsWith('cone')
+          return [`em_${k}`, { value: d.emissive[k], min: 0, max: fx ? 1 : 20, step: fx ? 0.01 : 0.5, label: emissiveLabels[k] }]
+        }),
+      ),
+    ),
     性能: folder({
       mergeStatic: { value: d.mergeStatic, label: '合并网格' },
       quality: { value: d.quality, options: { 自动: 'auto', 高: 'high', 低: 'low' }, label: '画质' },
@@ -157,14 +173,9 @@ export default function DebugPanel() {
         layerDay: d.cityView.layerDay.map((_, i) => v[`cvDay${i}`] as string),
         layerNight: d.cityView.layerNight.map((_, i) => v[`cvNight${i}`] as string),
       },
-      emissive: {
-        bulb: v.emBulb as number,
-        ledStrip: v.emLed as number,
-        screen: v.emScreen as number,
-        lamp: v.emLamp as number,
-        pool: v.emPool as number,
-        sconce: v.emSconce as number,
-      },
+      emissive: Object.fromEntries(
+        Object.keys(d.emissive).map((k) => [k, v[`em_${k}`] as number]),
+      ) as SceneParams['emissive'],
       camera: {
         azimuthMinDeg: v.azimuthMinDeg as number,
         azimuthMaxDeg: v.azimuthMaxDeg as number,

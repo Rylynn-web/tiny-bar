@@ -27,10 +27,14 @@ export function getPoolTexture() {
 type Props = {
   position: [number, number, number]
   radius: number
+  /** 浓度分组（sceneConfig.emissive 里的键），默认吊灯那组 */
+  group?: keyof typeof sceneConfig.emissive
+  /** 单件灯的亮度倍数 */
+  multiplier?: number
 }
 
 /** 灯具下方的假光斑：贴在表面上的叠加渐变圆，强度随时段的 glow 倍率变化 */
-export function LightPool({ position, radius }: Props) {
+export function LightPool({ position, radius, group = 'pool', multiplier = 1 }: Props) {
   const { palette, emissive } = useSceneParams()
   const { glow } = useLighting()
   const map = useMemo(() => getPoolTexture(), [])
@@ -42,7 +46,7 @@ export function LightPool({ position, radius }: Props) {
         map={map}
         color={palette.warmLight}
         transparent
-        opacity={Math.min(1, emissive.pool * glow)}
+        opacity={Math.min(1, emissive[group] * glow * multiplier)}
         blending={AdditiveBlending}
         depthWrite={false}
         polygonOffset

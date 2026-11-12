@@ -8,6 +8,7 @@ import { Metal } from '../primitives/Metal'
 import { useLathe } from '../primitives/useLathe'
 import { paletteColor } from '../paletteColor'
 import type { CatalogProps } from '../catalogTypes'
+import { LightCone } from '../primitives/LightCone'
 
 const P = sceneConfig.bar.pendants
 
@@ -21,6 +22,8 @@ export function PendantLamp({ props }: CatalogProps) {
   const shadeHeight = Math.max(...P.shade.map((p) => p[1]))
   const shadeTop = P.shadeBottom + shadeHeight
   const cordLength = P.hangFrom - shadeTop
+  // 单件灯的亮度倍数（编辑器里的「亮度」滑杆）
+  const brightness = typeof props.brightness === 'number' ? props.brightness : 1
 
   return (
     <group>
@@ -38,9 +41,18 @@ export function PendantLamp({ props }: CatalogProps) {
       </mesh>
       <mesh position={[0, P.shadeBottom, 0]}>
         <sphereGeometry args={[P.bulbRadius, 16, 12]} />
-        <Glow color={palette.warmLight} group="bulb" />
+        <Glow color={palette.warmLight} group="bulb" multiplier={brightness} />
       </mesh>
-      <LightPool position={[0, P.poolHeight, 0]} radius={P.poolRadius} />
+      {/* 灯罩下沿往下的光锥，落到台面上的光斑 */}
+      <LightCone
+        position={[0, P.shadeBottom, 0]}
+        radiusTop={P.shade[0][0] * 0.95}
+        radiusBottom={P.poolRadius * sceneConfig.lightCone.bottomRatio}
+        height={P.shadeBottom - P.poolHeight}
+        group="conePendant"
+        multiplier={brightness}
+      />
+      <LightPool position={[0, P.poolHeight, 0]} radius={P.poolRadius} multiplier={brightness} />
     </group>
   )
 }

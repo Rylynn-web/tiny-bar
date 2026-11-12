@@ -28,7 +28,7 @@ export type CatalogEntry = {
   /** 墙面物件只能沿墙水平移动、高度固定 */
   lockY?: boolean
   /** 编辑器侧边栏里可以直接改的数值属性（写进 layout 的 props） */
-  editableProps?: { key: string; label: string; min: number; max: number; step: number }[]
+  editableProps?: { key: string; label: string; min: number; max: number; step: number; default?: number }[]
   /** 编辑器里的按钮：点一下把这个数值属性换成一个新的随机种子（如画作的"换一幅 / 换配色"） */
   editorActions?: { label: string; reseed: string }[]
   /** 编辑器里可以换颜色的部位：props 里的键名、显示名、默认调色板键 */

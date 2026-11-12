@@ -18,7 +18,7 @@ export const sceneConfig = {
   shadows: {
     mapSize: 1024,
     // PCF 阴影边缘的模糊半径
-    radius: 6,
+    radius: 4,
     bias: -0.0005,
     normalBias: 0.02,
     // 主光阴影相机覆盖范围（世界单位，正交），要盖住整个房间
@@ -110,16 +110,33 @@ export const sceneConfig = {
     instanceBase: '#FFFFFF',
   },
   // 自发光分组强度：最终强度 = 分组强度 × 当前时段的 glow 倍率。夜晚要高于 Bloom 阈值才有光晕
+  // 每种灯一组，可以分开调（?debug 的 leva「自发光」）；单件灯还能在编辑器里用「亮度」再乘一个倍数
   emissive: {
+    // 灯泡 / 灯身的发光强度（夜晚要高于 Bloom 阈值才有光晕）
     bulb: 8,
+    floorLamp: 7,
+    mushroomLamp: 7,
+    stackLamp: 6,
+    sconce: 7,
     ledStrip: 6,
     screen: 2,
-    // 台灯类：叠环台灯、蘑菇台灯、落地灯
-    lamp: 7,
-    // 灯具下方的假光斑（叠加混合的径向渐变），不是真实光源
+    // 灯下的假光斑浓度（叠加混合的径向渐变，不是真实光源）
     pool: 0.55,
-    // 粉色发光球壁灯
-    sconce: 7,
+    poolFloorLamp: 0.55,
+    poolMushroom: 0.5,
+    // 光锥浓度（吊灯、落地弧灯）
+    conePendant: 0.55,
+    coneFloorLamp: 0.5,
+  },
+  // 光锥：从灯罩下沿向下展开的半透明柔光，越往下越淡、边缘柔和（叠加混合，不是真实光源）
+  lightCone: {
+    color: 'warmLight',
+    segments: 32,
+    // 自上而下的衰减指数（越大越快变淡）、侧边柔化指数
+    falloff: 1.6,
+    edgeSoftness: 1.4,
+    // 底部开口占光斑半径的比例
+    bottomRatio: 0.85,
   },
   // 光斑贴图：径向渐变，启动时生成一次
   lightPool: {
@@ -146,28 +163,30 @@ export const sceneConfig = {
   // ───────── 时段 ─────────
   defaultTimeOfDay: 'day' as TimeOfDay,
   lighting: {
+    // 白天：晴天日照。主光从右边（+X）的落地窗斜照进来，暖白、偏强，影子边缘清楚；
+    // 环境光天空一侧偏冷蓝，亮面暖、暗面冷，对比出阳光感
     day: {
-      background: '#E9DFD2',
-      sunColor: '#FFF4E6',
-      sunIntensity: 2.4,
-      ambientSky: '#FFF6EC',
-      ambientGround: '#C8B49E',
-      ambientIntensity: 1.1,
+      background: '#ECE3D6',
+      sunColor: '#FFE7C2',
+      sunIntensity: 3.6,
+      ambientSky: '#D9E4EE',
+      ambientGround: '#C9B39A',
+      ambientIntensity: 1.05,
       // 所有自发光物件的整体倍率（白天几乎关闭）
-      glow: 0.15,
+      glow: 0.12,
     },
+    // 夜晚：不开投影主光（sunIntensity = 0，也不算阴影），屋里只有暖色环境光 + 灯具发光 / 光锥 / 光斑
     night: {
-      background: '#2E2A2B',
-      sunColor: '#8A8496',
-      sunIntensity: 2,
-      ambientSky: '#5C5058',
-      ambientGround: '#2C2428',
-      ambientIntensity: 3,
+      background: '#30231C',
+      sunColor: '#FFD9A8',
+      sunIntensity: 0,
+      ambientSky: '#A87650',
+      ambientGround: '#4C3426',
+      ambientIntensity: 2.6,
       glow: 1,
     },
-    // 主光方向（相对房间中心）
-    // 从房间正面偏左上打过来：右墙的影子落在房间外，左墙的影子只贴着墙根，三面墙都能受一点光
-    sunPosition: [-1.2, 6, 6] as Vec3,
+    // 白天主光方向（相对房间中心）：从右前上方穿过右墙落地窗，地面和左墙上会落下窗形的阳光
+    sunPosition: [7, 5.5, 1.5] as Vec3,
   },
   // ───────── 环境光遮蔽（N8AO）─────────
   ao: {

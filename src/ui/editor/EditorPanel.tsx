@@ -133,7 +133,7 @@ export function EditorPanel() {
             ))}
             {selectedEntry.editableProps?.map((ep) => {
               const raw = selected.props?.[ep.key] ?? selectedEntry.defaultProps?.[ep.key]
-              const value = typeof raw === 'number' ? raw : ep.min
+              const value = typeof raw === 'number' ? raw : (ep.default ?? ep.min)
               return (
                 <Slider
                   key={ep.key}
