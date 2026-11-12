@@ -33,6 +33,9 @@ export type CityViewParams = {
   skyNightHorizon: string
   layerDay: string[]
   layerNight: string[]
+  /** 楼的进深倍率、侧面暗度 */
+  depthScale: number
+  sideDarken: number
 }
 
 export type SceneParams = {
@@ -78,6 +81,8 @@ export const defaultSceneParams: SceneParams = {
     skyNightHorizon: sceneConfig.cityView.sky.night.horizon,
     layerDay: sceneConfig.cityView.layers.map((l) => l.dayColor),
     layerNight: sceneConfig.cityView.layers.map((l) => l.nightColor),
+    depthScale: sceneConfig.cityView.depthScale,
+    sideDarken: sceneConfig.cityView.sideDarken,
   },
   emissive: { ...sceneConfig.emissive },
   camera: {

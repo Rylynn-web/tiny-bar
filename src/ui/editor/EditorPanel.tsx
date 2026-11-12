@@ -171,6 +171,11 @@ export function EditorPanel() {
               <button type="button" onClick={duplicateSelected}>复制</button>
               <button type="button" onClick={deleteSelected}>删除</button>
             </div>
+            {selectedEntry.mount === 'wall' && (
+              <p className="editor-panel__hint">
+                直接拖动物件可以换到另一面墙（精确调整只沿当前这面墙移动）；被隐藏的墙放不上去，先点「显示全部墙」
+              </p>
+            )}
           </>
         ) : (
           <p className="editor-panel__hint">点击场景里的物件，或在下方列表里选</p>

@@ -35,7 +35,8 @@ export function LightPool({ position, radius }: Props) {
   const { glow } = useLighting()
   const map = useMemo(() => getPoolTexture(), [])
   return (
-    <mesh position={position} rotation={[-Math.PI / 2, 0, 0]} renderOrder={1}>
+    // 假光斑不是实体：编辑器算尺寸、拖动边界和重叠时跳过
+    <mesh position={position} rotation={[-Math.PI / 2, 0, 0]} renderOrder={1} userData={{ editorIgnore: true }} raycast={() => null}>
       <planeGeometry args={[radius * 2, radius * 2]} />
       <meshBasicMaterial
         map={map}

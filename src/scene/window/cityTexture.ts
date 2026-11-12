@@ -1,4 +1,4 @@
-import { CanvasTexture, LinearFilter, NoColorSpace, RepeatWrapping, ClampToEdgeWrapping } from 'three'
+import { CanvasTexture, NearestFilter, NoColorSpace, RepeatWrapping, ClampToEdgeWrapping } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
 import { seededRandom } from '../primitives/canvasTexture'
 
@@ -75,7 +75,10 @@ export function getCityTexture(index: number, layer: LayerCfg): CityTexture {
   texture.colorSpace = NoColorSpace
   texture.wrapS = RepeatWrapping
   texture.wrapT = ClampToEdgeWrapping
-  texture.minFilter = LinearFilter
+  // 数据贴图按最近像素取：每个像素只属于一栋楼，楼的随机值（G）不会在边缘和隔壁楼混在一起
+  //（混了以后着色器会误以为"进入了另一栋楼"，楼的侧面外面出现一道道虚线）
+  texture.minFilter = NearestFilter
+  texture.magFilter = NearestFilter
   texture.generateMipmaps = false
   texture.flipY = true
   const result = { texture, tallest }

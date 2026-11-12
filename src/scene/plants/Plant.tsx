@@ -4,6 +4,7 @@ import { DoubleSide } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { Matte } from '../primitives/Matte'
+import { useRequestRemerge } from '../primitives/remerge'
 import type { CatalogProps } from '../catalogTypes'
 import { getPlantParts, soilHeight, type PotStyle } from './plantGeometry'
 import { Planter } from './Planter'
@@ -35,6 +36,8 @@ function PlantModel({ species }: { species: Species }) {
   const { palette } = useSceneParams()
   const parts = useMemo(() => getPlantParts(species, scene, spec.height, spec.baseAnchor), [species, scene, spec])
   const leaf = { side: DoubleSide, shadowSide: DoubleSide } as const
+  // 模型是异步加载的：挂上之后让外层重新合并，叶子、茎和花盆合成一次绘制
+  useRequestRemerge()
   return (
     <group>
       <mesh geometry={parts.leaf} castShadow receiveShadow>

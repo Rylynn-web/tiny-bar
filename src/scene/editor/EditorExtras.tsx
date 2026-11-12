@@ -121,8 +121,8 @@ function PivotEditor() {
 
   if (!pivotMode || !item || !entry) return null
   const wall = entry.mount === 'wall'
-  const left = wall && Math.abs(normalizeDeg(item.rotationY) - 90) < 45
-  const activeAxes: [boolean, boolean, boolean] = !wall ? [true, false, true] : left ? [false, true, true] : [true, true, false]
+  // 手柄按物件自己的坐标轴摆：墙面物件的局部 x 总是沿墙、y 向上（三面墙都一样），地面物件开放水平的 x / z
+  const activeAxes: [boolean, boolean, boolean] = wall ? [true, true, false] : [true, false, true]
 
   return (
     <PivotControls

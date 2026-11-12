@@ -371,8 +371,20 @@ export const sceneConfig = {
     bodyVariation: 0.16,
     // 体积感：楼顶变亮、侧面变暗的比例；挤出在画面上的最大长度（米），防止极端视角下拉得太长
     roofLighten: 0.14,
-    sideDarken: 0.24,
-    extrudeMax: 0.35,
+    sideDarken: 0.26,
+    extrudeMax: 0.6,
+    // 楼的进深：每层 buildingDepth × depthScale，再按每栋楼的随机值乘 depthVariation 里的倍数（前后层次）
+    depthScale: 1.8,
+    depthVariation: [0.6, 1.4] as [number, number],
+    // 侧面：从转角往深处越来越暗的额外比例、转角那道亮线（占侧面进深的比例、提亮多少）
+    sideGradient: 0.35,
+    cornerEdge: 0.06,
+    cornerLighten: 0.14,
+    // 楼顶前沿的浅色压边（占楼顶进深的比例）
+    roofEdge: 0.12,
+    // 侧面窗户：沿进深方向的窗距（相对正面窗距的比例，透视压缩）和窗占格子的比例；低画质档不画
+    sideCellScale: 0.7,
+    sidePane: [0.5, 0.45] as [number, number],
     // 最近一层最高楼顶的红色信号灯
     beacon: { color: '#FF3B30', radius: 0.05, intensity: 6, period: 2.6 },
     // 昼夜切换的过渡时间（秒）

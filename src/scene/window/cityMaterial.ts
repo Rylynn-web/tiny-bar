@@ -53,6 +53,16 @@ export function createCityMaterial(map: Texture) {
       uExtrude: { value: new Vector2() },
       uRoofLighten: { value: 0.14 },
       uSideDarken: { value: 0.24 },
+      // 每栋楼进深不同：最浅的楼占完整挤出的比例（最深 = 1）；完整挤出对应的进深（米，侧面开窗用）
+      uDepthMin: { value: 0.43 },
+      uExtrudeDepth: { value: 0.2 },
+      // 侧面：越深越暗、转角亮线、楼顶前沿压边、侧面窗距（米）和窗占格子的比例
+      uSideGradient: { value: 0.35 },
+      uCornerEdge: { value: 0.06 },
+      uCornerLighten: { value: 0.14 },
+      uRoofEdge: { value: 0.12 },
+      uSideCell: { value: 0.08 },
+      uSidePane: { value: new Vector2(0.5, 0.45) },
       uHeight: { value: 10 },
       uBaseY: { value: 0 },
       uDayColor: { value: new Color() },
@@ -84,6 +94,8 @@ export function createCityMaterial(map: Texture) {
       uniform float uOffset;
       uniform vec2 uShift, uExtrude;
       uniform float uRoofLighten, uSideDarken;
+      uniform float uDepthMin, uExtrudeDepth, uSideGradient, uCornerEdge, uCornerLighten, uRoofEdge, uSideCell;
+      uniform vec2 uSidePane;
       uniform float uTileWidth, uHeight, uBaseY, uNight, uLitRatio, uTwinkleRatio, uLitIntensity, uDetail, uTime, uSeed;
       uniform float uDayPaneDarken, uBodyVariation;
       uniform vec2 uTwinkleSpeed, uCell, uPane, uBeaconUV;
@@ -103,6 +115,10 @@ export function createCityMaterial(map: Texture) {
         return texture2D(uMap, vec2(fract(u), v));
       }
 
+      // 每栋楼的进深（占完整挤出的比例），由楼的随机值决定；和楼体明暗用的随机值错开
+      float depthFrac(float g) {
+        return mix(uDepthMin, 1.0, fract(g * 7.31 + 0.17));
+      }
       // 红色信号灯：每个平铺周期里最高的那栋楼顶各一盏，缓慢闪烁（低画质档不闪）
       float beacon(vec2 world) {
         if (uBeaconOn < 0.5) return 0.0;
@@ -120,40 +136,79 @@ export function createCityMaterial(map: Texture) {
         float glow = beacon(world);
         vec3 beaconCol = uBeaconColor * uBeaconIntensity * mix(0.35, 1.0, uNight);
 
-        // 楼的体积：正面之外的地方，沿挤出方向往回找——找到楼身就是这栋楼的楼顶或侧面
+        // 楼的体积：正面之外的地方，沿挤出方向往回找——找到楼身（且在这栋楼的进深以内）就是它的楼顶或侧面
         if (t.r < 0.5) {
-          // 先粗找：沿挤出方向往回走，找到第一个落在楼身上的位置
+          // 沿挤出方向往回走：每进入一栋楼，先二分找准"进入点"（楼身边缘是连续的，二分很准），
+          // 再看进入点是否在这栋楼自己的进深以内——是就是它的侧面 / 楼顶，不是就继续往后找下一栋。
+          // 直接用"楼身且在进深内"做粗找，侧面最深处那一小条会被步长跳过，出现虚线状的毛边
           const int STEPS = 12;
-          float hitT = -1.0;
+          float hi = -1.0;
+          float prevIn = 0.0;
+          float prevG = -1.0;
           for (int i = 1; i <= STEPS; i++) {
             float k = float(i) / float(STEPS);
-            if (city(world - uExtrude * k).r > 0.5) { hitT = k; break; }
-          }
-          // 再二分细化楼身边缘，避免一圈圈的台阶纹
-          vec2 src = world;
-          vec4 srcTex = vec4(0.0);
-          if (hitT > 0.0) {
-            float lo = hitT - 1.0 / float(STEPS);
-            float hi = hitT;
-            for (int j = 0; j < 5; j++) {
-              float mid = 0.5 * (lo + hi);
-              if (city(world - uExtrude * mid).r > 0.5) hi = mid; else lo = mid;
+            vec4 ck = city(world - uExtrude * k);
+            float inside = step(0.5, ck.r);
+            // "进入一栋楼"：从楼外进到楼身，或者从一栋楼直接走进紧挨着的另一栋（剪影相连，楼的随机值变了）
+            bool entered = inside > 0.5 && (prevIn < 0.5 || abs(ck.g - prevG) > 0.02);
+            if (entered) {
+              float lo = k - 1.0 / float(STEPS);
+              float h = k;
+              for (int j = 0; j < 6; j++) {
+                float mid = 0.5 * (lo + h);
+                vec4 cm = city(world - uExtrude * mid);
+                if (cm.r > 0.5 && abs(cm.g - ck.g) < 0.02) h = mid; else lo = mid;
+              }
+              // 楼的随机值从进入点再往楼里走半步的地方取：边缘上的采样会混进楼外 / 隔壁楼的值，
+              // 进深忽长忽短，侧面外面会出现一道道虚线
+              vec4 cin = city(world - uExtrude * min(h + 0.5 / float(STEPS), 1.0));
+              float g = (cin.r > 0.5 && abs(cin.g - ck.g) < 0.02) ? cin.g : ck.g;
+              if (h <= depthFrac(g)) { hi = h; break; }
             }
-            src = world - uExtrude * hi;
-            srcTex = city(src);
+            prevIn = inside;
+            prevG = inside > 0.5 ? ck.g : -1.0;
           }
-          if (hitT < 0.0) {
+          if (hi < 0.0) {
             // 楼顶上方的天空：只画信号灯的光点
             if (glow < 0.5) discard;
             gl_FragColor = vec4(beaconCol, 1.0);
             return;
           }
+          vec2 src = world - uExtrude * hi;
+          // 同理：楼的随机值 / 能否开窗从楼身里面一点取
+          vec4 srcTex = city(world - uExtrude * min(hi + 0.5 / float(STEPS), 1.0));
+          // 在这栋楼自己的进深里走到了哪（0 = 转角 / 前沿，1 = 最深处）
+          float kn = clamp(hi / depthFrac(srcTex.g), 0.0, 1.0);
+
           vec3 b = mix(uDayColor, uNightColor, uNight);
           b *= 1.0 - uBodyVariation * 0.5 + uBodyVariation * srcTex.g;
-          // 源点贴着楼顶边缘 → 楼顶（亮一点）；否则是侧面（暗一点）
+          // 源点贴着楼顶边缘 → 楼顶；否则是侧面
           float eps = uHeight * 0.006;
           bool roof = city(src + vec2(0.0, eps)).r < 0.5;
-          vec3 c = roof ? b * (1.0 + uRoofLighten) : b * (1.0 - uSideDarken);
+          vec3 c;
+          if (roof) {
+            c = b * (1.0 + uRoofLighten);
+            // 楼顶前沿一道浅色压边
+            if (kn < uRoofEdge) c *= 1.0 + uRoofLighten;
+          } else {
+            // 侧面：越往深处越暗；转角一道亮线
+            c = b * (1.0 - uSideDarken * (1.0 + uSideGradient * kn));
+            if (kn < uCornerEdge) c *= 1.0 + uCornerLighten;
+            // 侧面窗户：沿进深方向一列列（窗距比正面窄，像透视压缩）；行和正面对齐
+            if (uDetail > 0.5 && srcTex.b > 0.5 && kn > uCornerEdge * 1.5) {
+              float d = hi * uExtrudeDepth;
+              vec2 sc = vec2(d / uSideCell, (src.y - uBaseY) / uCell.y);
+              vec2 cell = floor(sc);
+              vec2 f = fract(sc) - 0.5;
+              float inPane = step(abs(f.x), uSidePane.x * 0.5) * step(abs(f.y), uSidePane.y * 0.5);
+              // 这一行的中心还在楼身里才开窗（不在楼顶被切半）
+              inPane *= step(0.5, city(vec2(src.x, (cell.y + 0.5) * uCell.y + uBaseY)).r);
+              float r = hash(cell + vec2(srcTex.g * 97.0, 13.0));
+              float lit = step(r, uLitRatio);
+              c *= 1.0 - inPane * (1.0 - uNight) * uDayPaneDarken;
+              c += uLitColor * uLitIntensity * 0.8 * lit * inPane * uNight;
+            }
+          }
           gl_FragColor = vec4(mix(c, beaconCol, glow), 1.0);
           return;
         }

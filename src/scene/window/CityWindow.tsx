@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { BufferAttribute, BufferGeometry, Color, MathUtils, Quaternion, Vector3, type Group, type Object3D } from 'three'
+import { BufferAttribute, BufferGeometry, Color, MathUtils, Quaternion, Vector2, Vector3, type Group, type Object3D } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
 import { useSceneParams } from '../../state/sceneParams'
 import { resolveQuality } from '../../state/quality'
@@ -118,7 +118,15 @@ export function CityWindow({ props, item }: CatalogProps) {
       u.uDayPaneDarken.value = V.dayPaneDarken
       u.uBodyVariation.value = V.bodyVariation
       u.uRoofLighten.value = V.roofLighten
-      u.uSideDarken.value = V.sideDarken
+      u.uSideDarken.value = city.sideDarken
+      u.uDepthMin.value = V.depthVariation[0] / V.depthVariation[1]
+      u.uSideGradient.value = V.sideGradient
+      u.uCornerEdge.value = V.cornerEdge
+      u.uCornerLighten.value = V.cornerLighten
+      u.uRoofEdge.value = V.roofEdge
+      u.uSideCell.value = l.cfg.windowCell[0] * V.sideCellScale
+      ;(u.uSidePane.value as Vector2).set(V.sidePane[0], V.sidePane[1])
+      l.material.userData.fullDepth = l.cfg.buildingDepth * city.depthScale * V.depthVariation[1]
       u.uBeaconOn.value = l === nearest ? 1 : 0
       u.uBeaconUV.value.set(l.tex.tallest.u, l.tex.tallest.v)
       ;(u.uBeaconColor.value as Color).set(V.beacon.color)
@@ -182,11 +190,14 @@ export function CityWindow({ props, item }: CatalogProps) {
       projectionShift(ud.depth, dir0, shift0)
       const keep = 1 - l.cfg.parallax
       u.uShift.value.set((shift.x - shift0.x) * keep, (shift.y - shift0.y) * keep)
-      // 楼往后（离墙更远）挤出 buildingDepth：在这一层平面上的位移 = 视线的横向分量 × 进深 / |视线纵深分量|
-      projectionShift(l.cfg.buildingDepth, dir, shift)
+      // 楼往后（离墙更远）挤出最深的那栋楼的进深：在这一层平面上的位移 = 视线的横向分量 × 进深 / |视线纵深分量|
+      const fullDepth = ud.fullDepth as number
+      projectionShift(fullDepth, dir, shift)
       const len = Math.hypot(shift.x, shift.y)
       const k = len > V.extrudeMax ? V.extrudeMax / len : 1
       u.uExtrude.value.set(-shift.x * k, -shift.y * k)
+      // 挤出被限长时，侧面开窗用的进深也按同样比例缩短
+      u.uExtrudeDepth.value = fullDepth * k
       u.uNight.value = night.current
       u.uOffset.value = along
       u.uTime.value = clock.elapsedTime

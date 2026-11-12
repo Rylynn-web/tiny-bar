@@ -1,5 +1,6 @@
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
-import { BufferAttribute, Color, Matrix4, Mesh, MeshStandardMaterial, type BufferGeometry, type Group } from 'three'
+import { useCallback, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { RemergeContext } from './remerge'
+import { BufferAttribute, Color, DoubleSide, Matrix4, Mesh, MeshStandardMaterial, type BufferGeometry, type Group } from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 // 把一个物件里"除了颜色以外材质都一样"的零件合并成一个网格，减少绘制调用（手机性能）。
@@ -29,11 +30,9 @@ function signature(mesh: Mesh): string | null {
     m.emissive.getHexString(),
     m.emissiveIntensity,
     m.envMapIntensity,
-    m.side,
-    m.shadowSide,
+    // 单面 / 双面、是否接收阴影不分组：合并后取"最宽"的设置（有一块双面就双面，有一块接收就接收）
     m.map?.uuid ?? '',
     mesh.castShadow,
-    mesh.receiveShadow,
     mesh.renderOrder,
   ].join('|')
 }
@@ -64,6 +63,8 @@ type Props = {
 
 export function MergeStatic({ children, enabled, version, extra }: Props) {
   const ref = useRef<Group>(null)
+  const [nonce, setNonce] = useState(0)
+  const requestRemerge = useCallback(() => setNonce((n) => n + 1), [])
 
   useLayoutEffect(() => {
     const root = ref.current
@@ -101,9 +102,12 @@ export function MergeStatic({ children, enabled, version, extra }: Props) {
       const material = (first.material as MeshStandardMaterial).clone()
       material.color.copy(white)
       material.vertexColors = true
+      const mats = meshes.map((x) => x.material as MeshStandardMaterial)
+      if (mats.some((x) => x.side === DoubleSide)) material.side = DoubleSide
+      if (mats.some((x) => x.shadowSide === DoubleSide)) material.shadowSide = DoubleSide
       const mesh = new Mesh(merged, material)
       mesh.castShadow = first.castShadow
-      mesh.receiveShadow = first.receiveShadow
+      mesh.receiveShadow = meshes.some((x) => x.receiveShadow)
       mesh.renderOrder = first.renderOrder
       mesh.userData.merged = true
       root.add(mesh)
@@ -122,7 +126,11 @@ export function MergeStatic({ children, enabled, version, extra }: Props) {
       }
       for (const m of hidden) m.visible = true
     }
-  }, [enabled, version, extra])
+  }, [enabled, version, extra, nonce])
 
-  return <group ref={ref}>{children}</group>
+  return (
+    <RemergeContext.Provider value={requestRemerge}>
+      <group ref={ref}>{children}</group>
+    </RemergeContext.Provider>
+  )
 }
