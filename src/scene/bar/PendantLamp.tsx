@@ -6,6 +6,8 @@ import { LightPool } from '../primitives/LightPool'
 import { Matte } from '../primitives/Matte'
 import { Metal } from '../primitives/Metal'
 import { useLathe } from '../primitives/useLathe'
+import { paletteColor } from '../paletteColor'
+import type { CatalogProps } from '../catalogTypes'
 
 const P = sceneConfig.bar.pendants
 
@@ -13,7 +15,7 @@ const P = sceneConfig.bar.pendants
  * 吊灯（地面物件：在水平面上摆放，高度固定）：吊线 + 绿色宽扁灯罩 + 镀铬灯头 + 自发光灯泡 + 下方假光斑。
  * 不投射真实光。原点在灯正下方的地面。
  */
-export function PendantLamp() {
+export function PendantLamp({ props }: CatalogProps) {
   const { palette } = useSceneParams()
   const shadeGeo = useLathe(P.shade, 48)
   const shadeHeight = Math.max(...P.shade.map((p) => p[1]))
@@ -28,7 +30,7 @@ export function PendantLamp() {
       </mesh>
       {/* 开口薄壳：双面渲染 + 双面投影，避免月牙形影子 */}
       <mesh geometry={shadeGeo} position={[0, P.shadeBottom, 0]} castShadow receiveShadow>
-        <Matte color={palette.pendantGreen} side={DoubleSide} shadowSide={DoubleSide} />
+        <Matte color={paletteColor(palette, props.color, 'pendantGreen')} side={DoubleSide} shadowSide={DoubleSide} />
       </mesh>
       <mesh position={[0, shadeTop, 0]} castShadow>
         <sphereGeometry args={[P.capRadius, 20, 10, 0, Math.PI * 2, 0, Math.PI / 2]} />

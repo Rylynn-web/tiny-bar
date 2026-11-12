@@ -1,9 +1,9 @@
-import { MathUtils, Plane, Vector3 } from 'three'
+import { MathUtils, Plane, Vector3, type Ray } from 'three'
 import type { LayoutItem, Vec3 } from '../../config/layoutTypes'
 import { sceneConfig } from '../../config/sceneConfig'
 import { editorConfig } from '../../config/editorConfig'
 import { roomBounds } from '../../state/layoutStore'
-import { normalizeDeg, wallOf } from '../room/walls'
+import { normalizeDeg, wallOf, type Wall } from '../room/walls'
 
 /** 当前房间范围（房间尺寸可以在编辑器里改，所以每次现取） */
 export function roomLimits() {
@@ -12,6 +12,56 @@ export function roomLimits() {
 
 export type { Wall } from '../room/walls'
 export { normalizeDeg, wallOf }
+
+/** 贴在某面墙上时的朝向（度）：后墙 0、左墙 90、右墙 -90 */
+export function wallRotation(wall: Wall) {
+  return wall === 'left' ? 90 : wall === 'right' ? -90 : 0
+}
+
+const wallHit = new Vector3()
+
+/**
+ * 墙面物件拖动时，鼠标指着哪面墙：在允许的墙里找射线最先碰到、且落在墙面范围内的那一面。
+ * 返回墙和交点；都没碰到时返回 null（保持在原来的墙上）
+ */
+export function pickWall(ray: Ray, allowed: Wall[]) {
+  const room = roomLimits()
+  const margin = editorConfig.wallSwitchMargin
+  let best: { wall: Wall; point: Vector3; distance: number } | null = null
+  for (const wall of allowed) {
+    const plane =
+      wall === 'back'
+        ? new Plane(new Vector3(0, 0, 1), -room.minZ)
+        : new Plane(new Vector3(1, 0, 0), -(wall === 'left' ? room.minX : room.maxX))
+    if (!ray.intersectPlane(plane, wallHit)) continue
+    const along = wall === 'back' ? wallHit.x : wallHit.z
+    const [lo, hi] = wall === 'back' ? [room.minX, room.maxX] : [room.minZ, room.maxZ]
+    if (along < lo - margin || along > hi + margin || wallHit.y < -margin || wallHit.y > room.height + margin) continue
+    const distance = ray.origin.distanceTo(wallHit)
+    if (!best || distance < best.distance) best = { wall, point: wallHit.clone(), distance }
+  }
+  return best
+}
+
+/** 把物件包围盒相对原点的偏移绕 Y 轴转 deg 度（换墙时用），返回新的最小 / 最大偏移 */
+export function rotateOffsets(offMin: Vector3, offMax: Vector3, deg: number) {
+  const a = MathUtils.degToRad(deg)
+  const cos = Math.cos(a)
+  const sin = Math.sin(a)
+  const min = new Vector3(Infinity, offMin.y, Infinity)
+  const max = new Vector3(-Infinity, offMax.y, -Infinity)
+  for (const x of [offMin.x, offMax.x])
+    for (const z of [offMin.z, offMax.z]) {
+      // 和 three 的 Y 轴旋转一致：x' = x cos + z sin，z' = -x sin + z cos
+      const rx = x * cos + z * sin
+      const rz = -x * sin + z * cos
+      min.x = Math.min(min.x, rx)
+      min.z = Math.min(min.z, rz)
+      max.x = Math.max(max.x, rx)
+      max.z = Math.max(max.z, rz)
+    }
+  return { min, max }
+}
 
 /** 拖动用的平面：地面物件 = 物件所在高度的水平面；墙面物件 = 所在墙面 */
 export function dragPlane(item: LayoutItem, mount: 'floor' | 'wall') {

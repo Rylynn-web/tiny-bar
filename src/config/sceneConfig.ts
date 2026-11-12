@@ -412,6 +412,16 @@ export const sceneConfig = {
     radius: 0.85,
     thickness: 0.012,
   },
+  // 门口地毯：长方形薄地毯，图案程序生成（0 格子 / 1 波浪线 / 2 条纹）。底色用调色板基础色，线条奶白，一点强调色点缀
+  doorMat: {
+    width: 1.1,
+    depth: 0.66,
+    thickness: 0.012,
+    patterns: 3,
+    lineColor: 'cream',
+    accent: 'accentVermilion',
+    textureSize: 512,
+  },
 
 
   // ───────── 沙发区 ─────────
@@ -818,6 +828,49 @@ export const sceneConfig = {
       standoffInset: 0.022,
       // 每格贴图的像素（全部格子拼成一张贴图）
       textureCell: 256,
+    },
+    // 墙挂书架（参考图：半透明彩色亚克力托槽 + 镀铬横杆 + 两端红色小球），书和杂志封面朝外靠墙放。
+    // 原点在墙面上、最下面一层托槽的底面中心
+    bookLedge: {
+      rows: 3,
+      rowsRange: [1, 3] as [number, number],
+      width: 1.1,
+      widthRange: [0.6, 2.4] as [number, number],
+      rowGap: 0.38,
+      // 托槽：底板 + 前挡板，半透明；从上到下每层一种颜色
+      trayDepth: 0.06,
+      lipHeight: 0.06,
+      trayThickness: 0.006,
+      trayOpacity: 0.55,
+      trayColors: ['accentGrass', 'orange', 'accentCobalt'],
+      // 镀铬横杆（在挡板前方、书的下三分之一处）、两端立柱和杆头小球、卡扣
+      railY: 0.11,
+      railZ: 0.072,
+      railRadius: 0.005,
+      railOverhang: 0.05,
+      postRadius: 0.006,
+      postBottom: -0.04,
+      postTop: 0.15,
+      postInset: 0.02,
+      ballRadius: 0.013,
+      ballColor: 'accentVermilion',
+      clipSize: [0.02, 0.026, 0.012] as [number, number, number],
+      // 书 / 杂志：每层几本、宽高（米）、厚度、往墙靠的角度、摊开杂志的概率
+      booksPerRow: [3, 5] as [number, number],
+      bookWidth: [0.17, 0.24] as [number, number],
+      bookHeight: [0.22, 0.3] as [number, number],
+      bookThickness: [0.006, 0.014] as [number, number],
+      bookLeanDeg: 9,
+      openChance: 0.15,
+      pageColor: 'cream',
+      // 封面只用这三组颜色：米色系 / 黑白 / 深蓝
+      // 每组：[底色 / 主图形色（两者会互换），小面积点缀色]
+      coverGroups: [
+        ['cream', 'wood', 'dark'],
+        ['dark', 'cream', 'wall'],
+        ['navy', 'cream', 'wood'],
+      ],
+      textureCell: 160,
     },
     rod: {
       length: 2.4,

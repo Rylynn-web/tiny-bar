@@ -20,6 +20,7 @@ import {
   useEditor,
 } from '../../scene/editor/editorStore'
 import { useRoom } from '../../state/layoutStore'
+import { useSceneParams, useSetSceneParams } from '../../state/sceneParams'
 
 /** 滑杆：按下时开始一次"拖动"，松手算一步撤销 */
 function Slider(props: {
@@ -92,6 +93,8 @@ export function EditorPanel() {
         <p className={saveStatus === 'error' ? 'editor-panel__error' : 'editor-panel__hint'}>{saveMessage}</p>
       )}
 
+      <TimeOfDaySwitch />
+
       <label className="editor-panel__label">
         添加物件
         <select
@@ -120,6 +123,14 @@ export function EditorPanel() {
               <br />x {fmt(selected.position[0])} y {fmt(selected.position[1])} z {fmt(selected.position[2])}
               <br />朝向 {selected.rotationY}°
             </p>
+            {selectedEntry.colorProps?.map((cp) => (
+              <ColorPicker
+                key={cp.key}
+                label={cp.label}
+                value={String(selected.props?.[cp.key] ?? selectedEntry.defaultProps?.[cp.key] ?? cp.fallback)}
+                onPick={(key) => updateProp(selected.id, cp.key, key)}
+              />
+            ))}
             {selectedEntry.editableProps?.map((ep) => {
               const raw = selected.props?.[ep.key] ?? selectedEntry.defaultProps?.[ep.key]
               const value = typeof raw === 'number' ? raw : ep.min
@@ -223,5 +234,49 @@ function RoomSection() {
         </button>
       </div>
     </section>
+  )
+}
+
+/** 白天 / 夜晚：直接改场景参数（编辑器里看两种灯光下的效果） */
+function TimeOfDaySwitch() {
+  const params = useSceneParams()
+  const setParams = useSetSceneParams()
+  return (
+    <div className="editor-panel__row">
+      {(['day', 'night'] as const).map((t) => (
+        <button
+          key={t}
+          type="button"
+          className={params.timeOfDay === t ? 'is-on' : ''}
+          onClick={() => setParams({ ...params, timeOfDay: t })}
+        >
+          {t === 'day' ? '白天' : '夜晚'}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** 一排调色板色块：点一下把这个部位换成该颜色（写进 props，可撤销） */
+function ColorPicker({ label, value, onPick }: { label: string; value: string; onPick: (key: string) => void }) {
+  const { palette } = useSceneParams()
+  const size = editorConfig.colorSwatchSize
+  return (
+    <div className="editor-panel__label">
+      {label}
+      <div className="editor-panel__swatches">
+        {editorConfig.colorChoices.map((key) => (
+          <button
+            key={key}
+            type="button"
+            title={key}
+            aria-label={key}
+            className={value === key ? 'is-picked' : ''}
+            onClick={() => onPick(key)}
+            style={{ width: size, height: size, background: palette[key] }}
+          />
+        ))}
+      </div>
+    </div>
   )
 }

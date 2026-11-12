@@ -7,6 +7,8 @@ import { Glow } from '../primitives/Glow'
 import { Matte } from '../primitives/Matte'
 import { Metal } from '../primitives/Metal'
 import { getLathe } from '../primitives/useLathe'
+import { paletteColor } from '../paletteColor'
+import type { CatalogProps } from '../catalogTypes'
 
 const B = sceneConfig.bar
 const C = B.counter
@@ -70,7 +72,7 @@ function ledPath(y: number, o: number) {
 }
 
 /** L 形吧台（地面物件）：粉色立面 + 深蓝台面 + 外沿灯带 + 收银机等小物 + 摇酒壶。原点在长边正面中点 */
-export function BarCounter() {
+export function BarCounter({ props }: CatalogProps) {
   const { palette, bevel } = useSceneParams()
   const b = bevel * sceneConfig.bevelTiers.small
   const bodyHeight = C.height - C.topThickness
@@ -95,7 +97,7 @@ export function BarCounter() {
   return (
     <group>
       <mesh geometry={body} rotation={[-Math.PI / 2, 0, 0]} position={[0, b, 0]} castShadow receiveShadow>
-        <Matte color={palette.blush} />
+        <Matte color={paletteColor(palette, props.color, 'blush')} />
       </mesh>
       <mesh
         geometry={top}
@@ -104,7 +106,7 @@ export function BarCounter() {
         castShadow
         receiveShadow
       >
-        <Matte color={palette.navy} />
+        <Matte color={paletteColor(palette, props.topColor, 'navy')} />
       </mesh>
       <mesh geometry={led}>
         <Glow color={palette.warmLight} group="ledStrip" />

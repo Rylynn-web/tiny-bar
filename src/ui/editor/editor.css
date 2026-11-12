@@ -122,3 +122,19 @@
   color: #8f877d;
   font-size: 11px;
 }
+
+.editor-panel__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.editor-panel .editor-panel__swatches button {
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+.editor-panel .editor-panel__swatches button.is-picked {
+  border-color: #ffb347;
+  box-shadow: 0 0 0 2px rgba(255, 179, 71, 0.35);
+}

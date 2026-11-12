@@ -40,9 +40,11 @@
     {"id":"mirror-strip","type":"mirrorStrip","position":[1.12,0.98,-3.2],"rotationY":0,"props":{"count":4}},
     {"id":"wall-plate","type":"wallPlate","position":[1.8,1.86,-3.2],"rotationY":0,"props":{"seed":3,"paletteSeed":2}},
     {"id":"art-bokeh","type":"artBokeh","position":[-4,1.48,2],"rotationY":90,"props":{"seed":5,"paletteSeed":1}},
-    {"id":"art-horizon","type":"artHorizon","position":[-4,1.38,0.82],"rotationY":90,"props":{"seed":2,"paletteSeed":3}},
+    {"id":"art-horizon","type":"artHorizon","position":[-4,1.45,-2.78],"rotationY":90,"props":{"seed":2,"paletteSeed":3}},
     {"id":"orb-sconce","type":"orbSconce","position":[-2.38,1.95,-3.2],"rotationY":0},
     {"id":"shelf-set","type":"shelfSet","position":[-4,1.3,-1.9],"rotationY":90,"props":{"seed":4,"paletteSeed":5}},
-    {"id":"record-wall","type":"recordWall","position":[-4,1.86,-0.1],"rotationY":90,"props":{"seed":3,"paletteSeed":4,"cols":3,"rows":1}}
+    {"id":"record-wall","type":"recordWall","position":[-4,1.86,-0.1],"rotationY":90,"props":{"seed":3,"paletteSeed":4,"cols":3,"rows":1}},
+    {"id":"book-ledge","type":"bookLedge","position":[-4,1.02,1.05],"rotationY":90,"props":{"seed":2,"rows":3,"width":0.95}},
+    {"id":"door-mat","type":"doorMat","position":[2.5,0,-2.76],"rotationY":0,"props":{"color":"navy","pattern":0,"seed":1}}
   ]
 }

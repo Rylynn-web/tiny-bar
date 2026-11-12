@@ -25,4 +25,9 @@ export const editorConfig = {
   panelWidth: 260,
   // 房间尺寸滑杆的范围（米）
   room: { widthRange: [5, 9] as [number, number], depthRange: [4, 7] as [number, number], step: 0.1 },
+  // 家具可选的颜色：调色板里的基础色（强调色只给装饰品，scene-style 规则）
+  colorChoices: ['cream', 'wall', 'wood', 'sage', 'terracotta', 'rust', 'orange', 'blush', 'pendantGreen', 'navy', 'slate', 'dark'],
+  colorSwatchSize: 22,
+  // 墙面物件跨墙拖动：鼠标离墙边这么近也算指着这面墙（米）
+  wallSwitchMargin: 0.05,
   } as const

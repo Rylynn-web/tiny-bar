@@ -3,9 +3,11 @@ import { useSceneParams } from '../../state/sceneParams'
 import { BevelBox } from '../primitives/BevelBox'
 import { Glass } from '../primitives/Glass'
 import { Metal } from '../primitives/Metal'
+import { paletteColor } from '../paletteColor'
+import type { CatalogProps } from '../catalogTypes'
 
 /** 门（墙面物件）：深色门板 + 圆形舷窗 + 金属门把。原点在墙面上、门底边中点，局部 +Z 朝向室内 */
-export function Door() {
+export function Door({ props }: CatalogProps) {
   const { palette } = useSceneParams()
   const d = sceneConfig.door
   const front = d.thickness + d.surfaceOffset
@@ -16,7 +18,7 @@ export function Door() {
         tier="small"
         size={[d.width, d.height, d.thickness]}
         position={[0, d.height / 2, d.thickness / 2]}
-        color={palette.slate}
+        color={paletteColor(palette, props.color, 'slate')}
       />
 
       {/* 舷窗：金属圈 + 半透明玻璃 */}

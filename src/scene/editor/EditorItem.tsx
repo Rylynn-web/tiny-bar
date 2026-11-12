@@ -9,7 +9,9 @@ import { getLayoutItems } from '../../state/layoutStore'
 import { catalog } from '../catalog'
 import { markInteractiveHit } from '../interaction/tap'
 import { boundsOf } from './bounds'
-import { constrain, dragPlane, round3 } from './dragMath'
+import { constrain, dragPlane, pickWall, rotateOffsets, round3, wallOf, wallRotation } from './dragMath'
+import { wallState } from '../../state/wallVisibility'
+import type { Wall } from '../room/walls'
 import {
   beginTransient,
   endTransient,
@@ -85,10 +87,29 @@ export function EditorItem({ item, children }: { item: LayoutItem; children: Rea
       beginTransient()
     }
 
+    let moving = current
+    if (mount === 'wall') {
+      // 墙面物件：鼠标指到哪面（显示着的）墙就贴到哪面墙，朝向跟着转
+      const allowed: Wall[] = ['back']
+      if (wallState.visible.left) allowed.push('left')
+      if (wallState.visible.right) allowed.push('right')
+      const picked = pickWall(e.ray, allowed)
+      if (picked && picked.wall !== wallOf(current)) {
+        const rotationY = wallRotation(picked.wall)
+        const delta = rotationY - current.rotationY
+        const rotated = rotateOffsets(d.offMin!, d.offMax!, delta)
+        d.offMin = rotated.min
+        d.offMax = rotated.max
+        d.grab = rotateOffsets(d.grab!, d.grab!, delta).min
+        moving = { ...current, rotationY }
+        d.plane = dragPlane(moving, mount)
+      }
+    }
+
     if (!e.ray.intersectPlane(d.plane!, hit)) return
     const target = hit.clone().add(d.grab!)
-    const position = constrain(current, mount, target, d.offMin!, d.offMax!, e.shiftKey, catalog[item.type]?.lockY)
-    transientUpdate(item.id, { position: round3(position) })
+    const position = constrain(moving, mount, target, d.offMin!, d.offMax!, e.shiftKey, catalog[item.type]?.lockY)
+    transientUpdate(item.id, moving === current ? { position: round3(position) } : { position: round3(position), rotationY: moving.rotationY })
   }
 
   const finish = (e: ThreeEvent<PointerEvent>) => {

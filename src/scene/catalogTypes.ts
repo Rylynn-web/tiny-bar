@@ -31,4 +31,6 @@ export type CatalogEntry = {
   editableProps?: { key: string; label: string; min: number; max: number; step: number }[]
   /** 编辑器里的按钮：点一下把这个数值属性换成一个新的随机种子（如画作的"换一幅 / 换配色"） */
   editorActions?: { label: string; reseed: string }[]
+  /** 编辑器里可以换颜色的部位：props 里的键名、显示名、默认调色板键 */
+  colorProps?: { key: string; label: string; fallback: string }[]
 }

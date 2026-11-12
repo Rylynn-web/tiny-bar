@@ -4,11 +4,13 @@ import { Metal } from '../primitives/Metal'
 import { RoundedCylinder } from '../primitives/RoundedCylinder'
 import { useLathe } from '../primitives/useLathe'
 import type { SeatAnchor } from '../catalogTypes'
+import { paletteColor } from '../paletteColor'
+import type { CatalogProps } from '../catalogTypes'
 
 const S = sceneConfig.bar.stools
 
 /** 吧凳：不锈钢底座、立柱、脚踏环 + 黑色坐垫。原点在地面，局部 +Z 为坐上去时面朝的方向 */
-export function BarStool() {
+export function BarStool({ props }: CatalogProps) {
   const { palette } = useSceneParams()
   const baseGeo = useLathe(S.base)
   const baseTop = Math.max(...S.base.map((p) => p[1]))
@@ -32,7 +34,7 @@ export function BarStool() {
         radius={S.cushionRadius}
         height={S.cushionThickness}
         position={[0, cushionBottom, 0]}
-        color={palette.dark}
+        color={paletteColor(palette, props.color, 'dark')}
         tier="small"
       />
     </group>

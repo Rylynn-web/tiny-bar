@@ -5,6 +5,8 @@ import { useSceneParams } from '../../state/sceneParams'
 import { BevelBox } from '../primitives/BevelBox'
 import { InstancedMatte, type InstanceItem } from '../primitives/InstancedLathe'
 import { seededRandom } from '../primitives/canvasTexture'
+import { paletteColor } from '../paletteColor'
+import type { CatalogProps } from '../catalogTypes'
 
 const B = sceneConfig.lounge.bookshelf
 // 书和唱片封套共用一个单位方块，按实例缩放（太小，不做倒角）
@@ -14,7 +16,7 @@ const t = B.board
 const innerWidth = B.width - 2 * t
 
 /** 书柜兼唱片柜：木框 + 中间隔板，上层放书、下层分格放唱片封套（都实例化）。原点在地面中心，背面朝 -Z 贴墙 */
-export function Bookshelf() {
+export function Bookshelf({ props }: CatalogProps) {
   const { palette } = useSceneParams()
 
   const { books, records } = useMemo(() => {
@@ -51,7 +53,7 @@ export function Bookshelf() {
     return { books, records }
   }, [palette])
 
-  const wood = palette.wood
+  const wood = paletteColor(palette, props.color, 'wood')
   return (
     <group>
       {[-1, 1].map((s) => (

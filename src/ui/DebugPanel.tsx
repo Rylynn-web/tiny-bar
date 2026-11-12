@@ -29,10 +29,6 @@ export default function DebugPanel() {
   const setParams = useSetSceneParams()
 
   const v = useControls({
-    时段: {
-      value: d.timeOfDay,
-      options: { 白天: 'day', 夜晚: 'night' },
-    },
     小人: folder({
       pose: { value: d.buddy.pose, options: { 坐: 'sit', 站: 'stand' }, label: '姿势' },
       outline: { value: d.buddy.outline, label: '描边' },
@@ -122,6 +118,11 @@ export default function DebugPanel() {
       truckSpeed: { value: d.camera.truckSpeed, min: 0.1, max: 3, step: 0.05, label: '平移速度' },
       dollySpeed: { value: d.camera.dollySpeed, min: 0.1, max: 3, step: 0.05, label: '缩放速度' },
     }),
+    // 白天 / 夜晚切换和两套灯光放在一起
+    时段: {
+      value: d.timeOfDay,
+      options: { 白天: 'day', 夜晚: 'night' },
+    },
     白天灯光: folder(lightingFolder('day'), { collapsed: true }),
     夜晚灯光: folder(lightingFolder('night'), { collapsed: true }),
   }) as Record<string, unknown>

@@ -5,11 +5,13 @@ import { useSceneParams } from '../../state/sceneParams'
 import { BevelBox } from '../primitives/BevelBox'
 import { Metal } from '../primitives/Metal'
 import { CoffeeStation } from './CoffeeStation'
+import { paletteColor } from '../paletteColor'
+import type { CatalogProps } from '../catalogTypes'
 
 const B = sceneConfig.bar
 
 /** 后操作台（地面物件）：柜体 + 木台面 + 水槽 + 水龙头 + 台面上的咖啡区。原点在底面中心，背面朝 -Z 贴墙 */
-export function BackCounter() {
+export function BackCounter({ props }: CatalogProps) {
   const { palette } = useSceneParams()
   const c = B.backCounter
   const width = c.width
@@ -35,12 +37,12 @@ export function BackCounter() {
 
   return (
     <group>
-      <BevelBox size={[width, bodyHeight, c.depth]} position={[cx, bodyHeight / 2, cz]} color={palette.cream} />
+      <BevelBox size={[width, bodyHeight, c.depth]} position={[cx, bodyHeight / 2, cz]} color={paletteColor(palette, props.color, 'cream')} />
       <BevelBox
         tier="small"
         size={[width, c.topThickness, c.depth]}
         position={[cx, c.height - c.topThickness / 2, cz]}
-        color={palette.wood}
+        color={paletteColor(palette, props.topColor, 'wood')}
       />
       <BevelBox
         tier="rod"

@@ -153,8 +153,8 @@ export function transientUpdate(id: string, p: Partial<LayoutItem>) {
   setLayoutItems(mapItem(id, (i) => ({ ...i, ...p })))
   patch({ dirty: true })
 }
-/** 改物件的一个 props 数值（侧边栏里的可编辑属性）；不在拖动中时直接算一步 */
-export function updateProp(id: string, key: string, value: number) {
+/** 改物件的一个 props（侧边栏里的数值、颜色键名）；不在拖动中时直接算一步 */
+export function updateProp(id: string, key: string, value: number | string) {
   const next = mapItem(id, (i) => ({ ...i, props: { ...i.props, [key]: value } }))
   if (transientBase) {
     setLayoutItems(next)

@@ -7,7 +7,7 @@ import { seededRandom } from '../primitives/canvasTexture'
 
 const D = sceneConfig.decor
 type Palette = Record<string, string>
-export type ArtKind = 'bokeh' | 'orb' | 'horizon' | 'plate' | 'frame' | 'sleeve' | 'disc'
+export type ArtKind = 'bokeh' | 'orb' | 'horizon' | 'plate' | 'frame' | 'sleeve' | 'disc' | 'cover' | 'spread'
 
 const cache = new Map<string, CanvasTexture>()
 
@@ -260,6 +260,101 @@ const drawDisc: Draw = (ctx, w, h, rand, accents, palette) => {
   ctx.fill()
 }
 
+/**
+ * 书 / 杂志封面的颜色组（米色系 / 黑白 / 深蓝），由 group 指定（书架按顺序轮换，保证三组都出现）。
+ * 每组前两个颜色互为底色和主图形色，第三个是小面积的点缀。返回 [底色, 图形色, 点缀色]
+ */
+function coverColors(rand: () => number, palette: Palette, group: number) {
+  const groups = sceneConfig.decor.bookLedge.coverGroups
+  const g = groups[((group % groups.length) + groups.length) % groups.length].map((k) => palette[k])
+  const flip = rand() < 0.5
+  const bg = flip ? g[1] : g[0]
+  const fg = flip ? g[0] : g[1]
+  return [bg, fg, g[2] ?? fg]
+}
+
+/** 一块封面构成（没有文字）：大色块 / 圆 / 拱形 / 植物剪影 / 渐变"照片" */
+function drawCoverArt(
+  ctx: CanvasRenderingContext2D,
+  x0: number,
+  w: number,
+  h: number,
+  rand: () => number,
+  palette: Palette,
+  group: number,
+) {
+  const [bg, fg, fg2] = coverColors(rand, palette, group)
+  ctx.fillStyle = bg
+  ctx.fillRect(x0, 0, w, h)
+  const s = Math.min(w, h)
+  const kind = Math.floor(rand() * 5)
+  ctx.fillStyle = fg
+  if (kind === 0) {
+    // 下半部分一块"照片"色块 + 顶部细条（像标题栏，但不写字）
+    ctx.fillRect(x0 + w * 0.12, h * 0.42, w * 0.76, h * 0.46)
+    ctx.fillStyle = fg2
+    ctx.fillRect(x0 + w * 0.12, h * 0.12, w * (0.3 + rand() * 0.4), h * 0.05)
+  } else if (kind === 1) {
+    ctx.beginPath()
+    ctx.arc(x0 + w * (0.35 + rand() * 0.3), h * (0.4 + rand() * 0.25), s * (0.2 + rand() * 0.12), 0, Math.PI * 2)
+    ctx.fill()
+  } else if (kind === 2) {
+    // 拱形
+    const aw = w * 0.5
+    const ax = x0 + (w - aw) / 2
+    ctx.beginPath()
+    ctx.moveTo(ax, h * 0.85)
+    ctx.lineTo(ax, h * 0.5)
+    ctx.arc(ax + aw / 2, h * 0.5, aw / 2, Math.PI, 0)
+    ctx.lineTo(ax + aw, h * 0.85)
+    ctx.closePath()
+    ctx.fill()
+  } else if (kind === 3) {
+    // 植物剪影：一根茎 + 几片椭圆叶子
+    const cx = x0 + w / 2
+    ctx.strokeStyle = fg
+    ctx.lineWidth = Math.max(1, s * 0.02)
+    ctx.beginPath()
+    ctx.moveTo(cx, h * 0.88)
+    ctx.lineTo(cx, h * 0.3)
+    ctx.stroke()
+    const n = 4 + Math.floor(rand() * 3)
+    for (let i = 0; i < n; i++) {
+      const y = h * (0.3 + (i / n) * 0.5)
+      const side = i % 2 ? 1 : -1
+      ctx.save()
+      ctx.translate(cx + side * s * 0.12, y)
+      ctx.rotate(side * (0.5 + rand() * 0.3))
+      ctx.beginPath()
+      ctx.ellipse(0, 0, s * 0.14, s * 0.05, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.restore()
+    }
+  } else {
+    // 渐变"照片"：中间一块从图形色到底色的柔和过渡
+    const g = ctx.createLinearGradient(0, h * 0.2, 0, h * 0.9)
+    g.addColorStop(0, fg)
+    g.addColorStop(1, fg2)
+    ctx.fillStyle = g
+    ctx.fillRect(x0 + w * 0.1, h * 0.2, w * 0.8, h * 0.6)
+  }
+}
+
+/** 竖版封面 */
+const drawCover: Draw = (ctx, w, h, rand, _accents, palette, group) => drawCoverArt(ctx, 0, w, h, rand, palette, group)
+
+/** 摊开的杂志：左右两页各一块构成，中间一道折痕 */
+const drawSpread: Draw = (ctx, w, h, rand, _accents, palette, group) => {
+  drawCoverArt(ctx, 0, w / 2, h, rand, palette, group)
+  ctx.fillStyle = palette.cream
+  ctx.fillRect(w / 2, 0, w / 2, h)
+  // 右页：浅底上几条灰线（像正文，但只是色条）
+  ctx.fillStyle = rgba(palette.dark, 0.25)
+  for (let i = 0; i < 6; i++) ctx.fillRect(w * 0.58, h * (0.2 + i * 0.1), w * (0.25 + rand() * 0.12), h * 0.02)
+  ctx.fillStyle = rgba(palette.dark, 0.18)
+  ctx.fillRect(w / 2 - 1, 0, 2, h)
+}
+
 const drawers: Record<ArtKind, Draw> = {
   bokeh: drawBokeh,
   orb: drawOrb,
@@ -268,6 +363,8 @@ const drawers: Record<ArtKind, Draw> = {
   frame: drawFrame,
   sleeve: drawSleeve,
   disc: drawDisc,
+  cover: drawCover,
+  spread: drawSpread,
 }
 
 /**
@@ -311,7 +408,17 @@ export function getAtlasTexture(cells: AtlasCell[], palette: Palette, cellHeight
   const widths = cells.map((c) => Math.round(cellHeight * c.aspect))
   const total = widths.reduce((a, b) => a + b, 0)
   const accentsKey = cells.map((c) => pickAccents(c.paletteSeed, palette).join('')).join('/')
-  const key = ['atlas', cellHeight, cells.map((c) => `${c.kind}:${c.seed}:${c.paletteSeed}:${c.aspect}`).join(','), accentsKey, palette.cream, palette.wall].join('|')
+  const key = [
+    'atlas',
+    cellHeight,
+    cells.map((c) => `${c.kind}:${c.seed}:${c.paletteSeed}:${c.aspect}`).join(','),
+    accentsKey,
+    palette.cream,
+    palette.wall,
+    palette.dark,
+    palette.navy,
+    palette.wood,
+  ].join('|')
   const ranges: [number, number][] = []
   let x = 0
   for (const w of widths) {
@@ -341,4 +448,87 @@ export function getAtlasTexture(cells: AtlasCell[], palette: Palette, cellHeight
     cache.set(key, tex)
   }
   return { texture: tex, ranges }
+}
+
+/**
+ * 门口地毯图案：0 格子（参考图的方格毯）/ 1 波浪线（几道弯曲的平行线）/ 2 条纹。
+ * base = 底色，line = 线条色，accent = 一小段点缀色。宽高比 aspect = 宽 / 深
+ */
+export function getMatTexture(pattern: number, seed: number, base: string, line: string, accent: string, aspect: number, longSide: number) {
+  const w = Math.round(aspect >= 1 ? longSide : longSide * aspect)
+  const h = Math.round(aspect >= 1 ? longSide / aspect : longSide)
+  const key = ['mat', pattern, seed, base, line, accent, w, h].join('|')
+  let tex = cache.get(key)
+  if (tex) return tex
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')!
+  const rand = seededRandom(seed * 7349 + 11)
+  ctx.fillStyle = base
+  ctx.fillRect(0, 0, w, h)
+  const s = Math.min(w, h)
+  if (pattern === 0) {
+    // 格子：奶白粗线，边缘一圈宽边；一个格子填点缀色
+    const n = 5 + Math.floor(rand() * 4)
+    const cw = w / n
+    const ch = h / Math.max(3, Math.round(n / aspect))
+    ctx.strokeStyle = line
+    ctx.lineWidth = s * 0.022
+    for (let x = 0; x <= w + 1; x += cw) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, h)
+      ctx.stroke()
+    }
+    for (let y = 0; y <= h + 1; y += ch) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(w, y)
+      ctx.stroke()
+    }
+    ctx.fillStyle = accent
+    const cx = Math.floor(rand() * n)
+    const cy = Math.floor(rand() * (h / ch))
+    ctx.fillRect(cx * cw + ctx.lineWidth, cy * ch + ctx.lineWidth, cw - ctx.lineWidth * 2, ch - ctx.lineWidth * 2)
+  } else if (pattern === 1) {
+    // 波浪线：一组平行的弯曲线条，其中一道用点缀色
+    const n = 4 + Math.floor(rand() * 3)
+    const amp = h * (0.12 + rand() * 0.1)
+    const freq = 1 + rand() * 1.5
+    const phase = rand() * Math.PI * 2
+    ctx.lineWidth = s * 0.03
+    ctx.lineCap = 'round'
+    for (let i = 0; i < n; i++) {
+      ctx.strokeStyle = i === Math.floor(n / 2) ? accent : line
+      const y0 = h * (0.2 + (i / (n - 1)) * 0.6)
+      ctx.beginPath()
+      for (let x = 0; x <= w; x += w / 60) {
+        const y = y0 + Math.sin((x / w) * Math.PI * 2 * freq + phase) * amp
+        if (x === 0) ctx.moveTo(x, y)
+        else ctx.lineTo(x, y)
+      }
+      ctx.stroke()
+    }
+  } else {
+    // 条纹：沿长边的宽窄条，一条点缀色
+    let x = w * 0.08
+    let i = 0
+    while (x < w * 0.92) {
+      const sw = w * (0.03 + rand() * 0.06)
+      ctx.fillStyle = i === 2 ? accent : line
+      ctx.fillRect(x, h * 0.1, sw, h * 0.8)
+      x += sw + w * (0.04 + rand() * 0.08)
+      i++
+    }
+  }
+  // 外圈一道窄边
+  ctx.strokeStyle = line
+  ctx.lineWidth = s * 0.03
+  ctx.strokeRect(ctx.lineWidth / 2, ctx.lineWidth / 2, w - ctx.lineWidth, h - ctx.lineWidth)
+  tex = new CanvasTexture(canvas)
+  tex.colorSpace = SRGBColorSpace
+  tex.anisotropy = 4
+  cache.set(key, tex)
+  return tex
 }
