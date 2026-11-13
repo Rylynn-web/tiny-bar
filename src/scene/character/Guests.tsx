@@ -6,6 +6,9 @@ import { sceneConfig } from '../../config/sceneConfig'
 import { useSeats } from '../../config/seatConfig'
 import { useFlow } from '../../state/flow'
 import { TitleTag } from './TitleTag'
+import { MusicNote } from './MusicNote'
+import { useNowPlaying } from '../../state/nowPlaying'
+import { Vector3 } from 'three'
 import { MAX_GUESTS, choosePartner, effectiveState, useGuests } from '../../state/guests'
 import { useSceneParams } from '../../state/sceneParams'
 import { Glow } from '../primitives/Glow'
@@ -20,6 +23,9 @@ const B = sceneConfig.buddy
 const P = B.props
 const M = sceneConfig.material
 const hidden = new Matrix4().makeScale(0, 0, 0)
+const noteRight = new Vector3()
+const notePos = new Vector3()
+const noteScale = new Vector3(1, 1, 1)
 
 // 每种零件 / 道具一组实例：名字 → 每个小人几份
 const SLOTS = {
@@ -49,6 +55,8 @@ export function Guests() {
   const guests = useGuests()
   const flow = useFlow()
   const tagRef = useRef<Mesh>(null)
+  const noteRef = useRef<Mesh>(null)
+  const nowPlaying = useNowPlaying()
   const { palette, buddy } = useSceneParams()
   const rigs = useRef(new Map<string, Rig>())
   const meshes = useRef<Partial<Record<Slot, InstancedMesh | null>>>({})
@@ -88,7 +96,7 @@ export function Guests() {
   // 当前坐着的人（最多 8 个）和每人的交谈对象
   const active = useMemo(() => {
     const byId = new Map(seats.map((s) => [s.id, s]))
-    const list: (RigInput & { seed: number; self: boolean })[] = []
+    const list: (RigInput & { seed: number; self: boolean; dj: boolean })[] = []
     for (const seat of seats) {
       const g = guests[seat.id]
       if (!g || list.length >= MAX_GUESTS) continue
@@ -108,10 +116,11 @@ export function Guests() {
         seed: g.seed,
         emote: g.emote ?? null,
         self: !!g.self,
+        dj: !!nowPlaying && !!g.id && g.id === nowPlaying.by,
       })
     }
     return list
-  }, [seats, guests])
+  }, [seats, guests, nowPlaying])
 
   const seen = useRef<Set<string> | null>(null)
   useFrame(({ camera, clock }, delta) => {
@@ -169,6 +178,21 @@ export function Guests() {
       if (rig) tag.matrix.copy(rig.tagMatrix)
       tag.matrixWorldNeedsUpdate = true
     }
+    // 放歌那个人头顶的音符：头的右上方，轻轻上下浮动
+    const note = noteRef.current
+    if (note) {
+      const dj = active.find((a) => a.dj)
+      const rig = dj && rigs.current.get(dj.seat.id)
+      note.visible = !!rig
+      if (rig) {
+        const N = sceneConfig.musicNote
+        const right = noteRight.set(1, 0, 0).applyQuaternion(camera.quaternion)
+        notePos.copy(rig.headTop).addScaledVector(right, N.side)
+        notePos.y += N.lift + Math.sin((now * Math.PI * 2) / N.bobSeconds) * N.bob
+        note.matrix.compose(notePos, camera.quaternion, noteScale)
+      }
+      note.matrixWorldNeedsUpdate = true
+    }
     for (const slot of Object.keys(SLOTS) as Slot[]) {
       const mesh = meshes.current[slot]
       if (!mesh) continue
@@ -219,6 +243,7 @@ export function Guests() {
         <Glow color={palette[P.laptop.screenColor]} group="screen" />
       </instancedMesh>
       {flow.title && <TitleTag title={flow.title} meshRef={tagRef} />}
+      {nowPlaying && <MusicNote meshRef={noteRef} paused={!nowPlaying.playing} />}
       {/* "…" 气泡：正对镜头，不受光照 */}
       <instancedMesh ref={ref('bubble')} args={[G.bubble, undefined, max('bubble')]} frustumCulled={false} renderOrder={8}>
         <meshBasicMaterial map={bubbleMap} transparent depthWrite={false} toneMapped={false} />

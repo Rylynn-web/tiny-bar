@@ -27,6 +27,20 @@ export const copy = {
       fries: 'Fries',
     } satisfies Record<MenuId, string>,
   },
+  // 歌单（点唱机 / 唱片架打开）
+  records: {
+    title: 'Records',
+    subtitle: 'Pick something for the whole room.',
+    nowPlaying: 'Now playing',
+    paused: 'Paused',
+    nothing: 'Nothing on yet',
+    pickOne: 'Pick a record',
+    pickHint: 'Tap a song below to put it on.',
+    play: 'Play',
+    pause: 'Pause',
+    next: 'Next song',
+    groups: { day: 'Day', night: 'Night' },
+  },
   // 坐下后自己选的状态
   status: {
     label: 'What are you doing?',

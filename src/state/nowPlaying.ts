@@ -1,17 +1,17 @@
 import { useSyncExternalStore } from 'react'
-import type { Track } from '../net/protocol'
+import type { NowPlaying } from '../net/protocol'
 
-// 店里正在放的歌（房间广播，所有人一样）
+// 店里正在放的歌（房间广播，所有人一样）：哪一首、在放还是暂停、是谁放的
 
-let current: Track | null = null
+let current: NowPlaying | null = null
 const listeners = new Set<() => void>()
 
 export function getNowPlaying() {
   return current
 }
 
-export function setNowPlaying(track: Track | null) {
-  current = track
+export function setNowPlaying(next: NowPlaying | null) {
+  current = next
   listeners.forEach((l) => l())
 }
 

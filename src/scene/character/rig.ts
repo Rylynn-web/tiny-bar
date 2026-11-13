@@ -147,6 +147,8 @@ export class Rig {
   readonly foodMatrix = new Matrix4()
   readonly bubbleMatrix = new Matrix4()
   readonly tagMatrix = new Matrix4()
+  /** 头顶（世界坐标），头顶的音符等挂件用 */
+  readonly headTop = new Vector3()
   speaking = false
 
   constructor(seed: number, now: number) {
@@ -453,7 +455,9 @@ export class Rig {
 
     // 气泡：头顶上方，始终正对镜头
     const headTop = this.head.getWorldPosition(new Vector3())
-    headTop.y += S.head.radius * S.head.squashY * BUDDY_SCALE + P.bubble.lift
+    headTop.y += S.head.radius * S.head.squashY * BUDDY_SCALE
+    this.headTop.copy(headTop)
+    headTop.y += P.bubble.lift
     this.bubbleMatrix.compose(headTop, cameraQuaternion, new Vector3().setScalar(this.pops.bubble.scale))
     // 称号标签：再高一点（只有自己的小人用）
     headTop.y += sceneConfig.titleTag.lift - P.bubble.lift

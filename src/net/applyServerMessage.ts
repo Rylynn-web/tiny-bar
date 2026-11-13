@@ -45,7 +45,7 @@ export function applyServerMessage(msg: ServerMessage) {
       if (msg.id === getFlow().selfId) patchFlow({ seatId: null })
       break
     case 'nowPlaying':
-      setNowPlaying(msg.track)
+      setNowPlaying(msg.nowPlaying)
       break
     case 'orderReady':
       // 桌上的显示已经跟着 guestUpdated 的 drink / food 走；这里留给之后的提示界面

@@ -6,7 +6,8 @@ import { MAX_GUESTS, getGuests, newSeed } from '../state/guests'
 import { getNowPlaying } from '../state/nowPlaying'
 import { logLeft, logOrder, logSong } from '../state/sessionLog'
 import { applyServerMessage } from './applyServerMessage'
-import type { ClientMessage, GuestSnapshot, ServerMessage, Track } from './protocol'
+import type { ClientMessage, GuestSnapshot, ServerMessage } from './protocol'
+import { nextTrackId, tracks, type TrackId } from '../config/tracks'
 import { track } from './track'
 
 // 房间客户端：和"自己"相关的操作都走这个接口，按 protocol.ts 的消息收发。
@@ -24,10 +25,12 @@ export interface RoomClient {
   setEmote(expression: Expression | null): void
   /** 点单：桌上最多一杯饮品 + 一份小食，再点同类会替换原来的 */
   order(item: MenuId): void
-  /** 点歌 */
-  requestSong(song: Track): void
-  /** 店里正在放的歌（变化用 state/nowPlaying 的 useNowPlaying / subscribeNowPlaying 监听） */
-  nowPlaying(): Track | null
+  /** 选歌：放这一首（全店一起听；当前在放什么用 state/nowPlaying 的 useNowPlaying 读） */
+  nowPlaying(trackId: TrackId): void
+  /** 播放 / 暂停当前这首 */
+  setPlaying(playing: boolean): void
+  /** 下一首（同一组里往下，最后一首之后回到第一首） */
+  nextTrack(): void
   /** 离店 */
   leave(): void
 }
@@ -56,13 +59,18 @@ abstract class BaseRoomClient implements RoomClient {
     track('drink_ordered', { item, kind: menuItems[item].kind })
     this.send({ type: 'order', item })
   }
-  requestSong(song: Track) {
-    logSong(song.title, song.artist)
-    track('song_requested', { title: song.title, artist: song.artist })
-    this.send({ type: 'requestSong', track: song })
+  nowPlaying(trackId: TrackId, source: 'list' | 'next' = 'list') {
+    const info = tracks[trackId]
+    logSong(trackId, info.title, info.artist)
+    track('track_played', { trackId, group: info.group, source })
+    this.send({ type: 'play', trackId })
   }
-  nowPlaying() {
-    return getNowPlaying()
+  setPlaying(playing: boolean) {
+    this.send({ type: 'setPlaying', playing })
+  }
+  nextTrack() {
+    const now = getNowPlaying()
+    if (now) this.nowPlaying(nextTrackId(now.trackId), 'next')
   }
   leave() {
     logLeft()
@@ -116,10 +124,16 @@ export class LocalRoomClient extends BaseRoomClient {
         this.update({ [menuItems[msg.item].kind]: msg.item })
         this.reply({ type: 'orderReady', item: msg.item })
         break
-      case 'requestSong':
-        // 假装马上开始放
-        this.reply({ type: 'nowPlaying', track: msg.track })
+      case 'play':
+        // 假装马上开始放，记下是谁放的
+        if (!this.me) return this.reply({ type: 'error', reason: 'notSeated' })
+        this.reply({ type: 'nowPlaying', nowPlaying: { trackId: msg.trackId, playing: true, by: this.me.id } })
         break
+      case 'setPlaying': {
+        const now = getNowPlaying()
+        if (now) this.reply({ type: 'nowPlaying', nowPlaying: { ...now, playing: msg.playing } })
+        break
+      }
       case 'leave':
         if (this.me) this.reply({ type: 'guestLeft', id: this.me.id })
         this.me = null

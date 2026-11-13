@@ -14,6 +14,7 @@ import { WallVisibilityDriver } from './room/WallVisibilityDriver'
 import { Guests } from './character/Guests'
 import { DoubleTapReset } from './interaction/tap'
 import { SeatPicker } from './SeatPicker'
+import { MusicHotspots } from './MusicHotspots'
 import { useFlow } from '../state/flow'
 
 // 脸部可见性检查：只在 ?debug 时加载
@@ -54,6 +55,8 @@ export function Scene() {
         <Guests />
         {/* 选座时给空着的座位套绿色蒙版；编辑器里不出现 */}
         {phase === 'seating' && !bridge && <SeatPicker />}
+        {/* 坐下后唱机 / 唱片架可以点，打开歌单 */}
+        {phase === 'seated' && !bridge && <MusicHotspots />}
         {Extras && <Extras />}
         {FaceCheck && params.faceCheck && (
           <Suspense fallback={null}>

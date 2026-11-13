@@ -3,6 +3,7 @@ import { button, folder, useControls } from 'leva'
 import { useSeats } from '../config/seatConfig'
 import { guestStateLabels, guestStates, type GuestState } from '../config/poses'
 import { roomClient } from '../net/RoomClient'
+import { trackGroups } from '../config/tracks'
 import { goTo, phases, useFlow, type Phase } from '../state/flow'
 import { getSessionLog } from '../state/sessionLog'
 import { comeBackIn, leaveBar, stepInside, takeRandomSeat } from '../state/flowActions'
@@ -37,7 +38,7 @@ export function FlowDebug() {
               roomClient.setStatus(v)
             },
           },
-          点一首歌: button(() => roomClient.requestSong({ title: 'Test Song', artist: 'Test Artist' })),
+          放第一首歌: button(() => roomClient.nowPlaying(trackGroups.day[0])),
           离开: button(() => leaveBar()),
           重新进店: button(() => comeBackIn()),
           打印会话记录: button(() => console.log('[session log]', JSON.parse(JSON.stringify(getSessionLog())))),

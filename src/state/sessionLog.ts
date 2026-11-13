@@ -12,7 +12,7 @@ export type SessionLog = {
   /** 点过的东西 */
   orders: { item: string; at: number }[]
   /** 点过的歌 */
-  songs: { title: string; artist: string; at: number }[]
+  songs: { trackId: string; title: string; artist: string; at: number }[]
   /** 和谁"聊得开心"（对方的称号，同一个人只记一次） */
   goodChats: { title: string; at: number }[]
 }
@@ -58,8 +58,8 @@ export function logOrder(item: string, at = Date.now()) {
   emit({ ...log, orders: [...log.orders, { item, at }] })
 }
 
-export function logSong(title: string, artist: string, at = Date.now()) {
-  emit({ ...log, songs: [...log.songs, { title, artist, at }] })
+export function logSong(trackId: string, title: string, artist: string, at = Date.now()) {
+  emit({ ...log, songs: [...log.songs, { trackId, title, artist, at }] })
 }
 
 /** 记一次"聊得开心"；同一个人已经记过就不再记（返回是否新记了一条） */

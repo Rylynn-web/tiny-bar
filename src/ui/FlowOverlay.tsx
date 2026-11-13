@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { sceneConfig } from '../config/sceneConfig'
 import { useSeats } from '../config/seatConfig'
 import { useFlow } from '../state/flow'
@@ -9,6 +9,8 @@ import { copy, fill } from './copy'
 import { EntryScreen } from './EntryScreen'
 import { MenuSheet } from './MenuSheet'
 import { StatusBar } from './StatusBar'
+import { RecordSheet } from './RecordSheet'
+import { closePanel, openPanel, usePanel } from '../state/panels'
 
 const O = sceneConfig.ui.overlay
 const E = sceneConfig.ui.entry
@@ -20,11 +22,11 @@ export function FlowOverlay() {
   const { phase, title } = useFlow()
   const seats = useSeats()
   const guests = useGuests()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const panel = usePanel()
   useGoodChatWatcher()
-  // 坐下就自动弹出菜单；离开座位就收起
+  // 坐下就自动弹出菜单；离开座位就收起所有面板
   useEffect(() => {
-    setMenuOpen(phase === 'seated')
+    openPanel(phase === 'seated' ? 'menu' : null)
   }, [phase])
 
   if (phase === 'entry') return <EntryScreen />
@@ -43,7 +45,7 @@ export function FlowOverlay() {
       break
     case 'seated':
       // 坐着时不显示提示文字，换成一排状态按钮
-      secondary = { label: copy.menu.open, run: () => setMenuOpen(true) }
+      secondary = { label: copy.menu.open, run: () => openPanel('menu') }
       action = { label: P.seatedAction, run: leaveBar }
       break
     case 'leaving':
@@ -87,7 +89,8 @@ export function FlowOverlay() {
         </button>
       )}
     </div>
-    {phase === 'seated' && <MenuSheet open={menuOpen} onClose={() => setMenuOpen(false)} />}
+    {phase === 'seated' && <MenuSheet open={panel === 'menu'} onClose={closePanel} />}
+    {phase === 'seated' && <RecordSheet open={panel === 'records'} onClose={closePanel} />}
     </>
   )
 }

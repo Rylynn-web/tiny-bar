@@ -9,7 +9,7 @@ export type TrackEvent =
   | 'status_changed'
   | 'emote_set'
   | 'drink_ordered'
-  | 'song_requested'
+  | 'track_played'
   | 'good_chat'
   | 'leave'
   | 'receipt_shown'

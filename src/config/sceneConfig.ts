@@ -278,6 +278,17 @@ export const sceneConfig = {
       shadow: '0 -8px 30px rgba(0, 0, 0, 0.18)',
       radius: 20,
     },
+    // 歌单面板：封套、黑胶的颜色和尺寸（像素）
+    records: {
+      sleeveSize: 112,
+      ink: '#3B3A40',
+      vinyl: '#1E1D22',
+      groove: '#34333A',
+      emptySleeve: '#E4D8C4',
+      emptyLabel: '#CDBFA8',
+      // 黑胶转一圈几秒
+      spinSeconds: 2.4,
+    },
   },
 
   // ───────── 单人流程（P2） ─────────
@@ -302,6 +313,26 @@ export const sceneConfig = {
     // 蒙版不透明度在这两个值之间缓慢呼吸（秒 / 一个来回）
     opacity: [0.28, 0.5] as [number, number],
     pulseSeconds: 1.8,
+  },
+  // ───────── 唱机 / 唱片架：点一下打开歌单；鼠标悬停时盖一层淡淡的高光 ─────────
+  musicHotspot: {
+    types: ['turntable', 'recordWall'] as const,
+    color: 'warmLight',
+    hoverOpacity: 0.32,
+  },
+  // 头顶音符：放歌的那个人头上，称号标签旁边；轻轻上下浮动。尺寸米，贴图像素
+  musicNote: {
+    size: 0.13,
+    // 从头顶往上多高、往右偏多少（镜头的右方）：在头的右上方，称号标签下面
+    lift: 0.04,
+    side: 0.26,
+    bob: 0.025,
+    bobSeconds: 1.6,
+    // 暂停时的透明度
+    pausedOpacity: 0.4,
+    textureSize: 64,
+    color: '#3B3A40',
+    background: '#F3E9DC',
   },
   // ───────── 点单：桌上的饮品 / 小食 ─────────
   order: {
