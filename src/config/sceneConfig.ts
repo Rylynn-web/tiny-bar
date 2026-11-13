@@ -357,9 +357,11 @@ export const sceneConfig = {
   },
   // ───────── 点单：桌上的饮品 / 小食 ─────────
   order: {
+    // 桌上图片的整体放大倍数（乘在 menu.ts 每项的 size 上）
+    scale: 1.4,
     // 饮品放在小人右手边、小食放在左手边，离桌面锚点多远（米）
-    drinkOffset: 0.15,
-    foodOffset: 0.17,
+    drinkOffset: 0.19,
+    foodOffset: 0.22,
     // 再往座位方向挪一点（让东西靠近自己这一侧）
     towardSeat: 0.02,
     // 没有正前方桌面的座位（沙发、方凳）：在这个距离内找最近的桌面

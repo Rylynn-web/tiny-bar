@@ -511,7 +511,7 @@ export class Rig {
       const right = new Vector3(-1, 0, 0).applyAxisAngle(up, seat.rotationY)
       const toSeat = new Vector3(0, 0, -1).applyAxisAngle(up, seat.rotationY).multiplyScalar(O.towardSeat)
       const place = (m: Matrix4, id: MenuId | null, pop: Pop, side: number, offset: number) => {
-        const size = id ? menuItems[id].size * pop.scale : 0
+        const size = id ? menuItems[id].size * O.scale * pop.scale : 0
         const p = new Vector3(table[0], table[1] - O.sink, table[2]).addScaledVector(right, side * offset).add(toSeat)
         m.compose(p, face, new Vector3(size, size, size))
       }
