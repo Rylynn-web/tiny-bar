@@ -265,3 +265,70 @@ body {
 .menu-tz {
   margin-top: 14px;
 }
+
+/* 坐着时的底部栏：状态按钮 + Menu + Leave；窄屏（手机）分两行，状态按钮占满第一行 */
+.flow-overlay.seated {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 8px;
+  border-radius: 22px;
+  padding: 8px;
+}
+
+.status-group {
+  position: relative;
+  display: flex;
+  gap: 4px;
+}
+
+.status-button {
+  min-width: 56px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.status-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.status-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.status-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 14px);
+  font-size: 12px;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 560px) {
+  .flow-overlay.seated {
+    width: calc(100% - 32px);
+    box-sizing: border-box;
+  }
+
+  .status-group {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  .status-button {
+    flex: 1;
+    padding: 0 6px;
+  }
+}

@@ -435,12 +435,11 @@ export class Rig {
     this.lid.rotation.x = -P.laptop.openAngle
     this.laptop.updateMatrixWorld(true)
 
-    // 饮品放右手边、小食放左手边；图片竖着立在桌面上，只绕竖轴转向镜头
+    // 饮品放右手边、小食放左手边；图片底边贴在桌面上，整张正对镜头（俯视时以底边为轴往后仰，不会被压扁）
     const table = seat.table
     if (table) {
       const O = sceneConfig.order
-      const fwd = new Vector3(0, 0, -1).applyQuaternion(cameraQuaternion)
-      const face = new Quaternion().setFromAxisAngle(up, Math.atan2(-fwd.x, -fwd.z))
+      const face = cameraQuaternion
       const right = new Vector3(-1, 0, 0).applyAxisAngle(up, seat.rotationY)
       const toSeat = new Vector3(0, 0, -1).applyAxisAngle(up, seat.rotationY).multiplyScalar(O.towardSeat)
       const place = (m: Matrix4, id: MenuId | null, pop: Pop, side: number, offset: number) => {

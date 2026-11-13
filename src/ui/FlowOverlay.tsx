@@ -8,6 +8,7 @@ import { useGoodChatWatcher } from '../state/goodChat'
 import { copy, fill } from './copy'
 import { EntryScreen } from './EntryScreen'
 import { MenuSheet } from './MenuSheet'
+import { StatusBar } from './StatusBar'
 
 const O = sceneConfig.ui.overlay
 const E = sceneConfig.ui.entry
@@ -41,7 +42,7 @@ export function FlowOverlay() {
       text = seats.some((s) => !guests[s.id]) ? P.seating : P.noSeat
       break
     case 'seated':
-      text = P.seated
+      // 坐着时不显示提示文字，换成一排状态按钮
       secondary = { label: copy.menu.open, run: () => setMenuOpen(true) }
       action = { label: P.seatedAction, run: leaveBar }
       break
@@ -61,7 +62,7 @@ export function FlowOverlay() {
   return (
     <>
     <div
-      className="flow-overlay"
+      className={`flow-overlay ${phase === 'seated' ? 'seated' : ''}`}
       style={{
         bottom: `calc(${O.margin}px + env(safe-area-inset-bottom))`,
         background: O.background,
@@ -69,7 +70,7 @@ export function FlowOverlay() {
         fontFamily: E.fontFamily,
       }}
     >
-      <span>{text}</span>
+      {phase === 'seated' ? <StatusBar /> : <span>{text}</span>}
       {secondary && (
         <button type="button" className="flow-button" onClick={secondary.run} style={{ background: E.buttonBackground, color: E.buttonColor }}>
           {secondary.label}

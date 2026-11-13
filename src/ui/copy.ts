@@ -1,6 +1,7 @@
 // 所有界面文字（英文）。改文案只改这里；菜名也在这里。
 
 import type { MenuId } from '../config/menu'
+import type { GuestState } from '../config/poses'
 
 export const copy = {
   entry: {
@@ -25,6 +26,12 @@ export const copy = {
       redwine: 'Red Wine',
       fries: 'Fries',
     } satisfies Record<MenuId, string>,
+  },
+  // 坐下后自己选的状态
+  status: {
+    label: 'What are you doing?',
+    names: { idle: 'Sit', reading: 'Read', laptop: 'Work', talking: 'Chat' } satisfies Record<GuestState, string>,
+    noOneNearby: 'No one nearby to chat with',
   },
   timezone: {
     label: 'Your time zone',

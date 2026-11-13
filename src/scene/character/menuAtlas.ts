@@ -1,4 +1,4 @@
-import { CanvasTexture, MeshStandardMaterial, PlaneGeometry, SRGBColorSpace } from 'three'
+import { CanvasTexture, MeshBasicMaterial, PlaneGeometry, SRGBColorSpace } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
 import { menuAtlasOrder, menuItems, type MenuId } from '../../config/menu'
 
@@ -63,15 +63,16 @@ export function menuPlaneGeometry() {
   return g
 }
 
-/** 菜品材质：受场景光照（夜里跟着暗下来），透明边缘；贴图坐标按每个实例的格子偏移 */
+/**
+ * 菜品材质：不受光照（白天晚上都是原图的颜色），透明边缘；不写深度，环境光遮蔽就不会在图片上压出暗影。
+ * 贴图坐标按每个实例的格子偏移
+ */
 export function createMenuMaterial() {
-  const m = new MeshStandardMaterial({
+  const m = new MeshBasicMaterial({
     map: getMenuAtlas(),
     transparent: true,
     alphaTest: 0.05,
-    roughness: 1,
-    metalness: 0,
-    envMapIntensity: sceneConfig.material.envMapIntensity,
+    depthWrite: false,
   })
   m.onBeforeCompile = (shader) => {
     shader.vertexShader = shader.vertexShader
