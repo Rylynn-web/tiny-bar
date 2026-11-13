@@ -1091,7 +1091,7 @@ export const sceneConfig = {
     props: {
       book: { width: 0.26, height: 0.2, thickness: 0.014, coverColor: 'navy', pageColor: 'cream', openAngle: 0.14 },
       // 书在身体前方（身体坐标，设计单位）和往脸的方向倾斜的角度
-      bookAt: [0, 1.2, 0.72] as Vec3,
+      bookAt: [0, 1.5, 1.1] as Vec3,
       bookTilt: deg(-40),
       laptop: { width: 0.3, depth: 0.21, baseThickness: 0.016, lidThickness: 0.01, openAngle: deg(108), color: 'slate', screenColor: 'steel', screenInset: 0.015 },
       bubble: { width: 0.2, height: 0.13, lift: 0.12, textureSize: 128, color: '#FFFFFF', dotColor: '#3B3A40' },

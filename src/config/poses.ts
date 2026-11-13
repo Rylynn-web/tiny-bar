@@ -87,7 +87,7 @@ export const statePoses: Record<GuestState, { lap: Partial<Pose>; desk?: Partial
   },
   // 双手把书举在胸前偏上，头微微低下
   reading: {
-    lap: { lean: deg(2), headPitch: deg(8), armLPitch: deg(-88), armLSplay: deg(-18), armRPitch: deg(-88), armRSplay: deg(-18) },
+    lap: { lean: deg(2), headPitch: deg(8), armLPitch: deg(-70), armLSplay: deg(-18), armRPitch: deg(-70), armRSplay: deg(-18) },
   },
   // 手臂前伸放在键盘上
   laptop: {
