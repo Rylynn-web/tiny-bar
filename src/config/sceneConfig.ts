@@ -317,8 +317,8 @@ export const sceneConfig = {
     enteringSeconds: 0.6,
     // 离开时走到哪：门口地毯（layout 里 type = doorMat）中心往室内挪多少（米）；找不到地毯时用 fallback
     exit: { inward: 0.1, fallback: [2.2, 0, -2.5] as Vec3 },
-    // 和同一个人连续交谈这么多秒，记一次"聊得开心"
-    goodChatSeconds: 20,
+    // 自己和交谈对象都在 Chatting 状态、连续这么多秒，记一次"聊得开心"（同一个人只记一次）
+    goodChatSeconds: 30,
   },
   // ───────── 时段：按访客选的时区（默认浏览器本地时区）切换白天 / 夜晚，菜单跟着场景时段换 ─────────
   clock: {

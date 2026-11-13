@@ -1,4 +1,4 @@
-import type { Expression } from '../config/expressions'
+import type { Expression, FlashEmote } from '../config/expressions'
 import type { GuestState } from '../config/poses'
 import type { MenuId } from '../config/menu'
 import type { TrackId } from '../config/tracks'
@@ -19,7 +19,10 @@ export type GuestSnapshot = {
   /** 桌上的饮品 / 小食（各最多一份，再点同类就替换） */
   drink: MenuId | null
   food: MenuId | null
+  /** 用户选的持续表情（null = 按状态自动） */
   emote: Expression | null
+  /** 临时表情（到期自动恢复；null = 没有） */
+  flash: FlashEmote | null
   seed: number
 }
 
@@ -28,7 +31,10 @@ export type ClientMessage =
   | { type: 'join' }
   | { type: 'sit'; seatId: string }
   | { type: 'status'; state: GuestState }
+  /** 持续表情：一直保持到换别的；null = 取消，回到自动 */
   | { type: 'emote'; expression: Expression | null }
+  /** 临时表情：显示 seconds 秒后自动恢复 */
+  | { type: 'flashEmote'; expression: Expression; seconds: number }
   | { type: 'order'; item: MenuId }
   /** 放这一首（从头开始） */
   | { type: 'play'; trackId: TrackId }

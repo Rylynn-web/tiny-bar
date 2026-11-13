@@ -18,7 +18,8 @@ const allowed: Record<Phase, Phase[]> = {
   entry: ['entering'],
   entering: ['seating'],
   seating: ['seated', 'leaving'],
-  seated: ['leaving'],
+  // 坐着时可以换座位（Move）：回到选座，选好或取消后回到 seated
+  seated: ['leaving', 'seating'],
   // 离开：要小票 → receipt；不要小票 → 直接 ended
   leaving: ['receipt', 'ended'],
   receipt: ['ended'],
@@ -38,9 +39,11 @@ export type FlowState = {
   leftSeatId: string | null
   /** 这次离开要不要小票 */
   withReceipt: boolean
+  /** 正在换座位（seating 阶段但人还坐在原来的座位上） */
+  moving: boolean
 }
 
-const initial: FlowState = { phase: 'entry', title: null, selfId: null, seatId: null, leftSeatId: null, withReceipt: false }
+const initial: FlowState = { phase: 'entry', title: null, selfId: null, seatId: null, leftSeatId: null, withReceipt: false, moving: false }
 let state: FlowState = initial
 const listeners = new Set<() => void>()
 

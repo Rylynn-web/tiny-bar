@@ -3,8 +3,8 @@ import { requestResetView } from '../state/cameraActions'
 
 const b = sceneConfig.ui.resetButton
 
-/** 右下角"回到全景"按钮 */
-export function ResetViewButton() {
+/** "回到全景"按钮：平时在右下角；坐着时底部栏占满了下方，挪到右上角 */
+export function ResetViewButton({ corner = 'bottom' }: { corner?: 'top' | 'bottom' }) {
   return (
     <button
       type="button"
@@ -14,7 +14,9 @@ export function ResetViewButton() {
       onClick={requestResetView}
       style={{
         right: `calc(${b.margin}px + env(safe-area-inset-right))`,
-        bottom: `calc(${b.margin}px + env(safe-area-inset-bottom))`,
+        ...(corner === 'top'
+          ? { top: `calc(${b.margin}px + env(safe-area-inset-top))` }
+          : { bottom: `calc(${b.margin}px + env(safe-area-inset-bottom))` }),
         width: b.size,
         height: b.size,
         background: b.background,

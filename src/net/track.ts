@@ -7,7 +7,7 @@ export type TrackEvent =
   | 'phase_changed'
   | 'seat_taken'
   | 'status_changed'
-  | 'emote_set'
+  | 'emote_sent'
   | 'drink_ordered'
   | 'track_played'
   | 'good_chat'

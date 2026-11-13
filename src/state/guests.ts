@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { Seat } from '../config/seatConfig'
 import type { GuestState } from '../config/poses'
-import type { Expression } from '../config/expressions'
+import type { Expression, FlashEmote } from '../config/expressions'
 import type { MenuId } from '../config/menu'
 
 // 座位上的小人：每个座位坐没坐人、在做什么、点没点饮料、称号，以及每人自己的随机种子（动作相位错开）。
@@ -11,7 +11,7 @@ export const MAX_GUESTS = 8
 
 /**
  * id：客人 id（房间分配）；title：称号；drink / food：桌上的饮品和小食（各最多一份）；
- * emote：手动指定的表情（RoomClient.setEmote），没有就按自动规则；
+ * emote：用户选的持续表情（没有就按状态自动）；flash：临时表情（到期自动恢复）；
  * self：是不是自己；fake：?debug 生成的假客人
  */
 export type Guest = {
@@ -22,6 +22,7 @@ export type Guest = {
   food: MenuId | null
   seed: number
   emote?: Expression | null
+  flash?: FlashEmote | null
   self?: boolean
   fake?: boolean
 }
@@ -92,11 +93,18 @@ export function setGuest(seatId: string, state: GuestState | null) {
   emit(next)
 }
 
-/** 手动设一个座位的表情；null = 回到自动规则。座位上没人时不做事 */
+/** 手动设一个座位的持续表情；null = 回到自动规则。座位上没人时不做事（?debug 用） */
 export function setGuestEmote(seatId: string, emote: Expression | null) {
   const g = guests[seatId]
   if (!g) return
   emit({ ...guests, [seatId]: { ...g, emote } })
+}
+
+/** 给一个座位发临时表情（?debug 用） */
+export function setGuestFlash(seatId: string, flash: FlashEmote | null) {
+  const g = guests[seatId]
+  if (!g) return
+  emit({ ...guests, [seatId]: { ...g, flash } })
 }
 
 /** 邻座里有没有人：交谈只在有人可聊时可用 */

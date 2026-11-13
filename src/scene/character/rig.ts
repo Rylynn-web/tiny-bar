@@ -9,7 +9,7 @@ import {
   type GuestState,
   type Pose,
 } from '../../config/poses'
-import { blushing, eyesOpen, expressionTiming as X, faceAtlas, pickWeighted, type Expression } from '../../config/expressions'
+import { blushing, eyesOpen, expressionTiming as X, faceAtlas, pickWeighted, type Expression, type FlashEmote } from '../../config/expressions'
 import { seededRandom } from '../primitives/canvasTexture'
 import type { Vec3 } from '../../config/layoutTypes'
 import { menuItems, type MenuId } from '../../config/menu'
@@ -86,8 +86,10 @@ export type RigInput = {
   food: MenuId | null
   /** 交谈对象的座位（没有就是 null） */
   partner: Seat | null
-  /** 手动指定的表情（?debug / setEmote）；null = 按自动规则 */
+  /** 用户选的持续表情；null = 按状态自动 */
   emote: Expression | null
+  /** 临时表情（到期时间是毫秒时间戳） */
+  flash?: FlashEmote | null
   /** 同一群里其他有人的座位（不含交谈对象）：人够多时偶尔扭头看看他们 */
   others: Seat[]
   /** 离开：从 seat 起身，走到这个位置（门口，地面高度）后缩小消失 */
@@ -268,12 +270,13 @@ export class Rig {
     this.greetAt = now
   }
 
-  /** 按优先级决定现在该是什么表情：手动 > 打招呼 > 状态规则 > 默认 */
+  /** 按优先级决定现在该是什么表情：临时表情 > 自动反应（打招呼）> 用户选的持续表情 > 状态默认 */
   private desiredExpression(input: RigInput, now: number): Expression {
-    if (input.emote) return input.emote
+    if (input.flash && Date.now() < input.flash.until) return input.flash.expression
     const g = now - this.greetAt
     if (g >= 0 && g < X.greet.surprised) return 'surprised'
     if (g >= X.greet.surprised && g < X.greet.surprised + X.greet.happy) return 'happy'
+    if (input.emote) return input.emote
     switch (input.state) {
       case 'idle':
         return 'default'

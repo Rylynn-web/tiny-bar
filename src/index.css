@@ -266,72 +266,6 @@ body {
   margin-top: 14px;
 }
 
-/* 坐着时的底部栏：状态按钮 + Menu + Leave；窄屏（手机）分两行，状态按钮占满第一行 */
-.flow-overlay.seated {
-  flex-wrap: wrap;
-  justify-content: center;
-  row-gap: 8px;
-  border-radius: 22px;
-  padding: 8px;
-}
-
-.status-group {
-  position: relative;
-  display: flex;
-  gap: 4px;
-}
-
-.status-button {
-  min-width: 56px;
-  min-height: 36px;
-  padding: 0 12px;
-  border: 2px solid transparent;
-  border-radius: 18px;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
-}
-
-.status-button:active:not(:disabled) {
-  transform: scale(0.95);
-}
-
-.status-button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.status-hint {
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 14px);
-  transform: translateX(-50%);
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: rgba(59, 58, 64, 0.72);
-  font-size: 12px;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-@media (max-width: 560px) {
-  .flow-overlay.seated {
-    width: calc(100% - 32px);
-    box-sizing: border-box;
-  }
-
-  .status-group {
-    flex: 1 1 100%;
-    justify-content: space-between;
-  }
-
-  .status-button {
-    flex: 1;
-    padding: 0 6px;
-  }
-}
 
 /* 歌单面板：沿用菜单的底部弹出样式；上面是"现在在放"（封套 + 探出来的黑胶），下面是分组曲目列表 */
 .now-playing {
@@ -680,4 +614,153 @@ body {
 /* 左上角门形图标：和右下角"回到全景"同一套样式 */
 .leave-button {
   position: fixed;
+}
+
+/* 坐着时的底部栏（手机优先）：状态 / 表情 / Menu、Move，按钮至少 44px；宽屏时并成两行 */
+.seated-bar {
+  position: fixed;
+  left: 50%;
+  z-index: 10;
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: min(calc(100% - 32px), 560px);
+  padding: 8px;
+  border-radius: 24px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.status-group {
+  position: relative;
+  display: flex;
+  flex: 1 1 100%;
+  gap: 4px;
+}
+
+.emote-group,
+.bar-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.emote-group {
+  flex: 1 1 auto;
+  justify-content: space-between;
+}
+
+.bar-actions {
+  flex: 0 0 auto;
+}
+
+.bar-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+
+.bar-button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.bar-button.active {
+  background: #f3e9dc;
+  color: #3b3a40;
+}
+
+.status-button {
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 56px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-button.locked {
+  opacity: 0.38;
+}
+
+.emote-button {
+  width: 44px;
+}
+
+.emote-button:disabled {
+  opacity: 0.4;
+}
+
+.emote-ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+  pointer-events: none;
+}
+
+.emote-ring circle {
+  fill: none;
+  stroke: #f3e9dc;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dashoffset: 0;
+  animation: emote-countdown linear forwards;
+}
+
+@keyframes emote-countdown {
+  to {
+    stroke-dashoffset: 125.66;
+  }
+}
+
+.action-button {
+  padding: 0 16px;
+  background: #f3e9dc;
+  color: #3b3a40;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.bar-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 16px);
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: rgba(59, 58, 64, 0.88);
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: fade-in 0.15s ease;
+}
+
+/* 宽屏：状态一行，表情和 Menu / Move 一行 */
+@media (min-width: 720px) {
+  .seated-bar {
+    width: auto;
+    max-width: calc(100% - 32px);
+  }
+
+  .status-group {
+    flex: 0 0 auto;
+  }
+
+  .status-button {
+    min-width: 76px;
+  }
 }

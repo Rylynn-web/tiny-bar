@@ -121,6 +121,7 @@ export function Guests() {
         food: g.food,
         seed: g.seed,
         emote: g.emote ?? null,
+        flash: g.flash ?? null,
         self: !!g.self,
         dj: !!nowPlaying && !!g.id && g.id === nowPlaying.by,
       })

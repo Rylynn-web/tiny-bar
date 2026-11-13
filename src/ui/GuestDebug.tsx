@@ -2,14 +2,14 @@ import { useEffect } from 'react'
 import { button, folder, useControls } from 'leva'
 import { useSeats } from '../config/seatConfig'
 import { guestStateLabels, guestStates, type GuestState } from '../config/poses'
-import { getGuests, hasNeighbor, setGuest, setGuestEmote, setGuestOrder, useGuests } from '../state/guests'
+import { getGuests, hasNeighbor, setGuest, setGuestEmote, setGuestFlash, setGuestOrder, useGuests } from '../state/guests'
 import { menuItems, menuAtlasOrder, type MenuId } from '../config/menu'
 import { copy } from './copy'
 import { useSceneParams } from '../state/sceneParams'
 import { addFakeGuest, clearFakes, fillFakes, randomizeFakes, removeFakeGuest, setFakeMenuTime } from '../state/fakeGuests'
 import { getFlow } from '../state/flow'
 import { FlowDebug } from './FlowDebug'
-import { expressionLabels, expressions, type Expression } from '../config/expressions'
+import { emoteTiming, expressionLabels, expressions, type Expression } from '../config/expressions'
 
 // 开发环境 ?debug 面板「座位」：在任意座位生成假客人（随机称号、随机状态），单独设状态 / 表情 / 饮料；
 // 全部随机 / 坐满 8 人 / 清空假客人。只在 import.meta.env.DEV 时加载，生产构建里没有假客人。
@@ -69,12 +69,18 @@ export function GuestDebug() {
                 {
                   value: (getGuests()[seat.id]?.emote ?? 'auto') as EmoteChoice,
                   options: emoteOptions,
-                  label: '  表情',
+                  label: '  持续表情',
                   onChange: (v: EmoteChoice, _path: string, ctx: { initial: boolean; fromPanel: boolean }) => {
                     if (ctx.initial || !ctx.fromPanel) return
                     setGuestEmote(seat.id, v === 'auto' ? null : v)
                   },
                 },
+              ],
+              [
+                `${seat.id}·flash`,
+                button(() => setGuestFlash(seat.id, { expression: 'happy', until: Date.now() + emoteTiming.temporarySeconds * 1000 }), {
+                  label: '  临时表情 ^ ^',
+                } as never),
               ],
               ...(['drink', 'food'] as const).map((kind) => [
                 `${seat.id}·${kind}`,

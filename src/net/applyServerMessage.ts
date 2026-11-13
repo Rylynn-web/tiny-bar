@@ -8,7 +8,7 @@ import { logSeat, logTitle } from '../state/sessionLog'
 // 所以 UI 只需要读状态（flow / guests / nowPlaying / sessionLog），不用管消息从哪来。
 
 function toGuest(s: GuestSnapshot, selfId: string | null): Guest {
-  return { id: s.id, title: s.title, state: s.state, drink: s.drink, food: s.food, emote: s.emote, seed: s.seed, self: s.id === selfId }
+  return { id: s.id, title: s.title, state: s.state, drink: s.drink, food: s.food, emote: s.emote, flash: s.flash, seed: s.seed, self: s.id === selfId }
 }
 
 /** 按 id 放进 / 挪到对应座位（没坐下就从座位上拿掉） */

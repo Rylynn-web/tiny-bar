@@ -46,8 +46,25 @@ export function takeSeat(seatId: string): boolean {
   if (g[seatId] && !g[seatId].self) return false
   if (!g[seatId] && Object.keys(g).length >= MAX_GUESTS) return false
   roomClient.sit(seatId)
+  patchFlow({ moving: false })
   if (phase === 'seating') goTo('seated')
   return true
+}
+
+/** Move：换座位。空座位重新发绿光，点一个就换过去（饮品、小食跟着走） */
+export function startMove() {
+  if (getFlow().phase !== 'seated') return
+  closePanel()
+  patchFlow({ moving: true })
+  goTo('seating')
+}
+
+/** 不换了：回到原来的座位 */
+export function cancelMove() {
+  const f = getFlow()
+  if (f.phase !== 'seating' || !f.moving) return
+  patchFlow({ moving: false })
+  goTo('seated')
 }
 
 /** 随机挑一个空座位坐下（只给 ?debug 用） */
@@ -111,7 +128,7 @@ export function stepBackInside() {
   if (timer) clearTimeout(timer)
   timer = null
   unlockAudio()
-  patchFlow({ title: null, selfId: null, seatId: null, leftSeatId: null, withReceipt: false })
+  patchFlow({ title: null, selfId: null, seatId: null, leftSeatId: null, withReceipt: false, moving: false })
   startSession()
   track('step_inside', { again: true })
   goTo('entering')

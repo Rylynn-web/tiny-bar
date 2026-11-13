@@ -2,6 +2,7 @@
 
 import type { MenuId } from '../config/menu'
 import type { GuestState } from '../config/poses'
+import type { Expression } from '../config/expressions'
 
 export const copy = {
   entry: {
@@ -79,8 +80,25 @@ export const copy = {
   // 坐下后自己选的状态
   status: {
     label: 'What are you doing?',
-    names: { idle: 'Sit', reading: 'Read', laptop: 'Work', talking: 'Chat' } satisfies Record<GuestState, string>,
-    noOneNearby: 'No one nearby to chat with',
+    names: { idle: 'Idle', reading: 'Reading', laptop: 'Working', talking: 'Chatting' } satisfies Record<GuestState, string>,
+    needsNeighbor: 'Chatting needs a neighbor',
+  },
+  // 表情按钮（读屏用的名字）
+  emotes: {
+    label: 'Expressions',
+    names: {
+      happy: 'Happy',
+      squint: 'Oops',
+      surprised: 'Surprised',
+      default: 'Calm',
+      focus: 'Focused',
+    } satisfies Record<Expression, string>,
+  },
+  // 换座位
+  move: {
+    button: 'Move',
+    hint: 'Tap a glowing seat to move.',
+    cancel: 'Cancel',
   },
   timezone: {
     label: 'Your time zone',

@@ -25,7 +25,7 @@ export default function App() {
         <Scene />
       )}
       {/* 小票、结束画面上不需要"回到全景" */}
-      {(EditorShell || (phase !== 'receipt' && phase !== 'ended')) && <ResetViewButton />}
+      {(EditorShell || (phase !== 'receipt' && phase !== 'ended')) && <ResetViewButton corner={!EditorShell && phase === 'seated' ? 'top' : 'bottom'} />}
       {/* 编辑器里不走进店流程 */}
       {!EditorShell && <FlowOverlay />}
       {DebugPanel && (

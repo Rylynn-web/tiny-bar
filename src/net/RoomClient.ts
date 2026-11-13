@@ -1,4 +1,4 @@
-import type { Expression } from '../config/expressions'
+import { emoteTiming, type Expression } from '../config/expressions'
 import type { GuestState } from '../config/poses'
 import { generateTitle } from '../config/titles'
 import { menuItems, type MenuId } from '../config/menu'
@@ -22,7 +22,8 @@ export interface RoomClient {
   /** 换状态：静坐 / 阅读 / 办公 / 交谈 */
   setStatus(state: GuestState): void
   /** 设置自己小人的表情；null = 回到自动表情 */
-  setEmote(expression: Expression | null): void
+  /** 表情：temporary = 临时表情（几秒后自动恢复）；否则是持续表情，null = 取消回到自动 */
+  setEmote(expression: Expression | null, options?: { temporary?: boolean }): void
   /** 点单：桌上最多一杯饮品 + 一份小食，再点同类会替换原来的 */
   order(item: MenuId): void
   /** 选歌：放这一首（全店一起听；当前在放什么用 state/nowPlaying 的 useNowPlaying 读） */
@@ -50,9 +51,10 @@ abstract class BaseRoomClient implements RoomClient {
     track('status_changed', { state })
     this.send({ type: 'status', state })
   }
-  setEmote(expression: Expression | null) {
-    track('emote_set', { expression })
-    this.send({ type: 'emote', expression })
+  setEmote(expression: Expression | null, options: { temporary?: boolean } = {}) {
+    track('emote_sent', { expression, temporary: !!options.temporary })
+    if (options.temporary && expression) this.send({ type: 'flashEmote', expression, seconds: emoteTiming.temporarySeconds })
+    else this.send({ type: 'emote', expression })
   }
   order(item: MenuId) {
     logOrder(item)
@@ -104,7 +106,7 @@ export class LocalRoomClient extends BaseRoomClient {
         if (this.lastTitle) taken.push(this.lastTitle)
         const title = generateTitle(taken)
         this.lastTitle = title
-        this.me = { id: `local-${++this.ids}`, title, seatId: null, state: 'idle', drink: null, food: null, emote: null, seed: newSeed() }
+        this.me = { id: `local-${++this.ids}`, title, seatId: null, state: 'idle', drink: null, food: null, emote: null, flash: null, seed: newSeed() }
         const others: GuestSnapshot[] = []
         this.reply({ type: 'welcome', you: { id: this.me.id, title }, guests: others, nowPlaying: getNowPlaying() })
         break
@@ -122,6 +124,9 @@ export class LocalRoomClient extends BaseRoomClient {
         break
       case 'emote':
         this.update({ emote: msg.expression })
+        break
+      case 'flashEmote':
+        this.update({ flash: { expression: msg.expression, until: Date.now() + msg.seconds * 1000 } })
         break
       case 'order':
         // 假装做好了：立刻端上来，同类的替换掉

@@ -49,6 +49,17 @@ export function pickWeighted(list: Weighted, r: number): Expression {
   return list[list.length - 1].expression
 }
 
+/**
+ * 底部栏的表情按钮：临时表情点了显示几秒后恢复；持续表情选中后一直保持，直到换别的（再点一次取消）。
+ * 优先级：临时表情 > 自动反应（邻座有人坐下时打招呼）> 用户选的持续表情 > 状态默认表情
+ */
+export const temporaryEmotes: Expression[] = ['happy', 'squint', 'surprised']
+export const persistentEmotes: Expression[] = ['default', 'focus']
+export const emoteTiming = { temporarySeconds: 3 }
+
+/** 临时表情：哪个、到什么时候为止（毫秒时间戳） */
+export type FlashEmote = { expression: Expression; until: number }
+
 /** 有腮红的表情 */
 export const blushing: Record<Expression, boolean> = {
   default: false,
