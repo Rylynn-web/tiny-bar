@@ -1089,10 +1089,10 @@ export const sceneConfig = {
     detail: { bodySegments: 20, bodyProfilePoints: 18, headSegments: [20, 14] as [number, number], eyeSegments: [8, 6] as [number, number], limbSegments: [3, 10] as [number, number] },
     // 道具（米）：所有小人共享同一套几何体和材质，颜色是调色板键名
     props: {
-      book: { width: 0.2, height: 0.15, thickness: 0.012, coverColor: 'navy', pageColor: 'cream', openAngle: 0.14 },
+      book: { width: 0.26, height: 0.2, thickness: 0.014, coverColor: 'navy', pageColor: 'cream', openAngle: 0.14 },
       // 书在身体前方（身体坐标，设计单位）和往脸的方向倾斜的角度
-      bookAt: [0, 0.8, 0.66] as Vec3,
-      bookTilt: deg(-55),
+      bookAt: [0, 1.2, 0.72] as Vec3,
+      bookTilt: deg(-40),
       laptop: { width: 0.3, depth: 0.21, baseThickness: 0.016, lidThickness: 0.01, openAngle: deg(108), color: 'slate', screenColor: 'steel', screenInset: 0.015 },
       bubble: { width: 0.2, height: 0.13, lift: 0.12, textureSize: 128, color: '#FFFFFF', dotColor: '#3B3A40' },
     },
