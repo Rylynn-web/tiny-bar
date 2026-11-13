@@ -27,6 +27,41 @@ export const copy = {
       fries: 'Fries',
     } satisfies Record<MenuId, string>,
   },
+  // 离开：确认框（点门 / 左上角门形图标打开）
+  leave: {
+    button: 'Head out',
+    title: 'Heading out?',
+    body: 'Your little figure will walk to the door.',
+    withReceipt: 'Leave with a receipt',
+    without: 'Leave without',
+    stay: 'Stay a bit longer',
+  },
+  // 小票（店名先用占位名，之后定了改这里）
+  receipt: {
+    shopName: 'THE TINY BAR',
+    tagline: 'coffee by day · drinks by night',
+    date: 'Date',
+    arrived: 'Arrived',
+    left: 'Left',
+    stayed: 'Stayed',
+    guest: 'Guest',
+    orders: 'Orders',
+    songs: 'Songs played',
+    none: '—',
+    chat: 'Had a lovely chat with {title}',
+    thanks: 'Thanks for stopping by.',
+    comeBack: 'Come back anytime.',
+    save: 'Save receipt',
+    done: 'Done',
+    fileName: 'tiny-bar-receipt-{date}.png',
+    printing: 'Printing your receipt…',
+  },
+  // 结束画面
+  end: {
+    title: 'See you next time.',
+    body: 'The door is always open.',
+    again: 'Step back inside',
+  },
   // 歌单（点唱机 / 唱片架打开）
   records: {
     title: 'Records',
@@ -88,12 +123,7 @@ export const copy = {
     entering: 'Hello, {title}.',
     seating: 'Tap a glowing seat.',
     seated: 'Make yourself at home.',
-    seatedAction: 'Leave',
     leaving: 'See you around.',
-    receipt: 'Your receipt is being printed…',
-    receiptAction: 'Close',
-    ended: 'Thanks for stopping by.',
-    endedAction: 'Come back in',
     noSeat: 'Every seat is taken right now.',
   },
 }

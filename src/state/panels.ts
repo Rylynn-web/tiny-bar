@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react'
 
-// 底部弹出的面板：同一时间只开一个（点单菜单 / 歌单）。场景里点唱机也会打开歌单，所以放在共享状态里。
+// 弹出的面板：同一时间只开一个（点单菜单 / 歌单 / 离开确认框）。场景里点唱机也会打开歌单，所以放在共享状态里。
 
-export type Panel = 'menu' | 'records' | null
+export type Panel = 'menu' | 'records' | 'leave' | null
 
 let open: Panel = null
 const listeners = new Set<() => void>()

@@ -83,6 +83,8 @@ abstract class BaseRoomClient implements RoomClient {
 export class LocalRoomClient extends BaseRoomClient {
   private me: GuestSnapshot | null = null
   private ids = 0
+  /** 上一次进店用过的称号：重新进店时避开，保证拿到新的 */
+  private lastTitle: string | null = null
 
   private reply(...msgs: ServerMessage[]) {
     setTimeout(() => msgs.forEach(applyServerMessage), 0)
@@ -99,7 +101,9 @@ export class LocalRoomClient extends BaseRoomClient {
     switch (msg.type) {
       case 'join': {
         const taken = Object.values(guests).map((g) => g.title ?? '')
+        if (this.lastTitle) taken.push(this.lastTitle)
         const title = generateTitle(taken)
+        this.lastTitle = title
         this.me = { id: `local-${++this.ids}`, title, seatId: null, state: 'idle', drink: null, food: null, emote: null, seed: newSeed() }
         const others: GuestSnapshot[] = []
         this.reply({ type: 'welcome', you: { id: this.me.id, title }, guests: others, nowPlaying: getNowPlaying() })

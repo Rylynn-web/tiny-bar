@@ -278,6 +278,26 @@ export const sceneConfig = {
       shadow: '0 -8px 30px rgba(0, 0, 0, 0.18)',
       radius: 20,
     },
+    // 小票：像热敏纸小票。宽度是 CSS 像素（约 58mm 小票的比例），按 scale 倍绘制保证清晰
+    receipt: {
+      width: 300,
+      scale: 2,
+      padding: 22,
+      paper: '#FBF8F1',
+      ink: '#2E2D33',
+      // 淡一点的字（时间、分隔线）
+      faint: '#8A8690',
+      font: "'SF Mono', 'Menlo', 'Courier New', monospace",
+      // 字号：店名 / 正文 / 小字（CSS 像素）
+      titleSize: 20,
+      bodySize: 12.5,
+      smallSize: 10.5,
+      lineHeight: 1.55,
+      // 底部撕边：锯齿宽、高
+      tear: { width: 10, height: 7 },
+      // 打印动画时长（秒）
+      printSeconds: 1.1,
+    },
     // 歌单面板：封套、黑胶的颜色和尺寸（像素）
     records: {
       sleeveSize: 112,
@@ -293,9 +313,10 @@ export const sceneConfig = {
 
   // ───────── 单人流程（P2） ─────────
   flow: {
-    // 进店的过渡多久进入选座、起身后多久出小票（秒）
+    // 进店的过渡多久进入选座（秒）；离开时走到门口的时长在 poses.ts 的 poseTiming.walk
     enteringSeconds: 0.6,
-    leavingSeconds: 0.6,
+    // 离开时走到哪：门口地毯（layout 里 type = doorMat）中心往室内挪多少（米）；找不到地毯时用 fallback
+    exit: { inward: 0.1, fallback: [2.2, 0, -2.5] as Vec3 },
     // 和同一个人连续交谈这么多秒，记一次"聊得开心"
     goodChatSeconds: 20,
   },
@@ -314,9 +335,9 @@ export const sceneConfig = {
     opacity: [0.28, 0.5] as [number, number],
     pulseSeconds: 1.8,
   },
-  // ───────── 唱机 / 唱片架：点一下打开歌单；鼠标悬停时盖一层淡淡的高光 ─────────
-  musicHotspot: {
-    types: ['turntable', 'recordWall'] as const,
+  // ───────── 场景里能点的东西：唱机 / 唱片架打开歌单，门打开离开确认框；鼠标悬停时盖一层淡淡的高光 ─────────
+  hotspot: {
+    targets: { turntable: 'records', recordWall: 'records', door: 'leave' } as const,
     color: 'warmLight',
     hoverOpacity: 0.32,
   },

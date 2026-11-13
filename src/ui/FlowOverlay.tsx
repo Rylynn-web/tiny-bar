@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { sceneConfig } from '../config/sceneConfig'
 import { useSeats } from '../config/seatConfig'
 import { useFlow } from '../state/flow'
-import { closeReceipt, comeBackIn, leaveBar } from '../state/flowActions'
 import { useGuests } from '../state/guests'
 import { useGoodChatWatcher } from '../state/goodChat'
 import { copy, fill } from './copy'
@@ -10,13 +9,17 @@ import { EntryScreen } from './EntryScreen'
 import { MenuSheet } from './MenuSheet'
 import { StatusBar } from './StatusBar'
 import { RecordSheet } from './RecordSheet'
+import { LeaveButton } from './LeaveButton'
+import { LeaveDialog } from './LeaveDialog'
+import { ReceiptView } from './ReceiptView'
+import { EndScreen } from './EndScreen'
 import { closePanel, openPanel, usePanel } from '../state/panels'
 
 const O = sceneConfig.ui.overlay
 const E = sceneConfig.ui.entry
 
 /**
- * 按流程阶段显示界面。P2 骨架：开始画面之外，每个阶段只有一行提示 + 一个按钮（之后换成正式界面）
+ * 按流程阶段显示界面：开始画面 / 进店和选座的提示 / 坐着时的底部栏、菜单、歌单、离开确认框 / 小票 / 结束画面
  */
 export function FlowOverlay() {
   const { phase, title } = useFlow()
@@ -30,10 +33,11 @@ export function FlowOverlay() {
   }, [phase])
 
   if (phase === 'entry') return <EntryScreen />
+  if (phase === 'receipt') return <ReceiptView />
+  if (phase === 'ended') return <EndScreen />
 
   const P = copy.phases
   let text = ''
-  let action: { label: string; run: () => void } | null = null
   let secondary: { label: string; run: () => void } | null = null
   switch (phase) {
     case 'entering':
@@ -45,19 +49,11 @@ export function FlowOverlay() {
       break
     case 'seated':
       // 坐着时不显示提示文字，换成一排状态按钮
+      // 离开走左上角的门形图标或场景里的门（都先弹确认框）
       secondary = { label: copy.menu.open, run: () => openPanel('menu') }
-      action = { label: P.seatedAction, run: leaveBar }
       break
     case 'leaving':
       text = P.leaving
-      break
-    case 'receipt':
-      text = P.receipt
-      action = { label: P.receiptAction, run: closeReceipt }
-      break
-    case 'ended':
-      text = P.ended
-      action = { label: P.endedAction, run: comeBackIn }
       break
   }
 
@@ -78,19 +74,11 @@ export function FlowOverlay() {
           {secondary.label}
         </button>
       )}
-      {action && (
-        <button
-          type="button"
-          className="flow-button"
-          onClick={action.run}
-          style={{ background: E.buttonBackground, color: E.buttonColor }}
-        >
-          {action.label}
-        </button>
-      )}
     </div>
     {phase === 'seated' && <MenuSheet open={panel === 'menu'} onClose={closePanel} />}
     {phase === 'seated' && <RecordSheet open={panel === 'records'} onClose={closePanel} />}
+    {phase === 'seated' && <LeaveButton />}
+    {phase === 'seated' && panel === 'leave' && <LeaveDialog onClose={closePanel} />}
     </>
   )
 }

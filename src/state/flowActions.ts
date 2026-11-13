@@ -3,7 +3,9 @@ import type { Seat } from '../config/seatConfig'
 import { roomClient } from '../net/RoomClient'
 import { track } from '../net/track'
 import { unlockAudio } from './audio'
-import { getFlow, goTo, resetFlow } from './flow'
+import { getFlow, goTo, patchFlow, resetFlow } from './flow'
+import { closePanel, openPanel } from './panels'
+import { poseTiming } from '../config/poses'
 import { getGuests, MAX_GUESTS } from './guests'
 import { getSessionLog, startSession } from './sessionLog'
 
@@ -55,13 +57,25 @@ export function takeRandomSeat(seats: Seat[]): boolean {
   return takeSeat(free[Math.floor(Math.random() * free.length)].id)
 }
 
-/** 起身离开 → 走回门口 → 出小票 */
-export function leaveBar() {
-  const phase = getFlow().phase
+/** 走到门口要多久（起身 + 走路 + 缩小消失），离开阶段等这么久再出小票 / 结束画面 */
+const walkSeconds = () => poseTiming.walk.standUp + poseTiming.walk.duration + poseTiming.walk.vanish
+
+/**
+ * 离开：小人起身走向门口消失 → 要小票就出小票，不要就直接到结束画面。
+ * 门和角落的门形图标都先打开确认框（requestLeave），确认后才走到这里
+ */
+export function leaveBar(withReceipt: boolean) {
+  const { phase, seatId } = getFlow()
   if (phase !== 'seated' && phase !== 'seating') return
+  closePanel()
+  patchFlow({ leftSeatId: seatId, withReceipt })
   roomClient.leave()
   goTo('leaving')
-  after(F.leavingSeconds, () => {
+  after(walkSeconds(), () => {
+    if (!withReceipt) {
+      endSession(false)
+      return
+    }
     if (goTo('receipt')) {
       const log = getSessionLog()
       track('receipt_shown', {
@@ -75,11 +89,37 @@ export function leaveBar() {
   })
 }
 
-export function closeReceipt() {
-  goTo('ended')
+/** 打开离开确认框（门 / 角落的门形图标） */
+export function requestLeave() {
+  if (getFlow().phase !== 'seated') return
+  openPanel('leave')
 }
 
-/** 结束后重新进店（回到开始画面） */
+/** 进入结束画面 */
+function endSession(withReceipt: boolean) {
+  if (goTo('ended')) track('session_end', { withReceipt })
+}
+
+/** 小票上的 Done */
+export function closeReceipt() {
+  endSession(true)
+}
+
+/** 结束画面的 Step back inside：直接重新进店，拿新称号，会话记录从零开始 */
+export function stepBackInside() {
+  if (getFlow().phase !== 'ended') return
+  if (timer) clearTimeout(timer)
+  timer = null
+  unlockAudio()
+  patchFlow({ title: null, selfId: null, seatId: null, leftSeatId: null, withReceipt: false })
+  startSession()
+  track('step_inside', { again: true })
+  goTo('entering')
+  roomClient.join()
+  after(F.enteringSeconds, () => goTo('seating'))
+}
+
+/** 回到开始画面（?debug 用） */
 export function comeBackIn() {
   if (timer) clearTimeout(timer)
   timer = null

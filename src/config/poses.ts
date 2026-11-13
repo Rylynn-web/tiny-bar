@@ -22,7 +22,8 @@ export const guestStateLabels: Record<GuestState, string> = {
   talking: '交谈',
 }
 
-export type SeatType = SeatPose
+/** stand = 站着（只在离开时走向门口用） */
+export type SeatType = SeatPose | 'stand'
 
 /** 一组可以平滑过渡的姿势参数 */
 export type Pose = {
@@ -49,7 +50,10 @@ export const neutralPose: Pose = {
   armRSplay: deg(8),
 }
 
-/** 每种座位：腿怎么摆、坐多深、身体基础倾角；lap = 腿面（放笔记本）在身体坐标里的高度和前后位置 */
+/**
+ * 每种座位：腿怎么摆、坐多深、身体基础倾角；lap = 腿面（放笔记本）在身体坐标里的高度和前后位置；
+ * arms = 手臂垂下的角度（不写就用中性姿势：坐着时搭在腿上）
+ */
 export const seatPoses: Record<
   SeatType,
   {
@@ -61,6 +65,7 @@ export const seatPoses: Record<
     lean: number
     lapY: number
     lapZ: number
+    arms?: { pitch: number; splay: number }
   }
 > = {
   chair: { legPitch: deg(-90), hipForward: 0.24, hipDrop: 0.04, sink: 0.2, back: 0.03, lean: 0, lapY: 0.52, lapZ: 0.5 },
@@ -69,6 +74,8 @@ export const seatPoses: Record<
   // 沙发软：坐得更深，身体往后靠
   sofa: { legPitch: deg(-82), hipForward: 0.24, hipDrop: 0.06, sink: 0.26, back: 0.06, lean: deg(-6), lapY: 0.5, lapZ: 0.5 },
   pouf: { legPitch: deg(-75), hipForward: 0.22, hipDrop: 0.04, sink: 0.18, back: 0.0, lean: deg(2), lapY: 0.5, lapZ: 0.46 },
+  // 站着：腿竖直、脚踩地面，手臂自然垂在身侧
+  stand: { legPitch: 0, hipForward: 0, hipDrop: 0, sink: 0, back: 0, lean: 0, lapY: 0.5, lapZ: 0.4, arms: { pitch: deg(-6), splay: deg(10) } },
 }
 
 /** 每种状态的姿势：lap = 没有桌面（或桌面太远）时，desk = 前面有桌面时（只写和 lap 不同的部分） */
@@ -128,5 +135,18 @@ export const poseTiming = {
     gestureWave: deg(6),
     // 一群人一起时（沙发区坐满）：偶尔扭头看看群里的其他人，只转头、身体还对着说话的那个人
     glance: { interval: [5, 9] as [number, number], duration: 1.8, minOthers: 2 },
+  },
+  // 离开：从座位跳下来（standUp 秒，落在座位正前方 hop 米处，弧线高 hopHeight）→ 直线走到门口（duration 秒）
+  // → 缩小消失（vanish 秒）。走路时腿 / 手臂前后摆、身体上下颠
+  walk: {
+    standUp: 0.5,
+    hop: 0.35,
+    hopHeight: 0.12,
+    duration: 2.4,
+    vanish: 0.45,
+    stepsPerSecond: 2.4,
+    legSwing: deg(28),
+    armSwing: deg(22),
+    bob: 0.025,
   },
 }

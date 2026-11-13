@@ -13,6 +13,7 @@ export type TrackEvent =
   | 'good_chat'
   | 'leave'
   | 'receipt_shown'
+  | 'session_end'
 
 export type TrackProps = Record<string, string | number | boolean | null>
 

@@ -19,9 +19,11 @@ const allowed: Record<Phase, Phase[]> = {
   entering: ['seating'],
   seating: ['seated', 'leaving'],
   seated: ['leaving'],
-  leaving: ['receipt'],
+  // 离开：要小票 → receipt；不要小票 → 直接 ended
+  leaving: ['receipt', 'ended'],
   receipt: ['ended'],
-  ended: ['entry'],
+  // 结束画面：Step back inside 直接重新进店（也可以回到开始画面）
+  ended: ['entering', 'entry'],
 }
 
 export type FlowState = {
@@ -32,9 +34,14 @@ export type FlowState = {
   selfId: string | null
   /** 自己坐在哪个座位（没坐下为 null） */
   seatId: string | null
+  /** 离开时是从哪个座位起身的（走向门口的动画从这里出发） */
+  leftSeatId: string | null
+  /** 这次离开要不要小票 */
+  withReceipt: boolean
 }
 
-let state: FlowState = { phase: 'entry', title: null, selfId: null, seatId: null }
+const initial: FlowState = { phase: 'entry', title: null, selfId: null, seatId: null, leftSeatId: null, withReceipt: false }
+let state: FlowState = initial
 const listeners = new Set<() => void>()
 
 function emit(next: FlowState) {
@@ -80,5 +87,5 @@ export function patchFlow(patch: Partial<Omit<FlowState, 'phase'>>) {
 
 /** 回到开始画面（ended 之后重新进店，或 ?debug 重置） */
 export function resetFlow() {
-  emit({ phase: 'entry', title: null, selfId: null, seatId: null })
+  emit(initial)
 }

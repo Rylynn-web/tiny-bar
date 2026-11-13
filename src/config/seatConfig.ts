@@ -159,3 +159,12 @@ export function useSeats() {
   return useMemo(() => deriveSeats(items), [items])
 }
 
+
+/** 离开时走到的位置：门口地毯中心往室内挪一点（地面高度） */
+export function exitSpot(items: LayoutItem[]): Vec3 {
+  const E = sceneConfig.flow.exit
+  const mat = items.find((i) => i.type === 'doorMat')
+  if (!mat) return E.fallback
+  const yaw = MathUtils.degToRad(mat.rotationY)
+  return [mat.position[0] + Math.sin(yaw) * E.inward, 0, mat.position[2] + Math.cos(yaw) * E.inward]
+}

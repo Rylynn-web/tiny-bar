@@ -3,7 +3,8 @@ import type { Mesh } from 'three'
 import { useFrame } from '@react-three/fiber'
 import { DoubleSide, InstancedBufferAttribute, Matrix4, MeshBasicMaterial, MeshPhysicalMaterial, type BufferGeometry, type InstancedMesh } from 'three'
 import { sceneConfig } from '../../config/sceneConfig'
-import { useSeats } from '../../config/seatConfig'
+import { exitSpot, useSeats } from '../../config/seatConfig'
+import { useLayoutItems } from '../../state/layoutStore'
 import { useFlow } from '../../state/flow'
 import { TitleTag } from './TitleTag'
 import { MusicNote } from './MusicNote'
@@ -13,7 +14,7 @@ import { MAX_GUESTS, choosePartner, effectiveState, useGuests } from '../../stat
 import { useSceneParams } from '../../state/sceneParams'
 import { Glow } from '../primitives/Glow'
 import { bookHalfGeometry, bubbleTexture, partGeometry as G } from './parts'
-import { Rig, type RigInput } from './rig'
+import { BUDDY_SCALE, Rig, type RigInput } from './rig'
 import { cellOffset, getFaceAtlas } from './faceAtlas'
 import { faceAtlas } from '../../config/expressions'
 import type { MenuId } from '../../config/menu'
@@ -57,6 +58,8 @@ export function Guests() {
   const tagRef = useRef<Mesh>(null)
   const noteRef = useRef<Mesh>(null)
   const nowPlaying = useNowPlaying()
+  const items = useLayoutItems()
+  const exit = useMemo(() => exitSpot(items), [items])
   const { palette, buddy } = useSceneParams()
   const rigs = useRef(new Map<string, Rig>())
   const meshes = useRef<Partial<Record<Slot, InstancedMesh | null>>>({})
@@ -97,9 +100,12 @@ export function Guests() {
   const active = useMemo(() => {
     const byId = new Map(seats.map((s) => [s.id, s]))
     const list: (RigInput & { seed: number; self: boolean; dj: boolean })[] = []
+    // 离开时：自己从原来的座位起身走向门口（座位上那份不再画，免得同一个座位出现两个人）
+    const leavingSeat = flow.phase === 'leaving' && flow.leftSeatId ? byId.get(flow.leftSeatId) : undefined
     for (const seat of seats) {
       const g = guests[seat.id]
       if (!g || list.length >= MAX_GUESTS) continue
+      if (leavingSeat && seat.id === leavingSeat.id) continue
       // 交谈对象：同桌 / 同一件家具优先；群里其他有人的座位（不含对象、不在桌边的）用来偶尔扭头看看
       const partner = choosePartner(seat, byId, guests)
       const others = seat.neighbors
@@ -119,8 +125,25 @@ export function Guests() {
         dj: !!nowPlaying && !!g.id && g.id === nowPlaying.by,
       })
     }
+    if (leavingSeat) {
+      let seed = 1
+      for (const ch of flow.selfId ?? '') seed = (seed * 31 + ch.charCodeAt(0)) % 1e6
+      list.push({
+        seat: leavingSeat,
+        partner: null,
+        others: [],
+        state: 'idle',
+        drink: null,
+        food: null,
+        seed,
+        emote: null,
+        self: true,
+        dj: !!nowPlaying && nowPlaying.by === flow.selfId,
+        walkTo: exit,
+      })
+    }
     return list
-  }, [seats, guests, nowPlaying])
+  }, [seats, guests, nowPlaying, flow.phase, flow.leftSeatId, flow.selfId, exit])
 
   const seen = useRef<Set<string> | null>(null)
   useFrame(({ camera, clock }, delta) => {
@@ -174,7 +197,9 @@ export function Guests() {
     if (tag) {
       const me = active.find((a) => a.self)
       const rig = me && rigs.current.get(me.seat.id)
-      tag.visible = !!rig
+      // 走到门口缩小消失时，标签也跟着消失
+      const shown = !!rig && rig.root.scale.x > BUDDY_SCALE * 0.3
+      tag.visible = shown
       if (rig) tag.matrix.copy(rig.tagMatrix)
       tag.matrixWorldNeedsUpdate = true
     }
@@ -183,7 +208,7 @@ export function Guests() {
     if (note) {
       const dj = active.find((a) => a.dj)
       const rig = dj && rigs.current.get(dj.seat.id)
-      note.visible = !!rig
+      note.visible = !!rig && rig.root.scale.x > BUDDY_SCALE * 0.3
       if (rig) {
         const N = sceneConfig.musicNote
         const right = noteRight.set(1, 0, 0).applyQuaternion(camera.quaternion)

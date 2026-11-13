@@ -3,19 +3,23 @@ import { MeshBasicMaterial } from 'three'
 import { sceneConfig } from '../config/sceneConfig'
 import { useLayoutItems } from '../state/layoutStore'
 import { openPanel } from '../state/panels'
+import { requestLeave } from '../state/flowActions'
 import { useSceneParams } from '../state/sceneParams'
 import { OverlayMeshes, useItemMeshes } from './ItemOverlay'
 
-const H = sceneConfig.musicHotspot
+const H = sceneConfig.hotspot
+type HotspotType = keyof typeof H.targets
 
 /**
- * 唱机和唱片架可以点：点一下打开歌单。电脑上鼠标移上去时盖一层淡淡的暖白高光、鼠标变手形；
- * 手机没有悬停，直接点。平时盖着的这层不画出来（材质不可见），但照样接收点击。
+ * 场景里能点的东西：唱机 / 唱片架打开歌单，门打开离开确认框（哪个打开什么在 sceneConfig.hotspot）。
+ * 电脑上鼠标移上去时盖一层淡淡的暖白高光、鼠标变手形；手机没有悬停，直接点。
+ * 平时盖着的这层不画出来（材质不可见），但照样接收点击。
  */
-export function MusicHotspots() {
+export function Hotspots() {
   const items = useLayoutItems()
   const { palette } = useSceneParams()
-  const ids = useMemo(() => items.filter((i) => (H.types as readonly string[]).includes(i.type)).map((i) => i.id), [items])
+  const typeOf = useMemo(() => new Map(items.filter((i) => i.type in H.targets).map((i) => [i.id, i.type as HotspotType])), [items])
+  const ids = useMemo(() => [...typeOf.keys()], [typeOf])
   const targets = useItemMeshes(ids)
   const [hovered, setHovered] = useState<string | null>(null)
 
@@ -58,7 +62,11 @@ export function MusicHotspots() {
       materialFor={(id) => (id === hovered ? glow : idle)}
       renderOrder={6}
       onHover={setHovered}
-      onTap={() => openPanel('records')}
+      onTap={(id) => {
+        const action = H.targets[typeOf.get(id)!]
+        if (action === 'leave') requestLeave()
+        else openPanel(action)
+      }}
     />
   )
 }

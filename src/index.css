@@ -536,3 +536,148 @@ body {
   font-variant-numeric: tabular-nums;
   opacity: 0.65;
 }
+
+/* 离开确认框 */
+.dialog-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.28);
+  animation: fade-in 0.2s ease;
+}
+
+.leave-dialog {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 340px;
+  padding: 24px 20px 16px;
+  border-radius: 20px;
+  font-family: 'Avenir Next', 'Helvetica Neue', system-ui, sans-serif;
+  text-align: center;
+  animation: pop-in 0.22s cubic-bezier(0.2, 0.8, 0.2, 1.2);
+}
+
+.leave-dialog h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.leave-dialog p {
+  margin: 0 0 8px;
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.dialog-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 2px solid transparent;
+  border-radius: 22px;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.dialog-button:active {
+  transform: scale(0.97);
+}
+
+.dialog-button.quiet {
+  opacity: 0.7;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+/* 小票：从出纸口往下"打印"出来；太长时可以上下滚动 */
+.receipt-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.receipt-scroll {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.receipt-slot {
+  flex: none;
+  width: min(332px, 100%);
+  height: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.receipt-paper {
+  flex: none;
+  max-width: calc(100% - 16px);
+  height: auto;
+  margin-top: -4px;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.22));
+  transform-origin: top center;
+  animation: receipt-print ease-out both;
+}
+
+@keyframes receipt-print {
+  from {
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(-24px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .receipt-paper {
+    animation: none;
+  }
+}
+
+.receipt-actions {
+  display: flex;
+  flex: none;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.flow-button.ghost {
+  border: 2px solid currentColor;
+  background: transparent;
+}
+
+/* 左上角门形图标：和右下角"回到全景"同一套样式 */
+.leave-button {
+  position: fixed;
+}

@@ -3,6 +3,7 @@ import { Scene } from './scene/Scene'
 import { SceneParamsProvider } from './state/SceneParamsProvider'
 import { ResetViewButton } from './ui/ResetViewButton'
 import { FlowOverlay } from './ui/FlowOverlay'
+import { useFlow } from './state/flow'
 
 // 只有带 ?debug 时才加载 leva 面板代码
 const isDebug = new URLSearchParams(window.location.search).has('debug')
@@ -13,6 +14,7 @@ const isEdit = import.meta.env.DEV && new URLSearchParams(window.location.search
 const EditorShell = isEdit ? lazy(() => import('./ui/editor/EditorShell')) : null
 
 export default function App() {
+  const { phase } = useFlow()
   return (
     <SceneParamsProvider>
       {EditorShell ? (
@@ -22,7 +24,8 @@ export default function App() {
       ) : (
         <Scene />
       )}
-      <ResetViewButton />
+      {/* 小票、结束画面上不需要"回到全景" */}
+      {(EditorShell || (phase !== 'receipt' && phase !== 'ended')) && <ResetViewButton />}
       {/* 编辑器里不走进店流程 */}
       {!EditorShell && <FlowOverlay />}
       {DebugPanel && (

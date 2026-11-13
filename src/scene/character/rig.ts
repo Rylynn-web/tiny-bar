@@ -11,6 +11,7 @@ import {
 } from '../../config/poses'
 import { blushing, eyesOpen, expressionTiming as X, faceAtlas, pickWeighted, type Expression } from '../../config/expressions'
 import { seededRandom } from '../primitives/canvasTexture'
+import type { Vec3 } from '../../config/layoutTypes'
 import { menuItems, type MenuId } from '../../config/menu'
 import { BODY_BOTTOM, EYE_Y } from './parts'
 
@@ -89,6 +90,8 @@ export type RigInput = {
   emote: Expression | null
   /** 同一群里其他有人的座位（不含交谈对象）：人够多时偶尔扭头看看他们 */
   others: Seat[]
+  /** 离开：从 seat 起身，走到这个位置（门口，地面高度）后缩小消失 */
+  walkTo?: Vec3 | null
 }
 
 export class Rig {
@@ -127,6 +130,8 @@ export class Rig {
   private glanceStart = -1
   private first = true
   private first2 = true
+  /** 开始离开（起身）的时刻；没在离开为 -1 */
+  private walkStart = -1
   // 表情
   private expr: Expression = 'default'
   /** 切换表情的过渡：0 = 没在切换，1 = 正在闭眼，2 = 正在睁眼 */
@@ -200,6 +205,48 @@ export class Rig {
     this.laptop.add(this.lid)
   }
 
+  /**
+   * 离开时的位置和腿：t = 起身后过了几秒。返回走路摆动（-1..1），给手臂用
+   * 跳下：从坐着的位置沿弧线落到座位正前方；走：直线走到门口、面朝前进方向；消失：原地缩小
+   */
+  private placeWalking(seat: Seat, to: Vec3, t: number): number {
+    const W = T.walk
+    const fwd = new Vector3(Math.sin(seat.rotationY), 0, Math.cos(seat.rotationY))
+    const landing = new Vector3(seat.position[0], 0, seat.position[2]).addScaledVector(fwd, W.hop)
+    const door = new Vector3(to[0], 0, to[2])
+    const setLegs = (pitch: number, swing: number) =>
+      this.hips.forEach((h, i) => {
+        const side = i === 0 ? -1 : 1
+        h.position.set(side * S.leg.offsetX, S.leg.hipY, 0)
+        h.rotation.x = pitch + side * swing
+      })
+    if (t < W.standUp) {
+      const p = ease(t / W.standUp)
+      const start = this.root.position.clone()
+      this.root.position.lerpVectors(start, landing, p)
+      this.root.position.y += Math.sin(p * Math.PI) * W.hopHeight
+      setLegs(MathUtils.lerp(seatPoses[seat.pose].legPitch, 0, p), 0)
+      return 0
+    }
+    const dir = door.clone().sub(landing)
+    const yaw = dir.lengthSq() > 1e-6 ? Math.atan2(dir.x, dir.z) : seat.rotationY
+    this.root.rotation.y = yaw
+    const w = t - W.standUp
+    if (w < W.duration) {
+      const p = w / W.duration
+      this.root.position.lerpVectors(landing, door, p)
+      const step = Math.sin(w * W.stepsPerSecond * Math.PI)
+      this.root.position.y += Math.abs(step) * W.bob
+      setLegs(0, step * W.legSwing)
+      return step
+    }
+    this.root.position.copy(door)
+    setLegs(0, 0)
+    const v = MathUtils.clamp((w - W.duration) / W.vanish, 0, 1)
+    this.root.scale.setScalar(BUDDY_SCALE * (1 - ease(v)))
+    return 0
+  }
+
   /** 点的东西：要显示的换了（替换同类）先把旧的瞬间收掉，再让新的弹出来 */
   private updateOrder(kind: 'drink' | 'food', want: MenuId | null, dt: number) {
     const pop = this.pops[kind]
@@ -260,23 +307,36 @@ export class Rig {
   /** 推进一帧：算目标姿势 → 平滑过渡 → 叠加快速的小动作 → 更新所有节点和道具 */
   update(input: RigInput, now: number, dt: number, cameraQuaternion: Quaternion) {
     const { seat, state, partner } = input
-    const sp = seatPoses[seat.pose]
+    const walking = !!input.walkTo
+    const sp = seatPoses[walking ? 'stand' : seat.pose]
     const desk = seat.desk
 
     // ── 摆放：坐在座位上，往后挪一点、往下沉一点 ──
-    const back = new Vector3(0, 0, -sp.back).applyAxisAngle(up, seat.rotationY)
-    this.root.position.set(seat.position[0] + back.x, seat.position[1] - sp.sink * BUDDY_SCALE, seat.position[2] + back.z)
+    const sit = seatPoses[seat.pose]
+    const back = new Vector3(0, 0, -sit.back).applyAxisAngle(up, seat.rotationY)
+    this.root.position.set(seat.position[0] + back.x, seat.position[1] - sit.sink * BUDDY_SCALE, seat.position[2] + back.z)
     this.root.rotation.y = seat.rotationY
+    this.root.scale.setScalar(BUDDY_SCALE)
     this.hips.forEach((h, i) => {
       const side = i === 0 ? -1 : 1
-      h.position.set(side * S.leg.offsetX, S.leg.hipY - sp.hipDrop, sp.hipForward)
-      h.rotation.x = sp.legPitch
+      h.position.set(side * S.leg.offsetX, S.leg.hipY - sit.hipDrop, sit.hipForward)
+      h.rotation.x = sit.legPitch
     })
+    // 离开：跳下座位 → 走到门口 → 缩小消失（walkSwing = 走路时腿 / 手臂的摆动，0 = 不摆）
+    let walkSwing = 0
+    if (input.walkTo) {
+      if (this.walkStart < 0) this.walkStart = now
+      walkSwing = this.placeWalking(seat, input.walkTo, now - this.walkStart)
+    } else this.walkStart = -1
 
     // ── 目标姿势：中性姿势 + 座位 + 状态（有桌面用桌面版） ──
     const sp2 = statePoses[state]
     const target: Pose = { ...neutralPose, ...sp2.lap, ...(desk && sp2.desk ? sp2.desk : {}) }
     target.lean += sp.lean
+    if (sp.arms) {
+      target.armLPitch = target.armRPitch = sp.arms.pitch
+      target.armLSplay = target.armRSplay = sp.arms.splay
+    }
 
     // 静坐：偶尔慢慢转头看看四周
     this.look.tick(now, state === 'idle')
@@ -358,6 +418,9 @@ export class Rig {
       headPitch += Math.sin(now * 5 + this.phase) * T.talk.nodAmplitude * 0.5
       armR += Math.sin(now * 4 + this.phase) * T.talk.gestureWave
     }
+    // 走路：手臂和腿反向前后摆
+    armL += walkSwing * T.walk.armSwing
+    armR -= walkSwing * T.walk.armSwing
 
     // ── 写入节点 ──
     this.torso.rotation.set(pose.lean, pose.turn, 0)
