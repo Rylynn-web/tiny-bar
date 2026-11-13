@@ -641,19 +641,54 @@ body {
   gap: 4px;
 }
 
-.emote-group,
 .bar-actions {
   display: flex;
+  flex: 1 1 100%;
+  gap: 8px;
+}
+
+.bar-actions .action-button {
+  flex: 1;
+}
+
+/* 表情：笑脸按钮，手机点按 / 电脑悬停在它上方展开一排表情 */
+.emote-picker {
+  position: relative;
+  flex: none;
+}
+
+.emote-toggle {
+  width: 52px;
+}
+
+.emote-toggle.open,
+.emote-toggle.kept {
+  background: rgba(243, 233, 220, 0.18);
+}
+
+.emote-list {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  z-index: 2;
+  display: flex;
   gap: 4px;
+  padding: 6px;
+  border-radius: 22px;
+  background: #3b3a40;
+  color: #f3e9dc;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  animation: pop-in 0.16s ease;
 }
 
-.emote-group {
-  flex: 1 1 auto;
-  justify-content: space-between;
-}
-
-.bar-actions {
-  flex: 0 0 auto;
+/* 悬停时鼠标从按钮移到列表中间的空隙不断开 */
+.emote-list::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  height: 12px;
 }
 
 .bar-button {
@@ -699,7 +734,7 @@ body {
   width: 44px;
 }
 
-.emote-button:disabled {
+.emote-toggle:disabled {
   opacity: 0.4;
 }
 
@@ -749,18 +784,23 @@ body {
   animation: fade-in 0.15s ease;
 }
 
-/* 宽屏：状态一行，表情和 Menu / Move 一行 */
+/* 宽屏：状态和表情、Menu、Move 并成一行 */
 @media (min-width: 720px) {
   .seated-bar {
     width: auto;
     max-width: calc(100% - 32px);
   }
 
-  .status-group {
+  .status-group,
+  .bar-actions {
     flex: 0 0 auto;
   }
 
   .status-button {
     min-width: 76px;
+  }
+
+  .bar-actions .action-button {
+    flex: none;
   }
 }

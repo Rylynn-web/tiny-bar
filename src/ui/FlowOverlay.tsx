@@ -74,11 +74,11 @@ export function FlowOverlay() {
   return (
     <>
       {phase === 'seated' ? (
-        // 坐着时的底部栏（手机优先）：状态 / 表情 / Menu、Move；离开走左上角门形图标或场景里的门
+        // 坐着时的底部栏（手机优先）：状态 / 表情（笑脸按钮展开）、Menu、Move；离开走左上角门形图标或场景里的门
         <div className="seated-bar" style={barStyle}>
           <StatusBar />
-          <EmoteBar />
           <div className="bar-actions">
+            <EmoteBar />
             <button type="button" className="bar-button action-button" onClick={() => openPanel('menu')}>
               {copy.menu.open}
             </button>
