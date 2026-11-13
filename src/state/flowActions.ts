@@ -36,19 +36,23 @@ export function freeSeats(seats: Seat[]) {
   return seats.filter((s) => !g[s.id])
 }
 
-/** 坐下：不指定就随机挑一个空座位。坐满了返回 false */
-export function takeSeat(seats: Seat[], seatId?: string): boolean {
+/** 坐到指定的座位上；座位被占了或房间满了返回 false */
+export function takeSeat(seatId: string): boolean {
   const phase = getFlow().phase
   if (phase !== 'seating' && phase !== 'seated') return false
   const g = getGuests()
-  if (!seatId) {
-    const free = freeSeats(seats)
-    if (!free.length || Object.keys(g).length >= MAX_GUESTS) return false
-    seatId = free[Math.floor(Math.random() * free.length)].id
-  }
+  if (g[seatId] && !g[seatId].self) return false
+  if (!g[seatId] && Object.keys(g).length >= MAX_GUESTS) return false
   roomClient.sit(seatId)
   if (phase === 'seating') goTo('seated')
   return true
+}
+
+/** 随机挑一个空座位坐下（只给 ?debug 用） */
+export function takeRandomSeat(seats: Seat[]): boolean {
+  const free = freeSeats(seats)
+  if (!free.length) return false
+  return takeSeat(free[Math.floor(Math.random() * free.length)].id)
 }
 
 /** 起身离开 → 走回门口 → 出小票 */

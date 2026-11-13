@@ -13,6 +13,8 @@ import { Room } from './room/Room'
 import { WallVisibilityDriver } from './room/WallVisibilityDriver'
 import { Guests } from './character/Guests'
 import { DoubleTapReset } from './interaction/tap'
+import { SeatPicker } from './SeatPicker'
+import { useFlow } from '../state/flow'
 
 // 脸部可见性检查：只在 ?debug 时加载
 const isDebug = new URLSearchParams(window.location.search).has('debug')
@@ -24,6 +26,7 @@ export function Scene() {
   const bridge = useEditorBridge()
   const params = useSceneParams()
   const items = useLayoutItems()
+  const { phase } = useFlow()
   const room = useRoom()
   // 窗户或房间尺寸变了，墙会重新开洞/变长，要跟着重新合并
   const roomKey = JSON.stringify([room, items.filter((i) => i.type === 'cityWindow')])
@@ -49,8 +52,10 @@ export function Scene() {
         </MergeStatic>
         <LayoutRenderer />
         <Guests />
+        {/* 选座时给空着的座位套绿色蒙版；编辑器里不出现 */}
+        {phase === 'seating' && !bridge && <SeatPicker />}
         {Extras && <Extras />}
-        {FaceCheck && (
+        {FaceCheck && params.faceCheck && (
           <Suspense fallback={null}>
             <FaceCheck />
           </Suspense>

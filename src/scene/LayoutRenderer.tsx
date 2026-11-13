@@ -22,6 +22,8 @@ export function LayoutRenderer() {
         const wall = entry.mount === 'wall' ? wallOf(item) : null
         const inner = (
           <group
+            // 选座蒙版靠这个标记找到家具的形状
+            userData={{ layoutItemId: item.id }}
             position={item.position}
             rotation={[0, MathUtils.degToRad(item.rotationY), 0]}
             scale={item.scale ?? 1}

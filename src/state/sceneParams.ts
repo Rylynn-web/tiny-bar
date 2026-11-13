@@ -47,6 +47,8 @@ export type SceneParams = {
   ao: { intensity: number; radius: number }
   bloom: { intensity: number }
   mergeStatic: boolean
+  /** ?debug：每个座位上显示"能不能看到正脸"的绿 / 红点 */
+  faceCheck: boolean
   quality: Quality
   cityView: CityViewParams
   emissive: { -readonly [K in keyof typeof sceneConfig.emissive]: number }
@@ -68,6 +70,7 @@ export const defaultSceneParams: SceneParams = {
   ao: { intensity: sceneConfig.ao.intensity, radius: sceneConfig.ao.radius },
   bloom: { intensity: sceneConfig.bloom.intensity },
   mergeStatic: sceneConfig.performance.mergeStatic,
+  faceCheck: false,
   quality: sceneConfig.performance.quality,
   cityView: {
     layerCount: sceneConfig.cityView.layers.length,

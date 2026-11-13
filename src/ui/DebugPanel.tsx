@@ -94,6 +94,7 @@ export default function DebugPanel() {
     ),
     性能: folder({
       mergeStatic: { value: d.mergeStatic, label: '合并网格' },
+      faceCheck: { value: d.faceCheck, label: '脸部检查（座位绿 / 红点）' },
       quality: { value: d.quality, options: { 自动: 'auto', 高: 'high', 低: 'low' }, label: '画质' },
     }),
     窗外: folder(
@@ -166,6 +167,7 @@ export default function DebugPanel() {
       ao: { intensity: v.aoIntensity as number, radius: v.aoRadius as number },
       bloom: { intensity: v.bloomIntensity as number },
       mergeStatic: v.mergeStatic as boolean,
+      faceCheck: v.faceCheck as boolean,
       quality: v.quality as SceneParams['quality'],
       cityView: {
         layerCount: v.cvLayers as number,

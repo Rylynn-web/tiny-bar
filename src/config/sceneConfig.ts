@@ -296,6 +296,13 @@ export const sceneConfig = {
     // 多久检查一次是否跨过了边界（秒）
     checkSeconds: 60,
   },
+  // ───────── 选座：可坐的家具套一层半透明绿色蒙版，点它就坐下 ─────────
+  seatPicker: {
+    color: 'accentGrass',
+    // 蒙版不透明度在这两个值之间缓慢呼吸（秒 / 一个来回）
+    opacity: [0.28, 0.5] as [number, number],
+    pulseSeconds: 1.8,
+  },
   // ───────── 点单：桌上的饮品 / 小食 ─────────
   order: {
     // 饮品放在小人右手边、小食放在左手边，离桌面锚点多远（米）

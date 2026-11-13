@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { sceneConfig } from '../config/sceneConfig'
 import { useSeats } from '../config/seatConfig'
 import { useFlow } from '../state/flow'
-import { closeReceipt, comeBackIn, leaveBar, takeSeat } from '../state/flowActions'
+import { closeReceipt, comeBackIn, leaveBar } from '../state/flowActions'
+import { useGuests } from '../state/guests'
 import { useGoodChatWatcher } from '../state/goodChat'
 import { copy, fill } from './copy'
 import { EntryScreen } from './EntryScreen'
@@ -17,7 +18,7 @@ const E = sceneConfig.ui.entry
 export function FlowOverlay() {
   const { phase, title } = useFlow()
   const seats = useSeats()
-  const [full, setFull] = useState(false)
+  const guests = useGuests()
   const [menuOpen, setMenuOpen] = useState(false)
   useGoodChatWatcher()
   // 坐下就自动弹出菜单；离开座位就收起
@@ -36,8 +37,8 @@ export function FlowOverlay() {
       text = fill(P.entering, { title: title ?? '' })
       break
     case 'seating':
-      text = full ? P.noSeat : P.seating
-      action = { label: P.seatingAction, run: () => setFull(!takeSeat(seats)) }
+      // 点发绿光的座位坐下（场景里的 SeatPicker）；没有空位时提示坐满了
+      text = seats.some((s) => !guests[s.id]) ? P.seating : P.noSeat
       break
     case 'seated':
       text = P.seated

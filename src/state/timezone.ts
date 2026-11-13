@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from 'react'
 import { sceneConfig, type TimeOfDay } from '../config/sceneConfig'
 import { useSetSceneParams } from './sceneParams'
 
-// 访客的时区：默认用浏览器的本地时区，访客可以自己换（记在这台设备的浏览器里）。
+// 访客的时区：默认用浏览器本地时区对应的代表城市，访客可以自己换（记在这台设备的浏览器里）。
 // 场景的白天 / 夜晚按这个时区的当前钟点决定，菜单跟着场景时段换。
 
 const KEY = 'tinybar.timezone'
@@ -15,16 +15,83 @@ export function browserTimeZone(): string {
   }
 }
 
-/** 可选的时区列表（浏览器支持的全部 IANA 时区；老浏览器只给本地时区和 UTC） */
-export function allTimeZones(): string[] {
-  const local = browserTimeZone()
+/** 可选的时区：每个时差一个代表城市（城市名在 ui/copy.ts），按时差从西到东 */
+export const timeZoneChoices = [
+  'Pacific/Honolulu',
+  'America/Anchorage',
+  'America/Los_Angeles',
+  'America/Denver',
+  'America/Chicago',
+  'America/New_York',
+  'America/Halifax',
+  'America/Sao_Paulo',
+  'Atlantic/South_Georgia',
+  'Atlantic/Azores',
+  'Europe/London',
+  'Europe/Paris',
+  'Africa/Cairo',
+  'Europe/Moscow',
+  'Asia/Tehran',
+  'Asia/Dubai',
+  'Asia/Kabul',
+  'Asia/Karachi',
+  'Asia/Kolkata',
+  'Asia/Kathmandu',
+  'Asia/Dhaka',
+  'Asia/Bangkok',
+  'Asia/Shanghai',
+  'Asia/Tokyo',
+  'Australia/Adelaide',
+  'Australia/Sydney',
+  'Pacific/Noumea',
+  'Pacific/Auckland',
+] as const
+
+/** 某个时区现在相对 UTC 的分钟数（夏令时期间会变） */
+export function offsetMinutes(tz: string, now = new Date()): number {
   try {
-    const list = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.('timeZone')
-    if (list?.length) return list.includes(local) ? list : [local, ...list]
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hourCycle: 'h23',
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+    }).formatToParts(now)
+    const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? 0)
+    const asUtc = Date.UTC(get('year'), get('month') - 1, get('day'), get('hour') % 24, get('minute'))
+    return Math.round((asUtc - Math.floor(now.getTime() / 60000) * 60000) / 60000)
   } catch {
-    // 忽略，用下面的兜底
+    return 0
   }
-  return local === 'UTC' ? ['UTC'] : [local, 'UTC']
+}
+
+/** "UTC+8"、"UTC-3:30" 这样的时差文字 */
+export function offsetLabel(tz: string, now = new Date()): string {
+  const m = offsetMinutes(tz, now)
+  const sign = m < 0 ? '-' : '+'
+  const a = Math.abs(m)
+  const h = Math.floor(a / 60)
+  const mm = a % 60
+  return `UTC${sign}${h}${mm ? `:${String(mm).padStart(2, '0')}` : ''}`
+}
+
+/** 下拉框里的列表：代表城市；访客本地时区的时差不在列表里时把它补进去（按时差排好） */
+export function allTimeZones(): string[] {
+  const list: string[] = [...timeZoneChoices]
+  const local = browserTimeZone()
+  const now = new Date()
+  if (!list.some((z) => offsetMinutes(z, now) === offsetMinutes(local, now))) list.push(local)
+  return list.sort((a, b) => offsetMinutes(a, now) - offsetMinutes(b, now))
+}
+
+/** 任意时区 → 列表里时差相同的代表城市（没有就保留原样） */
+function toChoice(tz: string): string {
+  if ((timeZoneChoices as readonly string[]).includes(tz)) return tz
+  const now = new Date()
+  const off = offsetMinutes(tz, now)
+  return timeZoneChoices.find((z) => offsetMinutes(z, now) === off) ?? tz
 }
 
 function isValid(tz: string) {
@@ -39,11 +106,11 @@ function isValid(tz: string) {
 function load(): string {
   try {
     const saved = localStorage.getItem(KEY)
-    if (saved && isValid(saved)) return saved
+    if (saved && isValid(saved)) return toChoice(saved)
   } catch {
     // 无痕模式等读不到存储：用本地时区
   }
-  return browserTimeZone()
+  return toChoice(browserTimeZone())
 }
 
 let zone = load()

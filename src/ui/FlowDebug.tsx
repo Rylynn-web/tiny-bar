@@ -5,7 +5,7 @@ import { guestStateLabels, guestStates, type GuestState } from '../config/poses'
 import { roomClient } from '../net/RoomClient'
 import { goTo, phases, useFlow, type Phase } from '../state/flow'
 import { getSessionLog } from '../state/sessionLog'
-import { comeBackIn, leaveBar, stepInside, takeSeat } from '../state/flowActions'
+import { comeBackIn, leaveBar, stepInside, takeRandomSeat } from '../state/flowActions'
 
 // 开发环境 ?debug 面板「流程」：看当前阶段 / 称号，强制跳到任意阶段，模拟自己的操作，打印会话记录
 
@@ -28,7 +28,7 @@ export function FlowDebug() {
           称号: { value: flow.title ?? '—', editable: false },
           座位: { value: flow.seatId ?? '—', editable: false },
           进店: button(() => stepInside()),
-          随机坐下: button(() => takeSeat(seats)),
+          随机坐下: button(() => takeRandomSeat(seats)),
           我的状态: {
             value: 'idle' as GuestState,
             options: Object.fromEntries(guestStates.map((s) => [guestStateLabels[s], s])),
